@@ -1,0 +1,43 @@
+################################################################################
+# Rule configuration                                                           #
+################################################################################
+
+#### General/shared rules ####
+trimmomatic:
+  threads: 8
+  adapter_pe: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-PE.fa 
+  adapter_se: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-SE.fa 
+
+bbduk:
+  refs: /home/springer/zhoux379/source/bbmap/resources/polyA.fa.gz,/home/springer/zhoux379/source/bbmap/resources/truseq.fa.gz
+  extra: k=13 ktrim=r useshortkmers=t mink=5 qtrim=r trimq=10 minlength=20
+
+star:
+  index: /home/springer/zhoux379/data/genome/B73/21.star
+  extra: ''
+  threads: 8
+
+sambamba_sort:
+  extra: ''
+  threads: 8
+
+sambamba_merge:
+  extra: ''
+  threads: 8
+
+featurecounts:
+  gtf: /home/springer/zhoux379/data/genome/B73/51.gtf
+  extra: --primary -Q 20 -t exon -g gene_id --byReadGroup
+  threads: 8
+
+multiqc:
+  extra: ''
+
+fastqc:
+  extra: ''
+
+ase:
+  threads: 1
+  gene_bed: /home/springer/zhoux379/data/genome/Zmays_v4/v37/gene.bed
+  extra: ''
+
