@@ -1,12 +1,15 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+import sys
 import os
 import os.path as op
 import yaml
 from astropy.table import Table, Column
 
 def str2bool(v):
+    if isinstance(v, bool):
+        return v
     if not isinstance(v, str):
         raise ValueError("invalid literal for boolean: Not a string.")
     if v.lower() in ("yes", "true", "t", "1"):
