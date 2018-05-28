@@ -6,9 +6,9 @@ rule trimmomatic:
     log:
         "logs/trimmomatic/{sid}.log"
     params:
-        extra = "-threads %s ILLUMINACLIP:%s:2:30:10:8:no "
-        "LEADING:3 TRAILING:3 SLIDINGWINDOW:4:15 MINLEN:35 " % 
-        (config["trimmomatic"]["threads"], 
-        config['trimmomatic']['adapter_se'])
+        extra = "-threads %s" % config["trimmomatic"]["threads"],
+        trimmer = [
+            "ILLUMINACLIP:%s:2:30:10:8:no" % config['trimmomatic']['adapter_se'],
+            "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:15", "MINLEN:35"]
     wrapper:
         "0.23.1/bio/trimmomatic/se"

@@ -1,2 +1,2 @@
-# snk_rnaseq
-snakemake pipeline scripts for RNA-Seq analysis
+# snakemake_rules
+snakemake pipeline scripts for NGS data analysis

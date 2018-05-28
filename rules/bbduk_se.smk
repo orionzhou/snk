@@ -6,10 +6,11 @@ rule bbduk:
     log:
         "logs/bbduk/{sid}.log"
     params:
+        cmd = config['bbduk']['cmd'],
         extra = "ref=%s %s" % 
-            (config['bbduk']['refs'], config['bbduk']['extra'])
+            (','.join(config['bbduk']['refs']), config['bbduk']['extra']),
     run:
-        shell("bbduk.sh "
+        shell("{params.cmd} "
         "in={input} "
         "out={output} "
         "{params.extra} "

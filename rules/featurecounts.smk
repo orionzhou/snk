@@ -1,6 +1,6 @@
 def featurecounts_extra(wildcards):
     extra = config["featurecounts"]["extra"]
-    extra += " --tmpDir %s" % config['temp_dir']
+    extra += " --tmpDir %s" % config['tmpdir']
     if config['paired']:
         extra += " -p"
     if config['stranded'] == 'reverse':
@@ -18,16 +18,17 @@ rule featurecounts:
     log:
         "logs/featurecounts.log"
     params:
+        cmd = config['featurecounts']['cmd'],
         gtf = config['featurecounts']['gtf'],
-        extra = featurecounts_extra
+        extra = featurecounts_extra,
     threads:
         config["featurecounts"]["threads"]
     run:
-        shell("featureCounts "
+        shell("{params.cmd} "
         "-T {threads} "
         "{params.extra} "
         "-a {params.gtf} "
         "-o {output} "
-        "{input} "
-        "> {log}")
+        "{input} ")
+        #"> {log}")
 

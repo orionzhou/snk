@@ -3,8 +3,8 @@ rule fastqc:
         #"10.fastq/{sid}.fq.gz"
         "14.trim/{sid}.fq.gz"
     output:
-        html="qc/fastqc/{sid}.html",
-        zip="qc/fastqc/{sid}.zip"
+        html="qc/fastqc/{sid}_fastqc.html",
+        zip="qc/fastqc/{sid}_fastqc.zip"
     params:
         config["fastqc"]["extra"]
     wrapper:
