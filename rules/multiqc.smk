@@ -2,11 +2,11 @@ rule multiqc:
     input:
         multiqc_inputs
     output:
-        "qc/multiqc.html"
+        "%s/multiqc.html" % config['dirq']
     params:
         config["multiqc"]["extra"]
     log:
-        "logs/multiqc.log"
+        "%s/multiqc.log" % config['dirl']
     wrapper:
         "0.23.1/bio/multiqc"
 

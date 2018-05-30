@@ -5,8 +5,8 @@ __default__:
   m: a
   r: n
   N: snk.{rule}.{wildcards}
-  o: pbs/{rule}/{wildcards}.out 
-  e: pbs/{rule}/{wildcards}.err
+  o: pbs/{rule}.{wildcards}.out 
+  e: pbs/{rule}.{wildcards}.err
 
 fastqc:
   q: small
@@ -45,6 +45,14 @@ bcftools_call:
   l: nodes=1:ppn=1,walltime=15:00:00,mem=20gb
 
 ase:
+  q: small
+  l: nodes=1:ppn=1,walltime=20:00:00,mem=20gb
+
+gatk_haplotype_caller:
+  q: small
+  l: nodes=1:ppn=1,walltime=20:00:00,mem=20gb
+
+gatk_variant_filtration:
   q: small
   l: nodes=1:ppn=1,walltime=20:00:00,mem=20gb
 

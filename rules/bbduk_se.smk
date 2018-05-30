@@ -1,10 +1,10 @@
 rule bbduk:
     input:
-        "10.fastq/{sid}.fq.gz"
+        "%s/{sid}.fq.gz" % config['bbduk']['idir']
     output:
-        "14.trim/{sid}.fq.gz"
+        "%s/{sid}.fq.gz" % config['bbduk']['odir']
     log:
-        "logs/bbduk/{sid}.log"
+        "%s/bbduk/{sid}.log" % config['dirl']
     params:
         cmd = config['bbduk']['cmd'],
         extra = "ref=%s %s" % 

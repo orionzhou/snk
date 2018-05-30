@@ -8,7 +8,7 @@ import re
 import subprocess as sp
 import collections
 import yaml
-from snakemake.utils import update_config
+from snakemake.utils import update_config, makedirs
 from astropy.table import Table, Column
 
 def str2bool(v):
@@ -31,10 +31,15 @@ def check_config(c):
     config_default = yaml.load(fy)
     update_config(config_default, c)
     c = config_default
-
-    for subdir in [c['dirw'], c['tmpdir']]: 
+    
+    for subdir in [c['dirw'], c['tmpdir']]:
         if not op.isdir(subdir):
-            mkdir(subdir)
+            makedirs(subdir)
+    
+    for rsubdir in [c['dirl'], c['dirp'], c['dirq']]: 
+        subdir = op.join(c['dirw'], rsubdir)
+        if not op.isdir(subdir):
+            makedirs(subdir)
 
     for fn in [c['samplelist'], c['config_default']]:
         assert op.isfile(fn), "cannot read %s" % fn
@@ -56,12 +61,12 @@ def check_config_ase(c):
         sid, gt = t['sid'][i], t['genotype'][i]
         fv = op.join(c['ase']['variant_dir'], "%s.vcf" % gt)
         fb = op.join(c['ase']['variant_dir'], "%s.bed" % gt)
-        if not op.isfile(fv):
+        if not op.isfile(fb):
             fv = op.join(c['ase']['variant_dir2'], "%s.vcf" % gt)
             fb = op.join(c['ase']['variant_dir2'], "%s.bed" % gt)
-        assert op.isfile(fv), "no vcf found: %s" % fv
+        #assert op.isfile(fv), "no vcf found: %s" % fv
         assert op.isfile(fb), "no variant-bed found: %s" % fb
-        c['vcf'][gt] = fv
+        #c['vcf'][gt] = fv
         c['vbed'][gt] = fb
 
 # From https://github.com/giampaolo/psutil/blob/master/scripts/meminfo.py

@@ -1,8 +1,8 @@
 rule sambamba_sort:
     input:
-        "21.bam.raw/{pre}.bam"
+        "%s/{pre}.bam" % config['sambamba_sort']['idir']
     output: 
-        "22.bam/{pre}.bam"
+        "%s/{pre}.bam" % config['sambamba_sort']['odir']
     params:
         config['sambamba']['sort']['extra']
     threads:

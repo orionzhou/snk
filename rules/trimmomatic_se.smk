@@ -1,10 +1,10 @@
 rule trimmomatic:
     input:
-        "10.fastq/{sid}.fq.gz"
+        "%s/{sid}.fq.gz" % config['trimmomatic']['idir']
     output:
-        "14.trim/{sid}.fq.gz"
+        "%s/{sid}.fq.gz" % config['trimmomatic']['odir']
     log:
-        "logs/trimmomatic/{sid}.log"
+        "%s/trimmomatic/{sid}.log" % config['dirl']
     params:
         extra = "-threads %s" % config["trimmomatic"]["threads"],
         trimmer = [

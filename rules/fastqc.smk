@@ -1,10 +1,9 @@
 rule fastqc:
     input:
-        #"10.fastq/{sid}.fq.gz"
-        "14.trim/{sid}.fq.gz"
+        "%s/{sid}.fq.gz" % config['fastqc']['idir']
     output:
-        html="qc/fastqc/{sid}_fastqc.html",
-        zip="qc/fastqc/{sid}_fastqc.zip"
+        html="%s/fastqc/{sid}_fastqc.html" % config['dirq'],
+        zip="%s/fastqc/{sid}_fastqc.zip" % config['dirq']
     params:
         config["fastqc"]["extra"]
     wrapper:

@@ -6,11 +6,11 @@ def ase_gbed(wildcards):
 
 rule ase:
     input:
-        "22.bam/{sid}_{gt}.bam"
+        "%s/{sid}_{gt}.bam" % config['ase']['idir']
     output:
-        "26.ase/{sid}_{gt}.tsv"
+        "%s/{sid}_{gt}.tsv" % config['ase']['odir']
     params:
-        pre = "26.ase/{sid}_{gt}.bam",
+        pre = "%s/{sid}_{gt}" % config['ase']['odir'],
         gbed = ase_gbed,
         vbed = lambda wildcards: config['vbed'][wildcards.gt],
         extra = config['ase']['extra'],

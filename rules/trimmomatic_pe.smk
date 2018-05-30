@@ -1,14 +1,14 @@
 rule trimmomatic:
     input:
-        r1 ="10.fastq/{sid}_1.fq.gz",
-        r2 ="10.fastq/{sid}_2.fq.gz"
+        r1 ="%s/{sid}_1.fq.gz" % config['trimmomatic']['idir'],
+        r2 ="%s/{sid}_2.fq.gz" % config['trimmomatic']['idir']
     output:
-        r1p = "14.trim/{sid}_1.PE.fq.gz",
-        r2p = "14.trim/{sid}_1.SE.fq.gz",
-        r1u = "14.trim/{sid}_2.PE.fq.gz",
-        r2u = "14.trim/{sid}_2.SE.fq.gz"
+        r1 = "%s/{sid}_1.fq.gz" % config['trimmomatic']['odir'],
+        r2 = "%s/{sid}_2.fq.gz" % config['trimmomatic']['odir'],
+        r1_unpaired = "%s/{sid}_1.unpaired.fq.gz" % config['trimmomatic']['odir'],
+        r2_unpaired = "%s/{sid}_2.unpaired.fq.gz" % config['trimmomatic']['odir']
     log:
-        "logs/trimmomatic/{sid}.log"
+        "%s/trimmomatic/{sid}.log" % config['dirl']
     params:
         extra = "-threads %s" % config["trimmomatic"]["threads"],
         trimmer = [

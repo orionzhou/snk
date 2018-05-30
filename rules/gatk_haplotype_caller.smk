@@ -7,18 +7,18 @@ def gatk_hc_cmd(wildcards):
     java_tmpdir = config['tmpdir']
     if 'tmpdir' in config['java']:
         java_tmpdir = config['java']['tmpdir']
-    
-    cmd = "%s -T %s -Xmx%s -Djava.io.tmpdir=%s" % (config['gatk']['cmd'], 
-        config['gatk']['haplotype_caller']['mode'],
-        java_mem, java_tmpdir)
+   
+    java_option = "-Xmx%s -Djava.io.tmpdir=%s" % (java_mem, java_tmpdir)
+    cmd = "%s --java-options \"%s\" %s" % (config['gatk']['cmd'], 
+            java_option, config['gatk']['haplotype_caller']['mode'])
     return cmd
 
 rule gatk_haplotype_caller:
     input:
-        expand(["22.bam/{sid}_{gt}.bam"],
+        expand(["%s/{sid}_{gt}.bam" % config['gatk']['idir']],
             zip, sid = config['t']['sid'], gt = config['t']['genotype'])
     output:
-        "25.gatk/01.vcf"
+        "%s/01.vcf" % config['gatk']['odir']
     params:
         cmd = gatk_hc_cmd,
         ref = config['gatk']['ref'],
@@ -27,10 +27,7 @@ rule gatk_haplotype_caller:
         config["gatk"]['haplotype_caller']["threads"]
     run:
         shell("{params.cmd} "
-        "-nct {threads} "
-	"-R {params.ref} "
-	"-I {input} "
-        "{params.extra} "
-        "-o {output} "
-        "{input}")
-
+            "-R {params.ref} "
+            "{params.extra} "
+            "-I {input} "
+            "-O {output}")

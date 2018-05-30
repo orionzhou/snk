@@ -2,10 +2,10 @@ def hisat2_inputs(wildcards):
     sid = wildcards.sid
     inputs = []
     if config['paired']:
-        inputs.append("14.trim/%s_1.PE.fq.gz" % sid)
-        inputs.append("14.trim/%s_2.PE.fq.gz" % sid)
+        inputs.append("%s/%s_1.fq.gz" % (config['hisat2']['idir'], sid))
+        inputs.append("%s/%s_2.fq.gz" % (config['hisat2']['idir'], sid))
     else:
-        inputs.append("14.trim/%s.fq.gz" % sid)
+        inputs.append("%s/%s.fq.gz" % (config['hisat2']['idir'], sid))
     return { 'reads': inputs }
 
 def hisat2_extra(wildcards):
@@ -17,9 +17,9 @@ rule hisat2:
     input: 
         unpack(hisat2_inputs)
     output:
-        "21.bam.raw/{sid}_{gt}.bam"
+        "%s/{sid}_{gt}.bam" % config['hisat2']['odir'][0]
     log:
-        "logs/hisat2/{sid}_{gt}.log"
+        "%s/hisat2/{sid}_{gt}.log" % config['dirl']
     params:
         idx = config["hisat2"]["index"],
         extra = hisat2_extra
@@ -28,3 +28,15 @@ rule hisat2:
     wrapper:
         "0.23.1/bio/hisat2"
 
+rule sambamba_sort:
+    input:
+        "%s/{pre}.bam" % config['hisat2']['odir'][0]
+    output: 
+        "%s/{pre}.bam" % config['hisat2']['odir'][1]
+    params:
+        config['sambamba']['sort']['extra']
+    threads:
+        config['sambamba']['threads']
+    wrapper:
+        "0.23.1/bio/sambamba/sort"
+ 

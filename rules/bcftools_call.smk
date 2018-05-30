@@ -13,6 +13,6 @@ rule bcftools_call:
         mpileup="",
         call=""
     log:
-        "logs/bcftools_call.log"
+        "%s/bcftools_call.log" % config['dirl']
     wrapper:
         "0.23.1/bio/bcftools/call"
