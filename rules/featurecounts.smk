@@ -12,9 +12,9 @@ def featurecounts_extra(wildcards):
 rule featurecounts:
     input:
         expand(["%s/{sid}_{gt}.bam" % config['featurecounts']['idir']],
-            zip, sid = config['t']['sid'], gt = config['t']['genotype'])
+            zip, sid = config['t']['SampleID'], gt = config['t']['Genotype'])
     output:
-        "%s/01.txt" % config['featurecounts']['odir']
+        config['featurecounts']['outfile']
     log:
         "%s/featurecounts.log" % config['dirl']
     params:

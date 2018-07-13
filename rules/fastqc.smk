@@ -7,6 +7,6 @@ rule fastqc:
     params:
         config["fastqc"]["extra"]
     wrapper:
-        "0.23.1/bio/fastqc"
+        "0.27.0/bio/fastqc"
 
 

@@ -26,7 +26,7 @@ rule hisat2:
     threads:
         config["hisat2"]["threads"]
     wrapper:
-        "0.23.1/bio/hisat2"
+        "0.27.0/bio/hisat2"
 
 rule sambamba_sort:
     input:
@@ -38,5 +38,5 @@ rule sambamba_sort:
     threads:
         config['sambamba']['threads']
     wrapper:
-        "0.23.1/bio/sambamba/sort"
+        "0.27.0/bio/sambamba/sort"
  

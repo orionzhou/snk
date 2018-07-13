@@ -15,5 +15,5 @@ rule trimmomatic:
             "ILLUMINACLIP:%s:2:30:10:8:no" % config['trimmomatic']['adapter_pe'],
             "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:15", "MINLEN:35"]
     wrapper:
-        "0.23.1/bio/trimmomatic/pe"
+        "0.27.0/bio/trimmomatic/pe"
 

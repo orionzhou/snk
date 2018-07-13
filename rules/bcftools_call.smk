@@ -1,18 +1,19 @@
 rule bcftools_call:
     input:
-        ref=config['bcftools_call']['ref'],
-        samples=expand(["22.bam/{sid}_{gt}.bam"], zip, 
-                sid = config['t']['sid'],
-                gt = config['t']['genotype']),
-        indexes=expand(["22.bam/{sid}_{gt}.bam.bai"], zip, 
-                sid = config['t']['sid'],
-                gt = config['t']['genotype']),
+        ref=config['bcftools']['ref'],
+        samples=expand(["%s/{sid}_{gt}.bam" % config['bcftools']['call']['idir']], zip, 
+                sid = config['t']['SampleID'],
+                gt = config['t']['Genotype']),
+        indexes=expand(["%s/{sid}_{gt}.bam.bai" % config['bcftools']['call']['idir']], zip, 
+                sid = config['t']['SampleID'],
+                gt = config['t']['Genotype']),
     output:
-        "25.vcf"
+        "%s/{region,.+(:[0-9]+-[0-9]+)?}.bcf" % config['bcftools']['call']['odir']
     params:
-        mpileup="",
+        mpileup="--region {region}",
         call=""
     log:
-        "%s/bcftools_call.log" % config['dirl']
+        "%s/bcftools_call/{region}.log" % config['dirl']
     wrapper:
-        "0.23.1/bio/bcftools/call"
+        "0.27.0/bio/bcftools/call"
+

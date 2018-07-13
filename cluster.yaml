@@ -8,6 +8,10 @@ __default__:
   o: pbs/{rule}.{wildcards}.out 
   e: pbs/{rule}.{wildcards}.err
 
+deinterleave:
+  q: small
+  l: nodes=1:ppn=10,walltime=10:00:00,mem=20gb
+
 fastqc:
   q: small
   l: nodes=1:ppn=1,walltime=5:00:00,mem=10gb
@@ -20,7 +24,15 @@ bbduk:
   q: small
   l: nodes=1:ppn=1,walltime=12:00:00,mem=10gb
 
-star:
+star_se:
+  q: small
+  l: nodes=1:ppn=8,walltime=10:00:00,mem=35gb
+
+star_pe:
+  q: small
+  l: nodes=1:ppn=8,walltime=10:00:00,mem=35gb
+
+star_pe_unpaired:
   q: small
   l: nodes=1:ppn=8,walltime=10:00:00,mem=35gb
 
@@ -36,13 +48,17 @@ sambamba_merge:
   q: small
   l: nodes=1:ppn=8,walltime=8:00:00,mem=20gb
 
+bcftools_call:
+  q: small
+  l: nodes=1:ppn=1,walltime=50:00:00,mem=30gb
+
+bcftools_concat:
+  q: small
+  l: nodes=1:ppn=1,walltime=20:00:00,mem=20gb
+
 featurecounts:
   q: small
   l: nodes=1:ppn=8,walltime=15:00:00,mem=20gb
-
-bcftools_call:
-  q: small
-  l: nodes=1:ppn=1,walltime=15:00:00,mem=20gb
 
 ase:
   q: small
@@ -50,11 +66,15 @@ ase:
 
 gatk_haplotype_caller:
   q: small
-  l: nodes=1:ppn=1,walltime=20:00:00,mem=20gb
+  l: nodes=1:ppn=4,walltime=40:00:00,mem=20gb
+
+gatk_genotype_gvcfs:
+  q: small
+  l: nodes=1:ppn=4,walltime=50:00:00,mem=40gb
 
 gatk_variant_filtration:
   q: small
-  l: nodes=1:ppn=1,walltime=20:00:00,mem=20gb
+  l: nodes=1:ppn=1,walltime=5:00:00,mem=20gb
 
 multiqc:
   q: small

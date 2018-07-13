@@ -8,6 +8,6 @@ rule multiqc:
     log:
         "%s/multiqc.log" % config['dirl']
     wrapper:
-        "0.23.1/bio/multiqc"
+        "0.27.0/bio/multiqc"
 
 

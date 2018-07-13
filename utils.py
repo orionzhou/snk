@@ -58,7 +58,7 @@ def check_config_ase(c):
     c['vcf'] = dict()
     c['vbed'] = dict()
     for i in range(len(t)):
-        sid, gt = t['sid'][i], t['genotype'][i]
+        sid, gt = t['SampleID'][i], t['Genotype'][i]
         fv = op.join(c['ase']['variant_dir'], "%s.vcf" % gt)
         fb = op.join(c['ase']['variant_dir'], "%s.bed" % gt)
         if not op.isfile(fb):
