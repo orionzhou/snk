@@ -10,20 +10,32 @@ def star_extra(wildcards):
         extras.append("--outSAMattributes All")
     return " ".join(extras)
 
-rule star_se:
+rule star:
     input: 
-        "%s/%s.fq.gz" % (config['star']['idir'], sid)
+        "%s/{sid}.fq.gz" % (config['star']['idir'])
     output:
-        temp("%s/{sid}/Aligned.out.bam" % config['star']['odir'][0])
+        temp("%s/{sid}/Aligned.out.bam" % config['star']['odir'][0]),
+        protected("%s/{sid}/Log.final.out" % config['star']['odir'][0])
     log:
         "%s/star/{sid}.log" % config['dirl']
     params:
         index = config["star"]["index"],
+        input_str = lambda wildcards, input: " ".join(input),
+        outprefix = "%s/{sid}/" % config['star']['odir'][0],
+        readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input[0].endswith(".gz") else "",
         extra = star_extra
     threads:
         config["star"]["threads"]
-    wrapper:
-        "0.27.0/bio/star/align"
+    shell:
+        """
+        STAR {params.extra} --runThreadN {threads} \
+        --genomeDir {params.index} \
+        --readFilesIn {params.input_str} {params.readcmd} \
+        --outSAMtype BAM Unsorted \
+        --outFileNamePrefix {params.outprefix} \
+        --outStd Log \
+        >{log} 2>&1
+        """
 
 rule sambamba_sort:
     input:
@@ -31,7 +43,7 @@ rule sambamba_sort:
     output: 
         protected("%s/{sid}.bam" % config['star']['odir'][1])
     params:
-        config['sambamba']['sort']['extra']
+        "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra'])
     threads:
         config['sambamba']['threads']
     shell:

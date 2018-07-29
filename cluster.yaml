@@ -4,9 +4,19 @@ __default__:
   M: zhoux379@umn.edu
   m: a
   r: n
-  N: snk.{rule}.{wildcards}
-  o: pbs/{rule}.{wildcards}.out 
-  e: pbs/{rule}.{wildcards}.err
+  N: s.{rule}.{wildcards}
+  o: pbs/{rule}/{wildcards}.out 
+  e: pbs/{rule}/{wildcards}.err
+
+fastq_dump:
+  q: small
+  l: nodes=1:ppn=1,walltime=20:00:00,mem=10gb
+fasterq_dump_pe:
+  q: small
+  l: nodes=1:ppn=4,walltime=10:00:00,mem=11gb
+fasterq_dump_se:
+  q: small
+  l: nodes=1:ppn=4,walltime=10:00:00,mem=11gb
 
 deinterleave:
   q: small
@@ -16,25 +26,26 @@ fastqc:
   q: small
   l: nodes=1:ppn=1,walltime=5:00:00,mem=10gb
 
-trimmomatic:
+trimmomatic_pe:
+  q: small
+  l: nodes=1:ppn=8,walltime=12:00:00,mem=10gb
+trimmomatic_se:
   q: small
   l: nodes=1:ppn=8,walltime=12:00:00,mem=10gb
 
-bbduk:
+bbduk_se:
+  q: small
+  l: nodes=1:ppn=1,walltime=12:00:00,mem=10gb
+bbduk_pe:
   q: small
   l: nodes=1:ppn=1,walltime=12:00:00,mem=10gb
 
-star_se:
-  q: small
-  l: nodes=1:ppn=8,walltime=10:00:00,mem=35gb
-
 star_pe:
   q: small
-  l: nodes=1:ppn=8,walltime=10:00:00,mem=35gb
-
-star_pe_unpaired:
+  l: nodes=1:ppn=8,walltime=10:00:00,mem=30gb
+star_se:
   q: small
-  l: nodes=1:ppn=8,walltime=10:00:00,mem=35gb
+  l: nodes=1:ppn=8,walltime=10:00:00,mem=30gb
 
 hisat2:
   q: small
@@ -42,23 +53,27 @@ hisat2:
 
 sambamba_sort:
   q: small
-  l: nodes=1:ppn=8,walltime=10:00:00,mem=20gb
-
+  l: nodes=1:ppn=8,walltime=10:00:00,mem=25gb
 sambamba_merge:
   q: small
-  l: nodes=1:ppn=8,walltime=8:00:00,mem=20gb
+  l: nodes=1:ppn=8,walltime=8:00:00,mem=25gb
 
 bcftools_call:
   q: small
-  l: nodes=1:ppn=1,walltime=50:00:00,mem=30gb
-
+  l: nodes=1:ppn=1,walltime=20:00:00,mem=10gb
+bcftools_merge:
+  q: small
+  l: nodes=1:ppn=2,walltime=23:00:00,mem=20gb
 bcftools_concat:
   q: small
-  l: nodes=1:ppn=1,walltime=20:00:00,mem=20gb
+  l: nodes=1:ppn=1,walltime=10:00:00,mem=15gb
+bcftools_gtcheck:
+  q: small
+  l: nodes=1:ppn=1,walltime=1:00:00,mem=5gb
 
 featurecounts:
   q: small
-  l: nodes=1:ppn=8,walltime=15:00:00,mem=20gb
+  l: nodes=1:ppn=8,walltime=15:00:00,mem=40gb
 
 ase:
   q: small
@@ -66,12 +81,13 @@ ase:
 
 gatk_haplotype_caller:
   q: small
-  l: nodes=1:ppn=4,walltime=40:00:00,mem=20gb
-
+  l: nodes=1:ppn=1,walltime=40:00:00,mem=20gb
+gatk_gather_vcfs:
+  q: small
+  l: nodes=1:ppn=1,walltime=5:00:00,mem=10gb
 gatk_genotype_gvcfs:
   q: small
   l: nodes=1:ppn=4,walltime=50:00:00,mem=40gb
-
 gatk_variant_filtration:
   q: small
   l: nodes=1:ppn=1,walltime=5:00:00,mem=20gb
@@ -79,4 +95,9 @@ gatk_variant_filtration:
 multiqc:
   q: small
   l: nodes=1:ppn=1,walltime=10:00:00,mem=20gb
+
+flank_mapping:
+  q: small
+  l: nodes=1:ppn=8,walltime=10:00:00,mem=20gb
+
 

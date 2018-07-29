@@ -17,9 +17,9 @@ rule hisat2:
     input: 
         unpack(hisat2_inputs)
     output:
-        "%s/{sid}_{gt}.bam" % config['hisat2']['odir'][0]
+        "%s/{sid}.bam" % config['hisat2']['odir'][0]
     log:
-        "%s/hisat2/{sid}_{gt}.log" % config['dirl']
+        "%s/hisat2/{sid}.log" % config['dirl']
     params:
         idx = config["hisat2"]["index"],
         extra = hisat2_extra

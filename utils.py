@@ -24,7 +24,6 @@ def str2bool(v):
         raise ValueError('invalid literal for boolean: "%s"' % v)
 
 def check_config(c):
-    c['paired'] = str2bool(c['paired'])
     assert c['stranded'] in ['yes', 'no', 'reverse'], "unknown strand option: %s" % c['stranded']
 
     fy = open(c['config_default'], 'r')
@@ -46,7 +45,29 @@ def check_config(c):
 
     tm = Table(names = ("sid", "gt", "vpre", "opre", "vcf"), dtype = ['O'] * 5)
     t = Table.read(c['samplelist'], format = 'ascii.tab')
-    c['t'] = t
+    c['SampleID'] = t['SampleID']
+    c['t'] = dict()
+    cols = t.colnames
+    for i in range(len(t)):
+        sid = t['SampleID'][i]
+        sdic = {x: t[x][i] for x in cols}
+        if 'paired' in sdic:
+            sdic['paired'] = str2bool(sdic['paired'])
+        c['t'][sid] = sdic
+
+    if 'regions' in c['bcftools']['concat'] and op.isfile(c['bcftools']['concat']['regions']):
+        fr = c['bcftools']['concat']['regions']
+        c['regions'] = dict()
+        tr = Table.read(fr, format = 'ascii.no_header')
+        chroms = [str(x) for x in range(1,10)]
+        for i in range(len(tr)):
+            chrom = tr['col1'][i]
+            start = tr['col2'][i] + 1
+            end = tr['col3'][i]
+            if chrom in chroms:
+                region1 = "%s-%d-%d" % (chrom, start, end)
+                region2 = "%s:%d-%d" % (chrom, start, end)
+                c['regions'][region1] = region2
 
     return c
 
@@ -64,9 +85,9 @@ def check_config_ase(c):
         if not op.isfile(fb):
             fv = op.join(c['ase']['variant_dir2'], "%s.vcf" % gt)
             fb = op.join(c['ase']['variant_dir2'], "%s.bed" % gt)
-        #assert op.isfile(fv), "no vcf found: %s" % fv
+        assert op.isfile(fv), "no vcf found: %s" % fv
         assert op.isfile(fb), "no variant-bed found: %s" % fb
-        #c['vcf'][gt] = fv
+        c['vcf'][gt] = fv
         c['vbed'][gt] = fb
 
 # From https://github.com/giampaolo/psutil/blob/master/scripts/meminfo.py

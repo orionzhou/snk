@@ -4,6 +4,8 @@ def star_inputs(wildcards):
     if config['paired']:
         inputs['fq1'] = "%s/%s_1.fq.gz" % (config['star']['idir'], sid)
         inputs['fq2'] = "%s/%s_2.fq.gz" % (config['star']['idir'], sid)
+        inputs['fq1u'] = "%s/%s_1.unpaired.fq.gz" % (config['star']['idir'], sid)
+        inputs['fq2u'] = "%s/%s_2.unpaired.fq.gz" % (config['star']['idir'], sid)
     else:
         inputs['fq1'] = "%s/%s.fq.gz" % (config['star']['idir'], sid)
     return inputs
@@ -20,60 +22,72 @@ def star_extra(wildcards):
         extras.append("--outSAMattributes All")
     return " ".join(extras)
 
-rule star_pe:
+rule star:
     input: 
         unpack(star_inputs)
     output:
-        temp("%s/{sid}/Aligned.out.bam" % config['star']['odir'][0])
+        temp("%s/{sid}/Aligned.out.bam" % config['star']['odir'][0]),
+        temp("%s/{sid}_unpaired/Aligned.out.bam" % config['star']['odir'][0]),
+        protected("%s/{sid}/Log.final.out" % config['star']['odir'][0]),
+        protected("%s/{sid}_unpaired/Log.final.out" % config['star']['odir'][0])
     log:
         "%s/star/{sid}.log" % config['dirl']
     params:
         index = config["star"]["index"],
+        input_str_paired = lambda wildcards, input: "%s %s" % (input.fq1, input.fq2),
+        input_str_unpaired = lambda wildcards, input: "%s,%s" % (input.fq1u, input.fq2u),
+        outprefix_paired = "%s/{sid}/" % config['star']['odir'][0],
+        outprefix_unpaired = "%s/{sid}_unpaired/" % config['star']['odir'][0],
+        readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input.fq1.endswith(".gz") else "",
         extra = star_extra
     threads:
         config["star"]["threads"]
-    wrapper:
-        "0.27.0/bio/star/align"
+    shell:
+        """
+        STAR {params.extra} --runThreadN {threads} \
+        --genomeDir {params.index} \
+        --readFilesIn {params.input_str_paired} {params.readcmd} \
+        --outSAMtype BAM Unsorted \
+        --outFileNamePrefix {params.outprefix_paired} \
+        --outStd Log \
+        >{log} 2>&1
 
-rule star_pe_unpaired:
+        STAR {params.extra} --runThreadN {threads} \
+        --genomeDir {params.index} \
+        --readFilesIn {params.input_str_unpaired} {params.readcmd} \
+        --outSAMtype BAM Unsorted \
+        --outFileNamePrefix {params.outprefix_unpaired} \
+        --outStd Log \
+        >{log} 2>&1
+        """
+
+rule sambamba_sort:
     input:
-        fq1 = [
-            "%s/{sid}_1.unpaired.fq.gz" % (config['star']['idir']),
-            "%s/{sid}_2.unpaired.fq.gz" % (config['star']['idir'])
-        ]
-    output:
-        temp("%s/{sid}_unpaired/Aligned.out.bam" % config['star']['odir'][0])
-    log:
-        "%s/star/{sid}.unpaired.log" % config['dirl']
+        "%s/{sid}/Aligned.out.bam" % config['star']['odir'][0],
+        "%s/{sid}_unpaired/Aligned.out.bam" % config['star']['odir'][0]
+    output: 
+        temp("%s/{sid}/Aligned.out.sorted.bam" % config['star']['odir'][0]),
+        temp("%s/{sid}_unpaired/Aligned.out.sorted.bam" % config['star']['odir'][0])
     params:
-        index = config["star"]["index"],
-        extra = star_extra
+        "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra'])
     threads:
-        config["star"]["threads"]
-    wrapper:
-        "0.27.0/bio/star/align"
+        config['sambamba']['threads']
+    shell:
+        """
+        sambamba sort {params} -t {threads} -o {output[0]} {input[0]}
+        sambamba sort {params} -t {threads} -o {output[1]} {input[1]}
+        """
 
 rule sambamba_merge:
     input:
-        "%s/{sid}/Aligned.out.bam" % config['star']['odir'][0],
-        "%s/{sid}_unpaired/Aligned.out.bam" % config['star']['odir'][0],
+        "%s/{sid}/Aligned.out.sorted.bam" % config['star']['odir'][0],
+        "%s/{sid}_unpaired/Aligned.out.sorted.bam" % config['star']['odir'][0]
     output: 
-        temp("%s/{sid}.unsorted.bam" % config['star']['odir'][1])
+        protected("%s/{sid}.bam" % config['star']['odir'][1])
     params:
         config['sambamba']['merge']['extra']
     threads:
         config['sambamba']['threads']
     shell:
-        "sambamba merge {params} -t {threads} -o {output} {input}"
+        "sambamba merge {params} -t {threads} {output} {input}"
  
-rule sambamba_sort:
-    input:
-        "%s/{sid}.unsorted.bam" % config['star']['odir'][1]
-    output: 
-        protected("%s/{sid}.bam" % config['star']['odir'][1])
-    params:
-        config['sambamba']['sort']['extra']
-    threads:
-        config['sambamba']['threads']
-    shell:
-        "sambamba sort {params} -t {threads} -o {output} {input}"

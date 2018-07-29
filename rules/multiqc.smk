@@ -4,10 +4,15 @@ rule multiqc:
     output:
         "%s/multiqc.html" % config['dirq']
     params:
-        config["multiqc"]["extra"]
+        outdir = lambda wildcards, output: op.dirname(output[0]),
+        outfile = lambda wildcards, output: op.basename(output[0]),
+        extra = config["multiqc"]["extra"]
     log:
         "%s/multiqc.log" % config['dirl']
-    wrapper:
-        "0.27.0/bio/multiqc"
-
+    shell:
+        "multiqc {params.extra} --force "
+        "-o {params.outdir} "
+        "-n {params.outfile} "
+        "{input} "
+        ">{log} 2>&1"
 

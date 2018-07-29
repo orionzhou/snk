@@ -10,5 +10,8 @@ rule trimmomatic:
         trimmer = [
             "ILLUMINACLIP:%s:2:30:10:8:no" % config['trimmomatic']['adapter_se'],
             "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:15", "MINLEN:35"]
-    wrapper:
-        "0.27.0/bio/trimmomatic/se"
+    shell:
+        "trimmomatic SE {params.extra} "
+        "{input} {output} "
+        "{params.trimmer} "
+        ">{log} 2>&1"

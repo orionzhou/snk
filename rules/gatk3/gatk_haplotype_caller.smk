@@ -7,8 +7,7 @@ def gatk_hc_cmd(wildcards):
     java_tmpdir = config['tmpdir']
     if 'tmpdir' in config['java']:
         java_tmpdir = config['java']['tmpdir']
-    java_options = "-Xmx%s -Djava.io.tmpdir=%s" % (java_mem, java_tmpdir)
-    cmd = "%s --java-options \"%s\"" % (config['gatk']['cmd'], java_options)
+    cmd = "%s -Xmx%s -Djava.io.tmpdir=%s" % (config['gatk']['cmd'], java_mem, java_tmpdir)
     return cmd
 
 rule gatk_haplotype_caller:
@@ -25,32 +24,40 @@ rule gatk_haplotype_caller:
     threads:
         config["gatk"]['haplotype_caller']["threads"]
     shell:
-        #-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation \
+        #-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation 
         """
-        {params.cmd} HaplotypeCaller \
+        source activate gatk
+
+        {params.cmd} -T HaplotypeCaller \
+        -nct {threads} \
         -R {params.ref} \
         -ERC GVCF \
+        -G Standard -G AS_Standard \
+        -rf ReassignOneMappingQuality -RMQF 255 -RMQT 60 \
+        -U ALLOW_N_CIGAR_READS \
         -L {wildcards.region} \
         {params.extra} \
         -I {input} \
-        -O {output} \
-        >{log} 2>&1
+        -o {output} 2>{log}
         """
 
-rule gatk_gather_vcfs:
+def bcftools_inputs(wildcards):
+    sid = wildcards.sid
+    inputs = ["%s/%s/%s.g.vcf.gz" % 
+        (config['gatk']['odir'], sid, x) 
+        for x in config['gatk']['bcftools_concat']['regions'].split(" ")]
+    return inputs
+
+rule bcftools_concat:
     input:
-        lambda wildcards: ["%s/%s/%s.g.vcf.gz" % 
-            (config['gatk']['odir'], wildcards.sid, x) 
-            for x in config['gatk']['gather_vcfs']['regions'].split(" ")]
+        bcftools_inputs
     output:
         temp("%s/{sid}.g.vcf.gz" % config['gatk']['odir'])
     log:
         "%s/gatk/{sid}.log" % config['dirl']
     params:
-        cmd = config['gatk']['cmd'],
-        input_str = lambda wildcards, input: ["-I %s" % x for x in input],
-        extra = config['gatk']['gather_vcfs']['extra']
+        extra = config['gatk']['bcftools_concat']['extra']
     threads:
-        config["gatk"]['gather_vcfs']["threads"]
+        config["gatk"]['bcftools_concat']["threads"]
     shell:
-        "{params.cmd} GatherVcfs {params.input_str} -O {output} >{log} 2>&1"
+        "bcftools concat --threads {threads} {input} -O z -o {output}"

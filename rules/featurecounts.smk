@@ -1,8 +1,7 @@
 def featurecounts_extra(wildcards):
     extra = config["featurecounts"]["extra"]
     extra += " --tmpDir %s" % config['tmpdir']
-    if config['paired']:
-        extra += " -p"
+    extra += " -p"
     if config['stranded'] == 'reverse':
         extra += " -s 2"
     elif config['stranded'] == 'yes':
@@ -11,10 +10,11 @@ def featurecounts_extra(wildcards):
 
 rule featurecounts:
     input:
-        expand(["%s/{sid}_{gt}.bam" % config['featurecounts']['idir']],
-            zip, sid = config['t']['SampleID'], gt = config['t']['Genotype'])
+        expand(["%s/{sid}.bam" % config['featurecounts']['idir']], sid = config['SampleID'])
     output:
-        config['featurecounts']['outfile']
+        protected("%s/01.txt" % config['featurecounts']['odir']),
+        protected("%s/01.txt.summary" % config['featurecounts']['odir'])
+        
     log:
         "%s/featurecounts.log" % config['dirl']
     params:
@@ -23,12 +23,8 @@ rule featurecounts:
         extra = featurecounts_extra,
     threads:
         config["featurecounts"]["threads"]
-    run:
-        shell("{params.cmd} "
-        "-T {threads} "
-        "{params.extra} "
-        "-a {params.gtf} "
-        "-o {output} "
-        "{input} "
-        "> {log}")
+    shell:
+        "{params.cmd} -T {threads} {params.extra} "
+        "-a {params.gtf} -o {output[0]} {input} "
+        ">{log} 2>&1"
 

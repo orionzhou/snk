@@ -1,0 +1,42 @@
+import os
+import os.path as op
+from snk.utils import check_config
+
+configfile: 'config.yaml'
+workdir: config['dirw']
+config = check_config(config)
+
+wildcard_constraints:
+    sid = "[0-9a-zA-Z]+",
+    region = ".+(:[0-9]+-[0-9]+)?"
+def multiqc_inputs(wildcards):
+    inputs = [
+        "logs/bbduk/",
+        "31_featurecounts/01.txt.summary",
+    ]
+    for sid in config['SampleID']:
+        if config['t'][sid]['paired']:
+            inputs.append("21_star/%s_p/Log.final.out" % sid)
+            inputs.append("21_star/%s_u/Log.final.out" % sid)
+        else:
+            inputs.append("21_star/%s/Log.final.out" % sid)
+    return inputs
+
+include: "rules/fasterq_dump.smk"
+include: "rules/bbduk.smk"
+include: "rules/star.smk"
+include: "rules/featurecounts.smk"
+include: "rules/multiqc.smk"
+rule all:
+    input:
+        "qc/multiqc.html",
+        expand(["22_bam/{sid}.bam"], sid = config['SampleID']),
+
+for rule in workflow.rules:
+    if rule.name != 'all':
+        snakemake.utils.makedirs(op.join(config['dirp'], rule.name))
+
+onsuccess:
+    shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))
+onerror:
+    shell("mail -s 'Error: %s' %s < {log}" % (config['dirw'], config['email']))

@@ -7,8 +7,7 @@ def gatk_gg_cmd(wildcards):
     java_tmpdir = config['tmpdir']
     if 'tmpdir' in config['java']:
         java_tmpdir = config['java']['tmpdir']
-    java_options = "-Xmx%s -Djava.io.tmpdir=%s" % (java_mem, java_tmpdir)
-    cmd = "%s --java-options \"%s\"" % (config['gatk']['cmd'], java_options)
+    cmd = "%s -Xmx%s -Djava.io.tmpdir=%s" % (config['gatk']['cmd'], java_mem, java_tmpdir)
     return cmd
 
 rule gatk_genotype_gvcfs:
@@ -28,18 +27,18 @@ rule gatk_genotype_gvcfs:
         config["gatk"]['genotype_gvcfs']["threads"]
     shell:
         """
-        {params.cmd} CombineGVCFs \
+        source activate gatk
+
+        {params.cmd} -T CombineGVCFs \
         -R {params.ref} \
         {params.extra} \
         {params.gvcfs} \
-        -O {params.gvcf} \
-        >{log} 2>&1
+        -o {params.gvcf} 2>{log}
 
-        {params.cmd} GenotypeGVCFs \
+        {params.cmd} -T GenotypeGVCFs \
         -nt {threads} \
         -R {params.ref} \
         {params.extra} \
         -V {params.gvcf} \
-        -O {output} \
-        >{log} 2>&1
+        -o {output} 2>{log}
         """
