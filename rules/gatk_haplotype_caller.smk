@@ -15,12 +15,14 @@ rule gatk_haplotype_caller:
     input:
         "%s/{sid}.bam" % config['gatk']['idir']
     output:
-        temp("%s/{sid}/{region}.g.vcf.gz" % config['gatk']['odir'])
+        temp("%s/{sid}/{rid}.g.vcf.gz" % config['gatk']['odir']),
+        temp("%s/{sid}/{rid}.g.vcf.gz.tbi" % config['gatk']['odir'])
     log:
-        "%s/gatk/{sid}/{region}.log" % config['dirl']
+        "%s/gatk/{sid}/{rid}.log" % config['dirl']
     params:
         cmd = gatk_hc_cmd,
         ref = config['gatk']['ref'],
+        region = lambda wildcards: config['regions'][wildcards.rid],
         extra = config['gatk']['haplotype_caller']['extra'],
     threads:
         config["gatk"]['haplotype_caller']["threads"]
@@ -30,27 +32,40 @@ rule gatk_haplotype_caller:
         {params.cmd} HaplotypeCaller \
         -R {params.ref} \
         -ERC GVCF \
-        -L {wildcards.region} \
+        -L {params.region} \
         {params.extra} \
         -I {input} \
-        -O {output} \
+        -O {output[0]} \
         >{log} 2>&1
         """
 
+def gather_vcf_inputs(wildcards):
+    sid = wildcards.sid
+    vcfs = expand(["%s/%s/{rid}.g.vcf.gz" % (config['gatk']['odir'], sid)],
+                  rid = list(config['regions'].keys()))
+    tbis = expand(["%s/%s/{rid}.g.vcf.gz.tbi" % (config['gatk']['odir'], sid)],
+                  rid = list(config['regions'].keys()))
+    return {
+        'vcfs': vcfs,
+        'tbis': tbis
+    }
+
 rule gatk_gather_vcfs:
     input:
-        lambda wildcards: ["%s/%s/%s.g.vcf.gz" % 
-            (config['gatk']['odir'], wildcards.sid, x) 
-            for x in config['gatk']['gather_vcfs']['regions'].split(" ")]
+        unpack(gather_vcf_inputs)
     output:
-        temp("%s/{sid}.g.vcf.gz" % config['gatk']['odir'])
+        vcf = protected("%s/{sid}.g.vcf.gz" % config['gatk']['odir']),
+        tbi = protected("%s/{sid}.g.vcf.gz.tbi" % config['gatk']['odir'])
     log:
         "%s/gatk/{sid}.log" % config['dirl']
     params:
         cmd = config['gatk']['cmd'],
-        input_str = lambda wildcards, input: ["-I %s" % x for x in input],
+        input_str = lambda wildcards, input: ["-I %s" % x for x in input.vcfs],
         extra = config['gatk']['gather_vcfs']['extra']
     threads:
         config["gatk"]['gather_vcfs']["threads"]
     shell:
-        "{params.cmd} GatherVcfs {params.input_str} -O {output} >{log} 2>&1"
+        """
+        {params.cmd} GatherVcfs {params.input_str} -O {output.vcf} >{log} 2>&1
+        tabix -p vcf {output.vcf}
+        """

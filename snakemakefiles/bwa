@@ -10,27 +10,21 @@ wildcard_constraints:
     sid = "[a-zA-Z0-9]+",
     region = ".+(:[0-9]+-[0-9]+)?"
 def multiqc_inputs(wildcards):
-    inputs = [
-        "%s/featurecounts.txt.summary" % config['dird'],
-    ]
+    inputs = []
     for sid in config['SampleID']:
         if config['t'][sid]['paired']:
-            inputs.append("21_star/%s_p/Log.final.out" % sid)
-            inputs.append("21_star/%s_u/Log.final.out" % sid)
             inputs.append("logs/trimmomatic_pe/%s.log" % sid)
         else:
-            inputs.append("21_star/%s/Log.final.out" % sid)
             inputs.append("logs/trimmomatic_se/%s.log" % sid)
     return inputs
 
 include: "rules/fasterq_dump.smk"
-include: "rules/trimmomatic.smk"
-include: "rules/star.smk"
-include: "rules/featurecounts.smk"
+include: "rules/trimmomatic.smk" 
+include: "rules/bwa.smk" 
 include: "rules/multiqc.smk"
 rule all:
     input:
-        "%s/multiqc.html" % config['dird'],
+        "qc/multiqc.html",
         expand(["22_bam/{sid}.bam"], sid = config['SampleID'])
 
 for rule in workflow.rules:

@@ -10,13 +10,12 @@ def featurecounts_extra(wildcards):
 
 rule featurecounts:
     input:
-        expand(["%s/{sid}.bam" % config['featurecounts']['idir']], sid = config['SampleID'])
+        "%s/{sid}.bam" % config['featurecounts']['idir']
     output:
-        protected("%s/01.txt" % config['featurecounts']['odir']),
-        protected("%s/01.txt.summary" % config['featurecounts']['odir'])
-        
+        protected("%s/{sid}.txt" % config['featurecounts']['odir']),
+        protected("%s/{sid}.txt.summary" % config['featurecounts']['odir'])
     log:
-        "%s/featurecounts.log" % config['dirl']
+        "%s/featurecounts/{sid}.log" % config['dirl']
     params:
         cmd = config['featurecounts']['cmd'],
         gtf = config['featurecounts']['gtf'],
@@ -28,3 +27,10 @@ rule featurecounts:
         "-a {params.gtf} -o {output[0]} {input} "
         ">{log} 2>&1"
 
+rule merge_featurecounts:
+    input:
+        expand(["%s/{sid}.txt" % config['featurecounts']['odir']], sid = config['SampleID'])
+    output:
+        protected("%s/featurecounts.tsv" % config['dird'])
+    shell:
+        "merge_featurecounts.py {input} > {output}"

@@ -35,7 +35,7 @@ def check_config(c):
         if not op.isdir(subdir):
             makedirs(subdir)
     
-    for rsubdir in [c['dirl'], c['dirp'], c['dirq']]: 
+    for rsubdir in [c['dirl'], c['dirp'], c['dird']]: 
         subdir = op.join(c['dirw'], rsubdir)
         if not op.isdir(subdir):
             makedirs(subdir)
@@ -48,6 +48,7 @@ def check_config(c):
     c['SampleID'] = t['SampleID']
     c['t'] = dict()
     cols = t.colnames
+    
     for i in range(len(t)):
         sid = t['SampleID'][i]
         sdic = {x: t[x][i] for x in cols}
@@ -55,19 +56,19 @@ def check_config(c):
             sdic['paired'] = str2bool(sdic['paired'])
         c['t'][sid] = sdic
 
-    if 'regions' in c['bcftools']['concat'] and op.isfile(c['bcftools']['concat']['regions']):
-        fr = c['bcftools']['concat']['regions']
+    if 'regions' in c['db'] and op.isfile(c['db']['regions']):
+        fr = c['db']['regions']
         c['regions'] = dict()
-        tr = Table.read(fr, format = 'ascii.no_header')
+        tr = Table.read(fr, format = 'ascii.tab')
         chroms = [str(x) for x in range(1,10)]
         for i in range(len(tr)):
-            chrom = tr['col1'][i]
-            start = tr['col2'][i] + 1
-            end = tr['col3'][i]
-            if chrom in chroms:
-                region1 = "%s-%d-%d" % (chrom, start, end)
-                region2 = "%s:%d-%d" % (chrom, start, end)
-                c['regions'][region1] = region2
+            chrom = tr['chrom'][i]
+            start = tr['start'][i]
+            end = tr['end'][i]
+            rid = tr['rid'][i]
+            region_str = "%d:%d-%d" % (chrom, start, end)
+            c['regions'][rid] = region_str
+        print("%d regions read" % len(c['regions'].keys()))
 
     return c
 
@@ -78,8 +79,8 @@ def check_config_ase(c):
     t = c['t']
     c['vcf'] = dict()
     c['vbed'] = dict()
-    for i in range(len(t)):
-        sid, gt = t['SampleID'][i], t['Genotype'][i]
+    for sid in c['SampleID']:
+        gt = t[sid]['Genotype']
         fv = op.join(c['ase']['variant_dir'], "%s.vcf" % gt)
         fb = op.join(c['ase']['variant_dir'], "%s.bed" % gt)
         if not op.isfile(fb):

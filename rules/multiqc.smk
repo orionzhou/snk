@@ -2,7 +2,7 @@ rule multiqc:
     input:
         multiqc_inputs
     output:
-        "%s/multiqc.html" % config['dirq']
+        "%s/multiqc.html" % config['dird']
     params:
         outdir = lambda wildcards, output: op.dirname(output[0]),
         outfile = lambda wildcards, output: op.basename(output[0]),

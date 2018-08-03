@@ -7,11 +7,13 @@ java:
 threads: 1    
 dirl: logs
 dirp: pbs
-dirq: qc
+dird: data
 
 db:
     ref: /home/springer/zhoux379/data/genome/B73/11_genome.fas
     chrom_sizes: /home/springer/zhoux379/data/genome/B73/15.sizes
+    #regions: /home/springer/zhoux379/data/genome/B73/17_regions/10.gap.sep.59win.tsv
+    regions: /home/springer/zhoux379/data/genome/B73/17_regions/11.chrom.10win.tsv
 
 annotation:
     gtf: /home/springer/zhoux379/data/genome/B73/51.gtf
@@ -19,11 +21,7 @@ annotation:
 
 zip_re: (\.gz|\.zip|\.bz2)
 
-copy_fq:
-    idir: 09_raw_fastq
-    odir: 10_fastq
-
-gzip_fq:
+fq_rename:
     idir: 09_raw_fastq
     odir: 10_fastq
 
@@ -59,6 +57,12 @@ fastqc:
     idir: 14_trim
     extra: ''
 
+bwa:
+    idir: 14_trim
+    odir: 21_bwa
+    index: /home/springer/zhoux379/data/genome/B73/21_bwa
+    extra: ''
+
 star:
     idir: 14_trim
     odir:
@@ -90,8 +94,10 @@ hisat2:
 sambamba:
     threads: 8
     sort:
-        extra: -m 20GB
+        extra: -m 11GB
     merge:
+        extra: ''
+    flagstat:
         extra: ''
 
 featurecounts:
@@ -100,7 +106,7 @@ featurecounts:
     cmd: featureCounts
     gtf: /home/springer/zhoux379/data/genome/B73/51.gtf
     extra: --primary -Q 20 -t exon -g gene_id --byReadGroup
-    threads: 8
+    threads: 4
 
 bcftools:
     idir: 22_bam
@@ -114,7 +120,6 @@ bcftools:
         threads: 2
         extra: ''
     concat:
-        regions: /home/springer/zhoux379/data/genome/B73/15.win.40m.bed
         threads: 1
         extra: ''
     gtcheck:
@@ -136,7 +141,6 @@ gatk:
         threads: 1
         extra: ''
     gather_vcfs:
-        regions: /home/springer/zhoux379/data/genome/B73/15.win.40m.bed
         threads: 1
         extra: ''
     genotype_gvcfs:
