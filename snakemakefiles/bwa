@@ -13,19 +13,23 @@ def multiqc_inputs(wildcards):
     inputs = []
     for sid in config['SampleID']:
         if config['t'][sid]['paired']:
-            inputs.append("logs/trimmomatic_pe/%s.log" % sid)
+            inputs.append("%s/trimmomatic_pe/%s.log" % (config['dirl'], sid))
         else:
-            inputs.append("logs/trimmomatic_se/%s.log" % sid)
+            inputs.append("%s/trimmomatic_se/%s.log" % (config['dirl'], sid))
+        inputs.append("%s/%s.txt" % (config['bwa']['odir2'], sid))
     return inputs
 
-include: "rules/fasterq_dump.smk"
+#include: "rules/fasterq_dump.smk"
+include: "rules/fq_deinterleave.smk"
 include: "rules/trimmomatic.smk" 
 include: "rules/bwa.smk" 
+include: "rules/callvnt_bcftools.smk" 
 include: "rules/multiqc.smk"
 rule all:
     input:
-        "qc/multiqc.html",
-        expand(["22_bam/{sid}.bam"], sid = config['SampleID'])
+        "%s/multiqc.html" % config['dird'],
+        config['callvnt']['outfile'],
+        expand("%s/{sid}.g.vcf.gz" % config['callvnt']['odir1'], sid = config['SampleID'])
 
 for rule in workflow.rules:
     if rule.name != 'all':

@@ -23,8 +23,10 @@ def str2bool(v):
     else:
         raise ValueError('invalid literal for boolean: "%s"' % v)
 
+
 def check_config(c):
-    assert c['stranded'] in ['yes', 'no', 'reverse'], "unknown strand option: %s" % c['stranded']
+    if 'stranded' in c:
+        assert c['stranded'] in ['yes', 'no', 'reverse'], "unknown strand option: %s" % c['stranded']
 
     fy = open(c['config_default'], 'r')
     config_default = yaml.load(fy)
@@ -66,7 +68,7 @@ def check_config(c):
             start = tr['start'][i]
             end = tr['end'][i]
             rid = tr['rid'][i]
-            region_str = "%d:%d-%d" % (chrom, start, end)
+            region_str = "%s:%d-%d" % (chrom, start, end)
             c['regions'][rid] = region_str
         print("%d regions read" % len(c['regions'].keys()))
 

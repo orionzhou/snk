@@ -45,6 +45,13 @@ hisat2:
   q: small
   l: nodes=1:ppn=8,walltime=10:00:00,mem=20gb
 
+bwa_se:
+  q: small
+  l: nodes=1:ppn=12,walltime=40:00:00,mem=40gb
+bwa_pe:
+  q: small
+  l: nodes=1:ppn=12,walltime=40:00:00,mem=40gb
+
 sambamba_sort:
   q: small
   l: nodes=1:ppn=8,walltime=10:00:00,mem=12gb
@@ -57,7 +64,7 @@ sambamba_flagstat:
 
 bcftools_call:
   q: small
-  l: nodes=1:ppn=1,walltime=20:00:00,mem=10gb
+  l: nodes=1:ppn=1,walltime=60:00:00,mem=30gb
 bcftools_merge:
   q: small
   l: nodes=1:ppn=2,walltime=23:00:00,mem=20gb
@@ -78,10 +85,13 @@ ase:
 
 gatk_haplotype_caller:
   q: small
-  l: nodes=1:ppn=1,walltime=15:00:00,mem=12gb
+  l: nodes=1:ppn=1,walltime=15:00:00,mem=15gb
 gatk_gather_vcfs:
   q: small
   l: nodes=1:ppn=1,walltime=5:00:00,mem=10gb
+gatk_combine_gvcfs:
+  q: small
+  l: nodes=1:ppn=1,walltime=20:00:00,mem=30gb
 gatk_genotype_gvcfs:
   q: small
   l: nodes=1:ppn=4,walltime=50:00:00,mem=40gb
@@ -93,8 +103,20 @@ multiqc:
   q: small
   l: nodes=1:ppn=1,walltime=10:00:00,mem=20gb
 
-flank_mapping:
-  q: small
-  l: nodes=1:ppn=8,walltime=10:00:00,mem=20gb
+genie3:
+  q: small #ram256g
+  l: nodes=1:ppn=24,walltime=50:00:00,mem=60gb
 
+wgc1_prepare:
+  q: small 
+  l: nodes=1:ppn=1,walltime=10:00:00,mem=10gb
+wgc2_align:
+  q: small 
+  l: nodes=1:ppn=4,walltime=20:00:00,mem=20gb
+wgc3_merge:
+  q: small 
+  l: nodes=1:ppn=1,walltime=1:00:00,mem=20gb
+wgc4_chain:
+  q: small 
+  l: nodes=1:ppn=1,walltime=40:00:00,mem=20gb
 

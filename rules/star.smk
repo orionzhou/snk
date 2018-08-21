@@ -26,14 +26,14 @@ rule star_se:
     input: 
         "%s/{sid}.fq.gz" % config['star']['idir']
     output:
-        temp("%s/{sid}/Aligned.out.bam" % config['star']['odir'][0]),
-        protected("%s/{sid}/Log.final.out" % config['star']['odir'][0])
+        temp("%s/{sid}/Aligned.out.bam" % config['star']['odir1']),
+        protected("%s/{sid}/Log.final.out" % config['star']['odir1'])
     log:
         "%s/star/{sid}.log" % config['dirl']
     params:
         index = config["star"]["index"],
         input_str = lambda wildcards, input: " ".join(input),
-        outprefix = "%s/{sid}/" % config['star']['odir'][0],
+        outprefix = "%s/{sid}/" % config['star']['odir1'],
         readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input[0].endswith(".gz") else "",
         extra = star_extra
     threads:
@@ -56,18 +56,18 @@ rule star_pe:
         fq1u = "%s/{sid}_1.unpaired.fq.gz" % config['star']['idir'],
         fq2u = "%s/{sid}_2.unpaired.fq.gz" % config['star']['idir']
     output:
-        temp("%s/{sid}_p/Aligned.out.bam" % config['star']['odir'][0]),
-        temp("%s/{sid}_u/Aligned.out.bam" % config['star']['odir'][0]),
-        protected("%s/{sid}_p/Log.final.out" % config['star']['odir'][0]),
-        protected("%s/{sid}_u/Log.final.out" % config['star']['odir'][0])
+        temp("%s/{sid}_p/Aligned.out.bam" % config['star']['odir1']),
+        temp("%s/{sid}_u/Aligned.out.bam" % config['star']['odir1']),
+        protected("%s/{sid}_p/Log.final.out" % config['star']['odir1']),
+        protected("%s/{sid}_u/Log.final.out" % config['star']['odir1'])
     log:
         "%s/star/{sid}.log" % config['dirl']
     params:
         index = config["star"]["index"],
         input_str_p = lambda wildcards, input: "%s %s" % (input.fq1, input.fq2),
         input_str_u = lambda wildcards, input: "%s,%s" % (input.fq1u, input.fq2u),
-        outprefix_p = "%s/{sid}_p/" % config['star']['odir'][0],
-        outprefix_u = "%s/{sid}_u/" % config['star']['odir'][0],
+        outprefix_p = "%s/{sid}_p/" % config['star']['odir1'],
+        outprefix_u = "%s/{sid}_u/" % config['star']['odir1'],
         readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input.fq1.endswith(".gz") else "",
         extra = star_extra
     threads:
@@ -93,7 +93,7 @@ rule star_pe:
 
 def sambamba_sort_inputs(wildcards):
     sid = wildcards.sid
-    odir1 = config['star']['odir'][0]
+    odir1 = config['star']['odir1']
     inputs = dict()
     if config['t'][sid]['paired']:
         inputs['bam_p'] = "%s/%s_p/Aligned.out.bam" % (odir1, sid)
@@ -106,10 +106,10 @@ rule sambamba_sort:
     input:
         unpack(sambamba_sort_inputs)
     output: 
-        protected("%s/{sid}.bam" % config['star']['odir'][1])
+        protected("%s/{sid}.bam" % config['star']['odir2'])
     params:
-        sorted_p = "%s/{sid}_p/Aligned.out.sorted.bam" % (config['star']['odir'][0]),
-        sorted_u = "%s/{sid}_u/Aligned.out.sorted.bam" % (config['star']['odir'][0]),
+        sorted_p = "%s/{sid}_p/Aligned.out.sorted.bam" % (config['star']['odir1']),
+        sorted_u = "%s/{sid}_u/Aligned.out.sorted.bam" % (config['star']['odir1']),
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra'])
     threads:
         config['sambamba']['threads']
@@ -118,6 +118,7 @@ rule sambamba_sort:
             shell("sambamba sort {params.extra} -t {threads} -o {params.sorted_p} {input.bam_p}")
             shell("sambamba sort {params.extra} -t {threads} -o {params.sorted_u} {input.bam_u}")
             shell("sambamba merge -t {threads} {output} {params.sorted_p} {params.sorted_u}")
+            shell("rm {params.sorted_p} {params.sorted_u}")
         else:
             shell("sambamba sort {params.extra} -t {threads} -o {output} {input.bam}")
 

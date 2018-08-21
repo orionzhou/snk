@@ -31,6 +31,6 @@ rule merge_featurecounts:
     input:
         expand(["%s/{sid}.txt" % config['featurecounts']['odir']], sid = config['SampleID'])
     output:
-        protected("%s/featurecounts.tsv" % config['dird'])
+        protected("%s/%s" % (config['dird'], config['featurecounts']['out']))
     shell:
-        "merge_featurecounts.py {input} > {output}"
+        "merge.featurecounts.R -o {output} {input}"

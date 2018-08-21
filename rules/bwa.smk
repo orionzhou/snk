@@ -1,18 +1,22 @@
+def bwa_extra(wildcards):
+    extras = [config["bwa"]["extra"]]
+    extras.append("-R '@RG\\tID:%s\\tSM:%s'" % (wildcards.sid, wildcards.sid))
+    return " ".join(extras)
+
 rule bwa_se:
     input: 
         "%s/{sid}.fq.gz" % config['bwa']['idir']
     output:
-        temp("%s/{sid}.bam" % config['bwa']['odir'])
+        temp("%s/{sid}.sam" % config['bwa']['odir1'])
     params:
         index = config["bwa"]["index"],
-        extra = config['bwa']['extra']
+        extra = bwa_extra
     threads:
         config["bwa"]["threads"]
     shell:
         """
-        (bwa mem -t {threads} {params.index} {input} | \
-        samtools view -Sbh -o {output} -) \
-        >{log} 2>&1
+        bwa mem -t {threads} {params.index} {params.extra} {input} \
+                >{output} 2>{log}
         """
 
 rule bwa_pe:
@@ -22,67 +26,74 @@ rule bwa_pe:
         fq1u = "%s/{sid}_1.unpaired.fq.gz" % config['bwa']['idir'],
         fq2u = "%s/{sid}_2.unpaired.fq.gz" % config['bwa']['idir']
     output:
-        temp("%s/{sid}_p.bam" % config['bwa']['odir']),
-        temp("%s/{sid}_u1.bam" % config['bwa']['odir']),
-        temp("%s/{sid}_u2.bam" % config['bwa']['odir'])
+        temp("%s/{sid}_p.sam" % config['bwa']['odir1']),
+        temp("%s/{sid}_u1.sam" % config['bwa']['odir1']),
+        temp("%s/{sid}_u2.sam" % config['bwa']['odir1'])
     log:
         "%s/bwa/{sid}.log" % config['dirl']
     params:
         index = config["bwa"]["index"],
-        extra = config['bwa']['extra']
+        extra = bwa_extra
     threads:
         config["bwa"]["threads"]
     shell:
         """
-        (bwa mem -t {threads} {params.index} {input.fq1} {input.fq2} | \
-        samtools view -Sbh -o {output[0]} -) \
-        >{log} 2>&1
-        (bwa mem -t {threads} {params.index} {input.fq1u} | \
-        samtools view -Sbh -o {output[1]} -) \
-        >>{log} 2>&1
-        (bwa mem -t {threads} {params.index} {input.fq2u} | \
-        samtools view -Sbh -o {output[2]} -) \
-        >>{log} 2>&1
+        bwa mem -t {threads} {params.index} {params.extra} {input.fq1} {input.fq2} \
+        >{output[0]} 2>{log}
+        bwa mem -t {threads} {params.index} {params.extra} {input.fq1u} \
+        >{output[1]} 2>>{log}
+        bwa mem -t {threads} {params.index} {params.extra} {input.fq2u} \
+        >{output[2]} 2>>{log}
         """
 
 def sambamba_sort_inputs(wildcards):
     sid = wildcards.sid
-    odir = config['bwa']['odir']
+    odir = config['bwa']['odir1']
     inputs = dict()
     if config['t'][sid]['paired']:
-        inputs['bam_p'] = "%s/%s_p.bam" % (odir, sid)
-        inputs['bam_u1'] = "%s/%s_u1.bam" % (odir, sid)
-        inputs['bam_u2'] = "%s/%s_u2.bam" % (odir, sid)
+        inputs['sam_p'] = "%s/%s_p.sam" % (odir, sid)
+        inputs['sam_u1'] = "%s/%s_u1.sam" % (odir, sid)
+        inputs['sam_u2'] = "%s/%s_u2.sam" % (odir, sid)
     else:
-        inputs['bam'] = "%s/%s.bam" % (odir, sid)
+        inputs['sam'] = "%s/%s.sam" % (odir, sid)
     return inputs
 
 rule sambamba_sort:
     input:
         unpack(sambamba_sort_inputs)
     output: 
-        protected("%s/{sid}.sorted.bam" % config['bwa']['odir'])
+        protected("%s/{sid}.bam" % config['bwa']['odir2']),
+        protected("%s/{sid}.bam.bai" % config['bwa']['odir2'])
     params:
-        sorted_p = "%s/{sid}_p.bam" % (config['bwa']['odir']),
-        sorted_u1 = "%s/{sid}_u1.bam" % (config['bwa']['odir']),
-        sorted_u2 = "%s/{sid}_u2.bam" % (config['bwa']['odir']),
+        bam = "%s/{sid}.bam" % config['bwa']['odir1'],
+        bam_p = "%s/{sid}_p.bam" % config['bwa']['odir1'], 
+        bam_u1 = "%s/{sid}_u1.bam" % config['bwa']['odir1'], 
+        bam_u2 = "%s/{sid}_u2.bam" % config['bwa']['odir1'], 
+        sorted_p = "%s/{sid}_p.sorted.bam" % config['bwa']['odir1'], 
+        sorted_u1 = "%s/{sid}_u1.sorted.bam" % config['bwa']['odir1'], 
+        sorted_u2 = "%s/{sid}_u2.sorted.bam" % config['bwa']['odir1'], 
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra'])
     threads:
         config['sambamba']['threads']
     run:
         if config['t'][wildcards.sid]['paired']:
-            shell("sambamba sort {params.extra} -t {threads} -o {params.sorted_p} {input.bam_p}")
-            shell("sambamba sort {params.extra} -t {threads} -o {params.sorted_u1} {input.bam_u1}")
-            shell("sambamba sort {params.extra} -t {threads} -o {params.sorted_u2} {input.bam_u2}")
-            shell("sambamba merge -t {threads} {output} {params.sorted_p} {params.sorted_u1} {params.sorted_u2}")
+            shell("sambamba view -S -f bam -t {threads} {input.sam_p} -o {params.bam_p}")
+            shell("sambamba view -S -f bam -t {threads} {input.sam_u1} -o {params.bam_u1}")
+            shell("sambamba view -S -f bam -t {threads} {input.sam_u2} -o {params.bam_u2}")
+            shell("sambamba sort {params.extra} -t {threads} -o {params.sorted_p} {params.bam_p}")
+            shell("sambamba sort {params.extra} -t {threads} -o {params.sorted_u1} {params.bam_u1}")
+            shell("sambamba sort {params.extra} -t {threads} -o {params.sorted_u2} {params.bam_u2}")
+            shell("sambamba merge -t {threads} {output[0]} {params.sorted_p} {params.sorted_u1} {params.sorted_u2}")
+            shell("rm {params.bam_p} {params.bam_u1} {params.bam_u2} {params.sorted_p}* {params.sorted_u1}* {params.sorted_u2}*")
         else:
-            shell("sambamba sort {params.extra} -t {threads} -o {output} {input.bam}")
+            shell("sambamba view -S -f bam -t {threads} {input.sam} -o {params.bam}")
+            shell("sambamba sort {params.extra} -t {threads} -o {output[0]} {params.bam}")
 
 rule sambamba_flagstat:
     input:
-        "%s/{sid}.sorted.bam" % config['bwa']['odir']
+        "%s/{sid}.bam" % config['bwa']['odir2']
     output:
-        protected("%s/{sid}.txt" % config['bwa']['odir'])
+        protected("%s/{sid}.txt" % config['bwa']['odir2'])
     params:
         extra = config['sambamba']['flagstat']['extra']
     threads:

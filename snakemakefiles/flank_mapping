@@ -1,0 +1,65 @@
+import os
+import os.path as op
+from snakemake.utils import update_config, makedirs
+from astropy.table import Table, Column
+import yaml
+
+def check_config(c):
+    fy = open(c['config_default'], 'r')
+    config_default = yaml.load(fy)
+    update_config(config_default, c)
+    c = config_default
+    
+    for subdir in [c['dirw'], c['tmpdir']]:
+        if not op.isdir(subdir):
+            makedirs(subdir)
+    
+    for rsubdir in [c['dirl'], c['dirp']]:
+        subdir = op.join(c['dirw'], rsubdir)
+        if not op.isdir(subdir):
+            makedirs(subdir)
+
+    t = Table.read(c['cfg'], format = 'ascii.tab')
+    c['t'] = dict()
+    for i in range(len(t)):
+        sid = t['sid'][i]
+        type = t['type'][i]
+        genotype = t['genotype'][i]
+        tgt = t['tgt'][i]
+        opt	= t['opt'][i]
+        mode = t['mode'][i]
+        c['t'][sid] = {
+                'type': type,
+                'genotype': genotype,
+                'tgt': tgt,
+                'opt': opt,
+                'mode': mode
+        }
+    return c
+
+configfile: 'config.yaml'
+workdir: config['dirw']
+config = check_config(config)
+
+wildcard_constraints:
+    sid = "[a-zA-Z0-9]+",
+    type = "[a-zA-Z0-9]+",
+    genotype = "[a-zA-Z0-9]+",
+    tgt = "[a-zA-Z0-9]+",
+    mode = "[a-zA-Z0-9]+",
+    opt = "[a-zA-Z0-9\+]+",
+
+rule all:
+    input:
+        expand("%s/{sid}.filtered.tsv" % config['fm']['odir4'], sid = config['t'].keys())
+
+include: "rules/flank_mapping.smk"
+
+for rule in workflow.rules:
+    if rule.name != 'all':
+        snakemake.utils.makedirs(op.join(config['dirp'], rule.name))
+
+onsuccess:
+    shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))
+onerror:
+    shell("mail -s 'Error: %s' %s < {log}" % (config['dirw'], config['email']))
