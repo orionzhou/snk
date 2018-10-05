@@ -14,7 +14,8 @@ def check_config(c):
         if not op.isdir(subdir):
             makedirs(subdir)
     
-    for rsubdir in [c['dirl'], c['dirp']]:
+    #for rsubdir in [c['dirl'], c['dirp']]:
+    for rsubdir in [c['dirp']]:
         subdir = op.join(c['dirw'], rsubdir)
         if not op.isdir(subdir):
             makedirs(subdir)
@@ -26,23 +27,39 @@ workdir: config['dirw']
 config = check_config(config)
 
 wildcard_constraints:
-    qry = "[a-zA-Z0-9]+",
-    tgt = "[a-zA-Z0-9]+",
-    idx = "[0-9]+",
-    tchrom = "[a-zA-Z0-9]+"
+    genome = "[a-zA-Z0-9]+",
+    chrom = "[a-zA-Z0-9]+"
 
 def all_inputs(wildcards):
     inputs = []
-    for comp in config['comps']:
-        qry, tgt = comp['qry'], comp['tgt']
-        fo = "%s/%s_%s/23.chain" % (config['wgc']['dirc'], qry, tgt)
-        inputs.append(fo)
+    for genome in config['genome']:
+        dbs = set(list(config['genome'][genome]['dbs'].split()))
+        for db in dbs:
+            odir = genome if db == 'fasta' else "%s/21_dbs/%s" % (genome, config[db]['odir'])
+            if db == 'fasta':
+                odir = "%s" % genome
+                inputs.append("%s/10_genome.fna" % odir)
+                inputs.append("%s/10_genome.fna.fai" % odir)
+                inputs.append("%s/15_intervals/01.chrom.bed" % odir)
+                inputs.append("%s/15_intervals/01.chrom.sizes" % odir)
+                inputs.append("%s/15_intervals/11.gap.bed" % odir)
+            if db == 'blat':
+                inputs.append("%s/db.2bit" % odir)
+            if db == 'bowtie2':
+                inputs.append("%sdb.rev.1.bt2" % odir)
+            if db == 'bwa':
+                inputs.append("%s/db.bwt" % odir)
+            if db == 'star':
+                inputs.append("%s/SA" % odir)
+            if db == 'gatk':
+                inputs.append("%s/db.fasta" % odir)
+                inputs.append("%s/db.dict" % odir)
     return inputs
 rule all:
     input:
         all_inputs
 
-include: "rules/genomeprepare.smk"
+include: "rules/genome.smk"
 
 for rule in workflow.rules:
     if rule.name != 'all':

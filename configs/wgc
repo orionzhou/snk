@@ -1,0 +1,10 @@
+config_default: /home/springer/zhoux379/git/snk/config.yaml
+dirw: /scratch.global/zhoux379/wgc
+species: maize
+comps:
+    - qry: Mo17
+      tgt: B73
+    - qry: W22
+      tgt: B73
+    - qry: PH207
+      tgt: B73

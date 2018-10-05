@@ -1,0 +1,13 @@
+__default__:
+  q: small
+  l: nodes=1:ppn=1,walltime=8:00:00,mem=4gb
+  M: zhoux379@umn.edu
+  m: a
+  r: n
+  N: s.{rule}.{wildcards}
+  o: pbs/{rule}/{wildcards}.out 
+  e: pbs/{rule}/{wildcards}.err
+
+genie3:
+  q: small #ram256g
+  l: nodes=1:ppn=12,walltime=50:00:00,mem=30gb

@@ -1,0 +1,7 @@
+config_default: /home/springer/zhoux379/git/snk/config.yaml
+dirw: /home/springer/zhoux379/projects/maize.grn/data
+genie3:
+    cfg: 10.dataset.tsv
+    idir: 11_input_fpkm
+    odir: 12_output_fpkm
+    threads: 12

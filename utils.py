@@ -23,34 +23,58 @@ def str2bool(v):
     else:
         raise ValueError('invalid literal for boolean: "%s"' % v)
 
+def make_symlink(dst, src):
+    if op.isdir(src):
+        os.system("rm -rf %s" % src)
+    os.system("ln -sf %s %s" % (dst, src))
 
 def check_config(c):
-    if 'stranded' in c:
-        assert c['stranded'] in ['yes', 'no', 'reverse'], "unknown strand option: %s" % c['stranded']
+    for fn in [c['studylist'], c['config_default']]:
+        assert op.isfile(fn), "cannot read %s" % fn
 
     fy = open(c['config_default'], 'r')
     config_default = yaml.load(fy)
     update_config(config_default, c)
     c = config_default
     
-    for subdir in [c['dirw'], c['tmpdir']]:
+    study = c['study']
+    t = Table.read(c['studylist'], format = 'ascii.tab')
+    dic_study = { t['sid'][i]: {x: t[x][i] for x in t.colnames} for i in range(len(t)) }
+    if study not in dic_study:
+        print("study not in config file: %s" % study)
+        sys.exit(1)
+    c['source'] = dic_study[study]['source']
+    c['readtype'] = dic_study[study]['readtype']
+    c['stranded'] = dic_study[study]['stranded']
+    assert c['source'] in ['sra', 'local', 'local_interleaved'], "unknown source: %s" % c['source']
+    assert c['stranded'] in ['yes', 'no', 'reverse'], "unknown strand: %s" % c['stranded']
+    assert c['readtype'] in ['illumina', 'solid', '3rnaseq'], "unknown readtype: %s" % c['readtype']
+   
+    dir_project, dir_cache = c['dir_project'], c['dir_cache']
+    dirw = op.join(dir_cache, study)
+    samplelist = "%s/data/05_read_list/%s.tsv" % (dir_project, study)
+    assert op.isfile(samplelist), "samplelist not found: %s" % samplelist
+    dir_raw = "%s/data/08_raw_output/%s" % (dir_project, study)
+    c['dirw'], c['samplelist'] = dirw, samplelist
+   
+    for subdir in [c['dirw'], dir_raw, c['tmpdir']]:
         if not op.isdir(subdir):
             makedirs(subdir)
-    
-    for rsubdir in [c['dirl'], c['dirp'], c['dird']]: 
+    for rsubdir in [c['dirl'], c['dirp']]: 
         subdir = op.join(c['dirw'], rsubdir)
         if not op.isdir(subdir):
             makedirs(subdir)
+    
+    dir_cachelink = op.join(dir_project, 'data', 'cache')
+    make_symlink(dir_cache, dir_cachelink)
+    dir_rawlink = op.join(dirw, c['dird'])
+    make_symlink(dir_raw, dir_rawlink)
 
-    for fn in [c['samplelist'], c['config_default']]:
-        assert op.isfile(fn), "cannot read %s" % fn
-
-    tm = Table(names = ("sid", "gt", "vpre", "opre", "vcf"), dtype = ['O'] * 5)
     t = Table.read(c['samplelist'], format = 'ascii.tab')
+    #tm = Table(names = ("sid", "gt", "vpre", "opre", "vcf"), dtype = ['O'] * 5)
     c['SampleID'] = t['SampleID']
     c['t'] = dict()
     cols = t.colnames
-    
     for i in range(len(t)):
         sid = t['SampleID'][i]
         sdic = {x: t[x][i] for x in cols}

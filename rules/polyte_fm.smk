@@ -59,7 +59,7 @@ def bwa_inputs(wildcards):
     inputs = dict()
     if mode == 'pe':
         inputs['f1'] = "%s.1.fna" % pre
-        inputs['f2'] = "%s.1.fna" % pre
+        inputs['f2'] = "%s.2.fna" % pre
     elif mode == 'se':
         inputs['f_se'] = "%s.se.fna" % pre
     elif mode == 'merged':

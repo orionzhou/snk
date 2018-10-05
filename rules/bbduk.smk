@@ -3,7 +3,7 @@ rule bbduk_se:
         "%s/{sid}.fq.gz" % config['bbduk']['idir']
     output:
         "%s/{sid}.fq.gz" % config['bbduk']['odir'],
-        "%s/bbduk/{sid}.txt" % config['dirl']
+        "%s/bbduk_se/{sid}.log" % config['dirl']
     params:
         cmd = config['bbduk']['cmd'],
         extra = "ref=%s %s" % 

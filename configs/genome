@@ -1,0 +1,35 @@
+config_default: /home/springer/zhoux379/git/snk/configs/base
+dirw: /home/springer/zhoux379/data/genome
+genome:
+    B73:
+        prefix: B
+        gap: 10000
+        dbs: fasta blat bwa star gatk
+    Mo17:
+        prefix: M
+        gap: 10000
+        dbs: fasta blat bwa star gatk
+    W22:
+        prefix: W
+        gap: 10000
+        dbs: fasta blat bwa star gatk
+    PH207:
+        prefix: P
+        gap: 5000
+        dbs: fasta blat bwa star gatk
+    PHB47:
+        prefix: PHB47_
+        gap: 10000
+        dbs: fasta blat bwa #star gatk
+fasta:
+blat:
+    odir: blat
+bwa:
+    odir: bwa
+bowtie2:
+    odir: bowtie2
+star:
+    odir: star
+    threads: 4
+gatk:
+    odir: gatk

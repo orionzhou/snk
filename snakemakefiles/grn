@@ -14,7 +14,7 @@ def check_config(c):
         if not op.isdir(subdir):
             makedirs(subdir)
     
-    for rsubdir in [c['dirl'], c['dirp']]:
+    for rsubdir in [c['dirp']]:
         subdir = op.join(c['dirw'], rsubdir)
         if not op.isdir(subdir):
             makedirs(subdir)
@@ -25,6 +25,8 @@ def check_config(c):
     cols = t.colnames
     for i in range(len(t)):
         nid = t['nid'][i]
+        if nid not in ['n16b','n16c','n99b_1','nc01','nc02','nc03']:
+            continue
         c['t'][nid] = {x: t[x][i] for x in cols}
     
     return c
@@ -38,7 +40,8 @@ wildcard_constraints:
 
 rule all:
     input:
-        expand(["%s/{nid}.rda" % config['genie3']['odir']], nid = config['nid'])
+        expand(["%s/{nid}.pkl" % config['genie3']['odir']], nid = config['nid']),
+        #expand(["%s/{nid}.pkl" % config['genie3']['odir']], nid = ['n13a','n13b']),
 
 include: "rules/genie3.smk"
 

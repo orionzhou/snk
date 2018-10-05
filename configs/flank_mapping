@@ -1,0 +1,15 @@
+config_default: /home/springer/zhoux379/git/snk/config.yaml
+dirw: /home/springer/zhoux379/projects/polyTE/data/flank_mapping
+cfg: 01.cfg.tsv
+species: maize
+fm:
+    idir: 05_gff
+    odir1: 11_loc
+    odir2: 12_seq
+    odir3: 14_bwa
+    odir4: 15_coord
+    bwa:
+        threads: 8
+lastz:
+    idir: 31_te_windows
+    odir: 32_lastz

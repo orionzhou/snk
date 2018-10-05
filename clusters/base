@@ -1,0 +1,136 @@
+__default__:
+  q: small
+  nodes: 1
+  ppn: 1
+  runtime: 8
+  mem: 4
+  M: zhoux379@umn.edu
+  m: a
+  r: n
+  N: s.{rule}.{wildcards}
+  o: pbs/{rule}/{wildcards}.out 
+  e: pbs/{rule}/{wildcards}.err
+
+fasterq_dump_pe:
+  ppn: 4
+  runtime: 20
+  mem: 11
+fasterq_dump_se:
+  ppn: 4
+  runtime: 20
+  mem: 11
+
+deinterleave:
+  ppn: 10
+  runtime: 10
+  mem: 20
+
+fastqc:
+  ppn: 1
+  runtime: 5
+  mem: 10
+
+trimmomatic_pe:
+  ppn: 8
+  runtime: 12
+  mem: 10
+trimmomatic_se:
+  ppn: 8
+  runtime: 12
+  mem: 10
+
+bbduk_se:
+  ppn: 1
+  runtime: 12
+  mem: 10
+
+star_pe:
+  ppn: 8
+  runtime: 10
+  mem: 35
+star_se:
+  ppn: 8
+  runtime: 10
+  mem: 35
+
+hisat2:
+  ppn: 8
+  runtime: 10
+  mem: 20
+
+bwa_se:
+  ppn: 12
+  runtime: 40
+  mem: 40
+bwa_pe:
+  ppn: 12
+  runtime: 40
+  mem: 40
+
+sambamba_sort:
+  ppn: 8
+  runtime: 10
+  mem: 12
+sambamba_merge:
+  ppn: 8
+  runtime: 8
+  mem: 12
+sambamba_flagstat:
+  ppn: 8
+  runtime: 4
+  mem: 12
+
+bcftools_call:
+  ppn: 1
+  runtime: 60
+  mem: 50
+bcftools_merge:
+  ppn: 2
+  runtime: 23
+  mem: 20
+bcftools_concat:
+  ppn: 1
+  runtime: 10
+  mem: 15
+bcftools_gtcheck:
+  ppn: 1
+  runtime: 1
+  mem: 5
+
+featurecounts:
+  ppn: 4
+  runtime: 20
+  mem: 15
+
+ase:
+  ppn: 1
+  runtime: 20
+  mem: 20
+
+gatk_haplotype_caller:
+  ppn: 1
+  runtime: 15
+  mem: 15
+gatk_gather_vcfs:
+  ppn: 1
+  runtime: 5
+  mem: 10
+gatk_combine_gvcfs:
+  ppn: 1
+  runtime: 20
+  mem: 30
+gatk_genotype_gvcfs:
+  ppn: 4
+  runtime: 50
+  mem: 40
+gatk_variant_filtration:
+  ppn: 1
+  runtime: 5
+  mem: 20
+
+multiqc:
+  ppn: 1
+  runtime: 10
+  mem: 20
+
+
