@@ -1,0 +1,30 @@
+__default__:
+  q: small
+  nodes: 1
+  ppn: 1
+  walltime: 8:00:00
+  mem: 4GB
+  M: zhoux379@umn.edu
+  m: a
+  r: n
+  N: s.{rule}.{wildcards}
+  o: pbs/{rule}/{wildcards}.out 
+  e: pbs/{rule}/{wildcards}.err
+
+wgc1_prepare:
+  ppn: 1
+  walltime: 10:00:00
+  mem: 10GB
+wgc2_align:
+  ppn: 4
+  walltime: 20:00:00
+  mem: 20GB
+wgc3_merge:
+  ppn: 1
+  walltime: 1:00:00
+  mem: 20GB
+wgc4_chain:
+  ppn: 1
+  walltime: 40:00:00
+  mem: 20GB
+

@@ -1,4 +1,4 @@
-config_default: /home/springer/zhoux379/git/snk/config.yaml
+config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
 dir_project: /home/springer/zhoux379/projects/maize.expression
 dir_cache: /scratch.global/zhoux379/maize.expression
 studylist: /home/springer/zhoux379/projects/maize.expression/data/01.cfg.tsv

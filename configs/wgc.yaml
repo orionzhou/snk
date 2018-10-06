@@ -1,4 +1,4 @@
-config_default: /home/springer/zhoux379/git/snk/config.yaml
+config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
 dirw: /scratch.global/zhoux379/wgc
 species: maize
 comps:

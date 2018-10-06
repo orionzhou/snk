@@ -1,4 +1,4 @@
-config_default: /home/springer/zhoux379/git/snk/configs/base
+config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
 dirw: /home/springer/zhoux379/data/genome
 genome:
     B73:
