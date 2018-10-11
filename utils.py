@@ -31,7 +31,7 @@ def make_symlink(dst, src):
     os.system("ln -sf %s %s" % (dst, src))
 
 def check_genome(genome, dbs, c):
-    dirw = op.join(c['dirg'], c['genomes'][genome]['gdir'])
+    dirw = op.join(c['dirg'], c[genome]['gdir'])
     ref, size, regions, gtf = [op.join(dirw, x) for x in [
         '10_genome.fna',
         '15_intervals/01.chrom.sizes',
@@ -39,13 +39,26 @@ def check_genome(genome, dbs, c):
         '50_annotation/10.gtf']]
     for fi in [ref, size, gtf]:
         assert op.isfile(fi), "%s not found" % fi
-    c['genomes'][genome]['ref'] = ref
-    c['genomes'][genome]['size'] = size 
-    c['genomes'][genome]['gtf'] = gtf
+    c[genome]['ref'] = ref
+    c[genome]['size'] = size 
+    c[genome]['gtf'] = gtf
     if op.isfile(regions):
-        c['genomes'][genome]['regions'] = regions
-    
+        fr = regions
+        c[genome]['regions'] = dict() 
+        tr = Table.read(fr, format = 'ascii.tab')
+        chroms = [str(x) for x in range(1,10)]
+        for i in range(len(tr)):
+            chrom = tr['chrom'][i]
+            start = tr['start'][i]
+            end = tr['end'][i]
+            rid = tr['rid'][i]
+            region_str = "%s:%d-%d" % (chrom, start, end)
+            c[genome]['regions'][rid] = region_str
+        print("%d regions read for %s" % (len(c[genome]['regions']), genome))
+
     if isinstance(dbs, str): dbs = [dbs]
+    if 'bwa' in dbs and 'gatk' not in dbs:
+        dbs.append('gatk')
     for db in dbs:
         dirx = op.join(dirw, '21_dbs', c[db]['xdir'])
         fos = []
@@ -55,12 +68,16 @@ def check_genome(genome, dbs, c):
             if genome == 'B73' and db == 'hisat2': ### use snp-corrected ref
                 dirx1 = op.join(dirw, '21_dbs', 'hisat2_snp')
                 fp, fo = op.join(dirx1, xpre), op.join(dirx1, xout)
-            c['genomes'][genome][db] = fp
+            c[genome][db] = fp
             fos = [fo]
         elif db == 'blat':
-            fos = [op.join(dirx, c[db][x]) for x in ['x.2bit', 'x.ooc']]
+            ks = ['x.2bit', 'x.ooc']
+            c[genome][db] = {x: op.join(dirx, c[db][x]) for x in ks}
+            fos = list(c[genome][db].values())
         elif db == 'gatk':
-            fos = [op.join(dirx, c[db][x]) for x in ['xref', 'xref.fai', 'xref.dict']]
+            ks = ['xref', 'xref.fai', 'xref.dict']
+            c[genome][db] = {x: op.join(dirx, c[db][x]) for x in ks}
+            fos = list(c[genome][db].values())
         else:
             print("unknown db: %s" % db)
             sys.exit(1)
@@ -89,7 +106,9 @@ def check_config(c):
     assert c['stranded'] in ['yes', 'no', 'reverse'], "unknown strand: %s" % c['stranded']
     assert c['readtype'] in ['illumina', 'solid', '3rnaseq'], "unknown readtype: %s" % c['readtype']
     assert c['mapper'] in ['star', 'hisat2', 'bwa'], "unknown mapper: %s" % c['mapper']
-    check_genome(c['reference'], c['mapper'], c)
+    c['genome'] = c['reference']
+    dbs = [c['mapper']]
+    check_genome(c['reference'], dbs, c)
    
     dir_project, dir_cache = c['dir_project'], c['dir_cache']
     dirw = op.join(dir_cache, study)
@@ -122,20 +141,6 @@ def check_config(c):
         if 'paired' in sdic:
             sdic['paired'] = str2bool(sdic['paired'])
         c['t'][sid] = sdic
-
-    if 'regions' in c['genomes'][c['reference']] and op.isfile(c['genomes'][c['reference']]['regions']):
-        fr = c['db']['regions']
-        c['regions'] = dict()
-        tr = Table.read(fr, format = 'ascii.tab')
-        chroms = [str(x) for x in range(1,10)]
-        for i in range(len(tr)):
-            chrom = tr['chrom'][i]
-            start = tr['start'][i]
-            end = tr['end'][i]
-            rid = tr['rid'][i]
-            region_str = "%s:%d-%d" % (chrom, start, end)
-            c['regions'][rid] = region_str
-        print("%d regions read" % len(c['regions'].keys()))
 
     return c
 

@@ -31,7 +31,7 @@ rule star_se:
     log:
         "%s/star/{sid}.log" % config['dirl']
     params:
-        index = config['genomes'][config['reference']]["star"],
+        index = config[config['reference']]["star"],
         input_str = lambda wildcards, input: " ".join(input),
         outprefix = "%s/{sid}/" % config['star']['odir1'],
         readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input[0].endswith(".gz") else "",
@@ -63,7 +63,7 @@ rule star_pe:
     log:
         "%s/star/{sid}.log" % config['dirl']
     params:
-        index = config['genomes'][config['reference']]["star"],
+        index = config[config['reference']]["star"],
         input_str_p = lambda wildcards, input: "%s %s" % (input.fq1, input.fq2),
         input_str_u = lambda wildcards, input: "%s,%s" % (input.fq1u, input.fq2u),
         outprefix_p = "%s/{sid}_p/" % config['star']['odir1'],

@@ -8,11 +8,15 @@ rule bwa_se:
         "%s/{sid}.fq.gz" % config['bwa']['idir']
     output:
         temp("%s/{sid}.sam" % config['bwa']['odir1'])
+    log:
+        "%s/bwa/{sid}.log" % config['dirl']
     params:
-        index = config['genomes'][config['reference']]["bwa"],
-        extra = bwa_extra
-    threads:
-        config["bwa"]["threads"]
+        index = config[config['reference']]["bwa"],
+        extra = bwa_extra,
+        ppn = config['bwa']['ppn'],
+        walltime = config['bwa']['walltime'],
+        mem = config['bwa']['mem']
+    threads: config['bwa']['ppn']
     shell:
         """
         bwa mem -t {threads} {params.index} {params.extra} {input} \
@@ -25,17 +29,19 @@ rule bwa_pe:
         fq2 = "%s/{sid}_2.fq.gz" % config['bwa']['idir'],
         fq1u = "%s/{sid}_1.unpaired.fq.gz" % config['bwa']['idir'],
         fq2u = "%s/{sid}_2.unpaired.fq.gz" % config['bwa']['idir']
+    log:
+        "%s/bwa/{sid}.log" % config['dirl']
     output:
         temp("%s/{sid}_p.sam" % config['bwa']['odir1']),
         temp("%s/{sid}_u1.sam" % config['bwa']['odir1']),
         temp("%s/{sid}_u2.sam" % config['bwa']['odir1'])
-    log:
-        "%s/bwa/{sid}.log" % config['dirl']
     params:
-        index = config['genomes'][config['reference']]["bwa"],
-        extra = bwa_extra
-    threads:
-        config["bwa"]["threads"]
+        index = config[config['reference']]["bwa"],
+        extra = bwa_extra,
+        ppn = config['bwa']['ppn'],
+        walltime = config['bwa']['walltime'],
+        mem = config['bwa']['mem']
+    threads: config['bwa']['ppn']
     shell:
         """
         bwa mem -t {threads} {params.index} {params.extra} {input.fq1} {input.fq2} \
@@ -72,9 +78,11 @@ rule sambamba_sort:
         sorted_p = "%s/{sid}_p.sorted.bam" % config['bwa']['odir1'], 
         sorted_u1 = "%s/{sid}_u1.sorted.bam" % config['bwa']['odir1'], 
         sorted_u2 = "%s/{sid}_u2.sorted.bam" % config['bwa']['odir1'], 
-        extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra'])
-    threads:
-        config['sambamba']['threads']
+        extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
+        ppn = config['sambamba']['ppn'],
+        walltime = config['sambamba']['walltime'],
+        mem = config['sambamba']['mem']
+    threads: config['sambamba']['ppn']
     run:
         if config['t'][wildcards.sid]['paired']:
             shell("sambamba view -S -f bam -t {threads} {input.sam_p} -o {params.bam_p}")
@@ -95,8 +103,10 @@ rule sambamba_flagstat:
     output:
         protected("%s/{sid}.txt" % config['bwa']['odir2'])
     params:
-        extra = config['sambamba']['flagstat']['extra']
-    threads:
-        config['sambamba']['threads']
+        extra = config['sambamba']['flagstat']['extra'],
+        ppn = config['sambamba']['ppn'],
+        walltime = config['sambamba']['flagstat']['walltime'],
+        mem = config['sambamba']['mem']
+    threads: config['sambamba']['ppn']
     shell:
         "sambamba flagstat {params.extra} -t {threads} {input} > {output}"

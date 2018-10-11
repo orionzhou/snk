@@ -4,25 +4,25 @@ email: zhoux379@umn.edu
 java:
     mem: 8G
     tmpdir: /scratch.global/zhoux379/temp
-threads: 1    
 dirl: logs
 dirp: pbs
 dird: data
 zip_re: (\.gz|\.zip|\.bz2)
+
+### genomes
 dirg: /home/springer/zhoux379/data/genome
+B73:
+    gdir: B73
+Mo17:
+    gdir: Mo17
+W22:
+    gdir: W22
+PH207:
+    gdir: PH207
+PHB47:
+    gdir: PHB47
 
-genomes:
-    B73:
-        gdir: B73
-    Mo17:
-        gdir: Mo17
-    W22:
-        gdir: W22
-    PH207:
-        gdir: PH207
-    PHB47:
-        gdir: PHB47
-
+### software
 fq_compress:
     idir: 09_fastq_raw
     odir: 10_fastq

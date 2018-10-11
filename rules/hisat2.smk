@@ -36,7 +36,7 @@ rule hisat2:
         temp("%s/{sid}.bam" % config['hisat2']['odir1']),
         protected("%s/{sid}.txt" % config['hisat2']['odir1'])
     params:
-        index = config['genomes'][config['reference']]["hisat2"],
+        index = config[config['reference']]["hisat2"],
         input_str = hisat2_input_str,
         extra = hisat2_extra,
         ppn = config['hisat2']['ppn'],

@@ -33,11 +33,13 @@ if config['readtype'] in ['illumina', 'solid']:
 elif config['readtype'] == '3rnaseq':
     include: "rules/bbduk.smk"
 include: "rules/bwa.smk"
+include: "rules/callvnt_gatk.smk"
 include: "rules/multiqc.smk"
 rule all:
     input:
-        expand("%s/{sid}.bam" % config['bwa']['odir2'], sid = config['SampleID']),
-        expand("%s/{sid}.txt" % config['bwa']['odir2'], sid = config['SampleID']),
+        expand("%s/{sid}.bam" % config['bwa']['odir2'], sid=config['SampleID']),
+        expand("%s/{sid}.txt" % config['bwa']['odir2'], sid=config['SampleID']),
+        "%s" % config['callvnt']['outfile'],
         "%s/multiqc.html" % config['dird'],
 
 for rule in workflow.rules:
