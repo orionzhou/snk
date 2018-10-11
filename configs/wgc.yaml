@@ -20,15 +20,23 @@ dira: 11_align
 dirc: 12_merged
 npieces: 30
 prepare:
-    threads: 1
     extra: ''
+    ppn: 1
+    walltime: 10:00:00
+    mem: 10GB
 align:
-    threads: 4
     extra: ''
+    ppn: 4
+    walltime: 20:00:00
+    mem: 20GB
 merge:
-    threads: 1
     extra: ''
+    ppn: 1
+    walltime: 1:00:00
+    mem: 20GB
 chain:
-    threads: 1
     extra: ''
+    ppn: 1
+    walltime: 40:00:00
+    mem: 20GB
 

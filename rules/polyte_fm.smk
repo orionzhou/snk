@@ -85,9 +85,11 @@ rule fm3_bwa:
         tgt = lambda wildcards: config['t'][wildcards.sid]['tgt'],
         tgt_db = lambda wildcards: "$genome/%s/21_dbs/bwa/db" % config['t'][wildcards.sid]['tgt'],
         opt = lambda wildcards: config['t'][wildcards.sid]['opt'],
-        mode = lambda wildcards: config['t'][wildcards.sid]['mode']
-    threads:
-        config["fm"]['bwa']["threads"]
+        mode = lambda wildcards: config['t'][wildcards.sid]['mode'],
+        ppn = config['fm']['bwa']['ppn'],
+        walltime = config['fm']['bwa']['walltime'],
+        mem = config['fm']['bwa']['mem'],
+    threads: config["fm"]['bwa']["ppn"]
     run:
         makedirs(config['fm']['odir3']) 
         if params.mode == 'pe':

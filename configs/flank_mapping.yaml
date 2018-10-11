@@ -9,7 +9,12 @@ fm:
     odir3: 14_bwa
     odir4: 15_coord
     bwa:
-        threads: 8
+        ppn: 8
+        walltime: 10:00:00
+        mem: 20GB
 lastz:
     idir: 31_te_windows
     odir: 32_lastz
+    ppn: 1
+    walltime: 60:00:00
+    mem: 20GB

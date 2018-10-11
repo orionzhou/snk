@@ -1,15 +1,17 @@
 rule wgc1_prepare:
     input:
-        lambda w: config['wgc']['genomes'][w.genome]['assembly']
+        lambda w: config['genomes'][w.genome]['assembly']
     output:
         fna = "%s/{genome}/10_genome.fna" % config['wgc']['dirg'],
         size = "%s/{genome}/15_intervals/01.chrom.sizes" % config['wgc']['dirg'],
     params:
-        odir = lambda w: "%s/%s" % (config['wgc']['dirg'], w.genome),
-        cdir = lambda w: "%s/%s/11_chroms" % (config['wgc']['dirg'], w.genome),
-        extra = config['wgc']['prepare']['extra']
-    threads:
-        config['wgc']['prepare']['threads']
+        odir = lambda w: "%s/%s" % (config['dirg'], w.genome),
+        cdir = lambda w: "%s/%s/11_chroms" % (config['dirg'], w.genome),
+        extra = '',
+        ppn = config['prepare']['ppn'],
+        walltime = config['prepare']['walltime'],
+        mem = config['prepare']['mem']
+    threads: config['prepare']['ppn'],
     shell:
         """
         mkdir -p {params.odir}
@@ -20,13 +22,13 @@ rule wgc1_prepare:
 
 rule wgc1_break_tgt:
     input:
-        "%s/{genome}/10_genome.fna" % config['wgc']['dirg']
+        "%s/{genome}/10_genome.fna" % config['dirg']
     output:
-        expand("%s/{{genome}}/11_chroms/{tchrom}.fa" % config['wgc']['dirg'], \
-                tchrom = config['wgc']['genomes']['B73']['chroms'].split())
+        expand("%s/{{genome}}/11_chroms/{tchrom}.fa" % config['dirg'], \
+                tchrom = config['genomes']['B73']['chroms'].split())
     params:
-        odir = lambda w: "%s/%s" % (config['wgc']['dirg'], w.genome),
-        cdir = lambda w: "%s/%s/11_chroms" % (config['wgc']['dirg'], w.genome),
+        odir = lambda w: "%s/%s" % (config['dirg'], w.genome),
+        cdir = lambda w: "%s/%s/11_chroms" % (config['dirg'], w.genome),
     shell:
         """
         mkdir -p {params.cdir}
@@ -35,16 +37,16 @@ rule wgc1_break_tgt:
 
 rule wgc1_break_qry:
     input:
-        "%s/{genome}/10_genome.fna" % config['wgc']['dirg']
+        "%s/{genome}/10_genome.fna" % config['dirg']
     output:
         fnas = expand("%s/{{genome}}/87_qrys/part.{idx}.fna" % \
-                config['wgc']['dirg'], 
-                idx = range(1,config['wgc']['npieces']+1)),
-        chain = "%s/{genome}/86.chain" % config['wgc']['dirg'],
+                config['dirg'], 
+                idx = range(1,config['npieces']+1)),
+        chain = "%s/{genome}/86.chain" % config['dirg'],
     params:
-        odir = lambda w: "%s/%s" % (config['wgc']['dirg'], w.genome),
-        cdir = lambda w: "%s/%s/11_chroms" % (config['wgc']['dirg'], w.genome),
-        npieces = config['wgc']['npieces'],
+        odir = lambda w: "%s/%s" % (config['dirg'], w.genome),
+        cdir = lambda w: "%s/%s/11_chroms" % (config['dirg'], w.genome),
+        npieces = config['npieces'],
     shell:
         """
         bed filter -min 5000 {params.odir}/15_intervals/11.gap.bed \
@@ -62,16 +64,18 @@ rule wgc1_break_qry:
 
 rule wgc2_align:
     input:
-        tgt = "%s/{tgt}/11_chroms/{tchrom}.fa" % config['wgc']['dirg'],
-        qry = "%s/{qry}/87_qrys/part.{idx}.fna" % config['wgc']['dirg'],
+        tgt = "%s/{tgt}/11_chroms/{tchrom}.fa" % config['dirg'],
+        qry = "%s/{qry}/87_qrys/part.{idx}.fna" % config['dirg'],
     output:
-        "%s/{qry}_{tgt}/q{idx}.{tchrom}.psl" % config['wgc']['dira']
+        "%s/{qry}_{tgt}/q{idx}.{tchrom}.psl" % config['dira']
     params:
-        sam = "%s/{qry}_{tgt}/q{idx}.{tchrom}.sam" % config['wgc']['dira'],
-        lav = "%s/{qry}_{tgt}/q{idx}.{tchrom}.lav" % config['wgc']['dira'],
-        extra = config['wgc']['align']['extra']
-    threads:
-        config['wgc']['align']['threads']
+        sam = "%s/{qry}_{tgt}/q{idx}.{tchrom}.sam" % config['dira'],
+        lav = "%s/{qry}_{tgt}/q{idx}.{tchrom}.lav" % config['dira'],
+        extra = '',
+        ppn = config['align']['ppn'],
+        walltime = config['align']['walltime'],
+        mem = config['align']['mem']
+    threads: config['align']['ppn'],
     shell:
         """
         minimap2 -x asm20 -a -t {threads} \
@@ -89,26 +93,28 @@ rule wgc2_align:
 rule wgc3_merge:
     input:
         expand("%s/{{qry}}_{{tgt}}/q{idx}.{tchrom}.psl" % \
-                config['wgc']['dira'], \
-                idx = range(1,config['wgc']['npieces']+1), \
-                tchrom = config['wgc']['genomes']['B73']['chroms'].split())
+                config['dira'], \
+                idx = range(1,config['npieces']+1), \
+                tchrom = config['genomes']['B73']['chroms'].split())
     output:
-        "%s/{qry}_{tgt}/02.coord.psl" % config['wgc']['dirc']
+        "%s/{qry}_{tgt}/02.coord.psl" % config['dirc']
     params:
-        odir = lambda w: "%s/%s_%s" % (config['wgc']['dirc'], w.qry, w.tgt),
+        odir = lambda w: "%s/%s_%s" % (config['dirc'], w.qry, w.tgt),
         chain = lambda w: "%s/%s/86.chain" %
-            (config['wgc']['dirg'], w.qry),
+            (config['dirg'], w.qry),
         tbit = lambda w: "%s/%s/21_dbs/blat/db.2bit" % 
-            (config['wgc']['dirg'], w.tgt),
+            (config['dirg'], w.tgt),
         qbit = lambda w: "%s/%s/21_dbs/blat/db.2bit" %
-            (config['wgc']['dirg'], w.qry),
+            (config['dirg'], w.qry),
         tsize = lambda w: "%s/%s/15_intervals/01.chrom.sizes" % 
-            (config['wgc']['dirg'], w.tgt),
+            (config['dirg'], w.tgt),
         qsize = lambda w: "%s/%s/15_intervals/01.chrom.sizes" % 
-            (config['wgc']['dirg'], w.qry),
-        extra = config['wgc']['merge']['extra']
-    threads:
-        config['wgc']['merge']['threads']
+            (config['dirg'], w.qry),
+        extra = '',
+        ppn = config['merge']['ppn'],
+        walltime = config['merge']['walltime'],
+        mem = config['merge']['mem']
+    threads: config['merge']['ppn'],
     shell:
         """
         mkdir -p {params.odir}
@@ -127,22 +133,24 @@ rule wgc3_merge:
 
 rule wgc4_chain:
     input:
-         "%s/{qry}_{tgt}/02.coord.psl" % config['wgc']['dirc']
+         "%s/{qry}_{tgt}/02.coord.psl" % config['dirc']
     output:
-         "%s/{qry}_{tgt}/23.chain" % config['wgc']['dirc']
+         "%s/{qry}_{tgt}/23.chain" % config['dirc']
     params:
-        odir = lambda w: "%s/%s_%s" % (config['wgc']['dirc'], w.qry, w.tgt),
+        odir = lambda w: "%s/%s_%s" % (config['dirc'], w.qry, w.tgt),
         tbit = lambda w: "%s/%s/21_dbs/blat/db.2bit" % 
-            (config['wgc']['dirg'], w.tgt),
+            (config['dirg'], w.tgt),
         qbit = lambda w: "%s/%s/21_dbs/blat/db.2bit" %
-            (config['wgc']['dirg'], w.qry),
+            (config['dirg'], w.qry),
         tsize = lambda w: "%s/%s/15_intervals/01.chrom.sizes" % 
-            (config['wgc']['dirg'], w.tgt),
+            (config['dirg'], w.tgt),
         qsize = lambda w: "%s/%s/15_intervals/01.chrom.sizes" % 
-            (config['wgc']['dirg'], w.qry),
-        extra = config['wgc']['chain']['extra']
-    threads:
-        config['wgc']['chain']['threads']
+            (config['dirg'], w.qry),
+        extra = '',
+        ppn = config['chain']['ppn'],
+        walltime = config['chain']['walltime'],
+        mem = config['chain']['mem']
+    threads: config['chain']['ppn'],
     shell:
         """
         axtChain -linearGap=medium -psl {input} \

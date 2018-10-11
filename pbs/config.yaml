@@ -1,6 +1,6 @@
 #cluster: "pbs-submit.py --depend \"{dependencies}\""
 cluster: "pbs-submit.py"
-cluster-config: "cluster.yaml"
+cluster-config: "snk/clusters/base.yaml"
 cluster-status: "pbs-status.py"
 jobscript: "pbs-jobscript.sh"
 jobs: 10

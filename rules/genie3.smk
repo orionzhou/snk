@@ -11,10 +11,12 @@ rule genie3:
     output:
         "%s/{nid}.pkl" % config['genie3']['odir']
     params:
-        genie3_extra
-    threads:
-        config['genie3']['threads']
+        extra = genie3_extra,
+        ppn = config['genie3']['ppn'],
+        walltime = config['genie3']['walltime'],
+        mem = config['genie3']['mem']
+    threads: config['genie3']['ppn']
     shell:
-        "genie3.py -p {threads} {params} {input} {output}"
+        "genie3.py -p {threads} {params.extra} {input} {output}"
 
 

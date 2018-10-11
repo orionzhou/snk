@@ -7,6 +7,10 @@ rule lastz:
         dummy = "%s/dummy" % config['lastz']['idir'],
         odir = lambda wildcards: "%s/%s_%s" % (config['lastz']['odir'], wildcards.genotype, wildcards.tgt),
         fcmd = lambda wildcards: "%s/%s_%s.sh" % (config['lastz']['odir'], wildcards.genotype, wildcards.tgt),
+        ppn = config['lastz']['ppn'],
+        walltime = config['lastz']['walltime'],
+        mem = config['lastz']['mem'],
+    threads: config['lastz']["ppn"]
     shell:
         """
         mkdir -p {params.odir}

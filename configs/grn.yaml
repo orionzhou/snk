@@ -4,4 +4,7 @@ genie3:
     cfg: 10.dataset.tsv
     idir: 11_input_fpkm
     odir: 12_output_fpkm
-    threads: 12
+    #q: ram256g
+    ppn: 12
+    walltime: 50:00:00
+    mem: 30GB
