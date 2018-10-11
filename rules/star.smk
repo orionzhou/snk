@@ -69,9 +69,11 @@ rule star_pe:
         outprefix_p = "%s/{sid}_p/" % config['star']['odir1'],
         outprefix_u = "%s/{sid}_u/" % config['star']['odir1'],
         readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input.fq1.endswith(".gz") else "",
-        extra = star_extra
-    threads:
-        config["star"]["threads"]
+        extra = star_extra,
+        ppn = config['star']['ppn'],
+        walltime = config['star']['walltime'],
+        mem = config['star']['mem']
+    threads: config['star']['ppn']
     shell:
         """
         STAR {params.extra} --runThreadN {threads} \
@@ -110,9 +112,11 @@ rule sambamba_sort:
     params:
         sorted_p = "%s/{sid}_p/Aligned.out.sorted.bam" % (config['star']['odir1']),
         sorted_u = "%s/{sid}_u/Aligned.out.sorted.bam" % (config['star']['odir1']),
-        extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra'])
-    threads:
-        config['sambamba']['threads']
+        extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
+        ppn = config['sambamba']['ppn'],
+        walltime = config['sambamba']['walltime'],
+        mem = config['sambamba']['mem']
+    threads: config['sambamba']['ppn']
     run:
         if config['t'][wildcards.sid]['paired']:
             shell("sambamba sort {params.extra} -t {threads} -o {params.sorted_p} {input.bam_p}")

@@ -20,8 +20,10 @@ rule featurecounts:
         cmd = config['featurecounts']['cmd'],
         gtf = config['genomes'][config['reference']]['gtf'],
         extra = featurecounts_extra,
-    threads:
-        config["featurecounts"]["threads"]
+        ppn = config['featurecounts']['ppn'],
+        walltime = config['featurecounts']['walltime'],
+        mem = config['featurecounts']['mem']
+    threads: config['featurecounts']['ppn']
     shell:
         "{params.cmd} -T {threads} {params.extra} "
         "-a {params.gtf} -o {output[0]} {input} "

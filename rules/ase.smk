@@ -9,13 +9,17 @@ rule ase:
         "%s/{sid}.bam" % config['ase']['idir']
     output:
         protected("%s/{sid}.tsv" % config['ase']['odir'])
+    log:
+        "%s/ase/{sid}.log" % config['dirl']
     params:
         pre = "%s/{sid}" % config['ase']['odir'],
         gbed = ase_gbed,
         vbed = lambda wildcards: config['vbed'][wildcards.gt],
-        extra = config['ase']['extra'],
-    log:
-        "%s/ase/{sid}.log" % config['dirl']
+        extra = '',
+        ppn = config['ase']['ppn'],
+        walltime = config['ase']['walltime'],
+        mem = config['ase']['mem']
+    threads: config['ase']['ppn']
     shell:
         """
         mkdir -p {params.pre}

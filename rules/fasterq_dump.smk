@@ -3,16 +3,17 @@ rule fasterq_dump_pe:
     output:
         protected("%s/{sid}_1.fq.gz" % config['fasterq_dump']['odir']),
         protected("%s/{sid}_2.fq.gz" % config['fasterq_dump']['odir'])
+    log:
+        "%s/fasterq_dump/{sid}.log" % config['dirl']
     params:
         outdir = config['fasterq_dump']['odir'],
         o1 = "%s/{sid}_1.fastq" % config['fasterq_dump']['odir'],
         o2 = "%s/{sid}_2.fastq" % config['fasterq_dump']['odir'],
+        tmp = config['tmpdir'],
+        ppn = config['fasterq_dump']['ppn'],
+        walltime = config['fasterq_dump']['walltime'],
         mem = config['fasterq_dump']['mem'],
-        tmp = config['tmpdir']
-    threads:
-        config["fasterq_dump"]["threads"]
-    log:
-        "%s/fasterq_dump/{sid}.log" % config['dirl']
+    threads: config['fasterq_dump']['ppn']
     shell:
         """
         fasterq-dump --split-files -e {threads} -m {params.mem} \
@@ -32,10 +33,11 @@ rule fasterq_dump_se:
     params:
         outdir = config['fasterq_dump']['odir'],
         o1 = "%s/{sid}.fastq" % config['fasterq_dump']['odir'],
+        tmp = config['tmpdir'],
+        ppn = config['fasterq_dump']['ppn'],
+        walltime = config['fasterq_dump']['walltime'],
         mem = config['fasterq_dump']['mem'],
-        tmp = config['tmpdir']
-    threads:
-        config["fasterq_dump"]["threads"]
+    threads: config['fasterq_dump']['ppn']
     log:
         "%s/fasterq_dump/{sid}.log" % config['dirl']
     shell:

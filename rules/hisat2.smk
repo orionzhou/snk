@@ -38,9 +38,11 @@ rule hisat2:
     params:
         index = config['genomes'][config['reference']]["hisat2"],
         input_str = hisat2_input_str,
-        extra = hisat2_extra
-    threads:
-        config["hisat2"]["threads"]
+        extra = hisat2_extra,
+        ppn = config['hisat2']['ppn'],
+        walltime = config['hisat2']['walltime'],
+        mem = config['hisat2']['mem']
+    threads: config['hisat2']['ppn']
     shell:
         """
         hisat2 {params.extra} --threads {threads} \
@@ -55,9 +57,11 @@ rule sambamba_sort:
     output: 
         protected("%s/{sid}.bam" % config['hisat2']['odir2'])
     params:
-        extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra'])
-    threads:
-        config['sambamba']['threads']
+        extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
+        ppn = config['sambamba']['ppn'],
+        walltime = config['sambamba']['walltime'],
+        mem = config['sambamba']['mem']
+    threads: config['sambamba']['ppn']
     shell:
         """
         sambamba sort {params.extra} -t {threads} -o {output} {input}

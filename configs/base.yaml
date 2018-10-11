@@ -198,6 +198,8 @@ gatk:
         ppn: 1
         walltime: 5:00:00
         mem: 10GB
+    combine_gvcfs:
+        ppn: 1
     genotype_gvcfs:
         java_mem: 20G
         ppn: 4

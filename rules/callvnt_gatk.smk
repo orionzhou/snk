@@ -24,8 +24,10 @@ rule gatk_haplotype_caller:
         ref = config['gatk']['ref'],
         region = lambda wildcards: config['regions'][wildcards.rid],
         extra = config['gatk']['haplotype_caller']['extra'],
-    threads:
-        config["gatk"]['haplotype_caller']["threads"]
+        ppn = config['gatk']['haplotype_caller']['ppn'],
+        walltime = config['gatk']['haplotype_caller']['walltime'],
+        mem = config['gatk']['haplotype_caller']['mem']
+    threads: config['gatk']['haplotype_caller']['ppn']
     shell:
         #-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation \
         """
@@ -61,13 +63,37 @@ rule gatk_gather_vcfs:
     params:
         cmd = config['gatk']['cmd'],
         input_str = lambda wildcards, input: ["-I %s" % x for x in input.vcfs],
-        extra = config['gatk']['gather_vcfs']['extra']
-    threads:
-        config["gatk"]['gather_vcfs']["threads"]
+        extra = '',
+        ppn = config['gatk']['gather_vcfs']['ppn'],
+        walltime = config['gatk']['gather_vcfs']['walltime'],
+        mem = config['gatk']['gather_vcfs']['mem']
+    threads: config['gatk']['gather_vcfs']['ppn']
     shell:
         """
         {params.cmd} GatherVcfs {params.input_str} -O {output.vcf} >{log} 2>&1
         tabix -p vcf {output.vcf}
+        """
+
+rule gatk_combine_gvcfs:
+    input:
+        vcfs = expand(["%s/{sid}.g.vcf.gz" % config['callvnt']['odir1']], 
+                sid = config['SampleID']),
+        tbis = expand(["%s/{sid}.g.vcf.gz.tbi" % config['callvnt']['odir1']], 
+                sid = config['SampleID'])
+    output:
+        vcf = protected("%s/all.g.vcf.gz" % config['callvnt']['odir2']),
+        tbi = protected("%s/all.g.vcf.gz.tbi" % config['callvnt']['odir2']),
+    params:
+        cmd = gatk_gg_cmd,
+        ref = config['gatk']['ref'],
+        gvcfs = lambda wildcards, input: ["-V %s" % x for x in input.vcfs],
+        ppn = config['gatk']['combine_gvcfs']['ppn'],
+    threads: config['gatk']['combine_gvcfs']['ppn']
+    shell:
+        """
+        {params.cmd} CombineGVCFs \
+        -R {params.ref} \
+        {params.gvcfs} -O {output.vcf}
         """
 
 def gatk_gg_cmd(wildcards):
@@ -83,26 +109,6 @@ def gatk_gg_cmd(wildcards):
     cmd = "%s --java-options \"%s\"" % (config['gatk']['cmd'], java_options)
     return cmd
 
-rule gatk_combine_gvcfs:
-    input:
-        vcfs = expand(["%s/{sid}.g.vcf.gz" % config['callvnt']['odir1']], 
-                sid = config['SampleID']),
-        tbis = expand(["%s/{sid}.g.vcf.gz.tbi" % config['callvnt']['odir1']], 
-                sid = config['SampleID'])
-    output:
-        vcf = protected("%s/all.g.vcf.gz" % config['callvnt']['odir2']),
-        tbi = protected("%s/all.g.vcf.gz.tbi" % config['callvnt']['odir2']),
-    params:
-        cmd = gatk_gg_cmd,
-        ref = config['gatk']['ref'],
-        gvcfs = lambda wildcards, input: ["-V %s" % x for x in input.vcfs],
-    shell:
-        """
-        {params.cmd} CombineGVCFs \
-        -R {params.ref} \
-        {params.gvcfs} -O {output.vcf}
-        """
-
 rule gatk_genotype_gvcfs:
     input:
         vcf = "%s/all.g.vcf.gz" % config['callvnt']['odir2'],
@@ -114,8 +120,10 @@ rule gatk_genotype_gvcfs:
         cmd = gatk_gg_cmd,
         ref = config['gatk']['ref'],
         region = lambda wildcards: config['regions'][wildcards.rid],
-    threads:
-        config['gatk']['genotype_gvcfs']['threads']
+        ppn = config['gatk']['genotype_gvcfs']['ppn'],
+        walltime = config['gatk']['genotype_gvcfs']['walltime'],
+        mem = config['gatk']['genotype_gvcfs']['mem']
+    threads: config['gatk']['genotype_gvcfs']['ppn']
     shell:
         """
         {params.cmd} GenotypeGVCFs \
