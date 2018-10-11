@@ -20,22 +20,18 @@ dira: 11_align
 dirc: 12_merged
 npieces: 30
 prepare:
-    extra: ''
     ppn: 1
     walltime: 10:00:00
     mem: 10GB
 align:
-    extra: ''
     ppn: 4
     walltime: 20:00:00
     mem: 20GB
 merge:
-    extra: ''
     ppn: 1
     walltime: 1:00:00
     mem: 20GB
 chain:
-    extra: ''
     ppn: 1
     walltime: 40:00:00
     mem: 20GB
