@@ -13,17 +13,22 @@ __default__:
 
 fasterq_dump_pe:
   ppn: 4
-  walltime: 20:00:00
+  walltime: 10:00:00
   mem: 11GB
 fasterq_dump_se:
   ppn: 4
-  walltime: 20:00:00
+  walltime: 10:00:00
   mem: 11GB
 
 deinterleave:
   ppn: 10
   walltime: 10:00:00
   mem: 20GB
+
+fq_compress:
+  ppn: 6
+  walltime: 5:00:00
+  mem: 30GB
 
 fastqc:
   ppn: 1
@@ -69,7 +74,7 @@ bwa_pe:
 
 sambamba_sort:
   ppn: 8
-  walltime: 10:00:00
+  walltime: 8:00:00
   mem: 12GB
 sambamba_merge:
   ppn: 8
@@ -99,8 +104,8 @@ bcftools_gtcheck:
 
 featurecounts:
   ppn: 4
-  walltime: 20:00:00
-  mem: 15
+  walltime: 5:00:00
+  mem: 15GB
 
 ase:
   ppn: 1

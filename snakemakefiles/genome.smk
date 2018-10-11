@@ -32,10 +32,10 @@ wildcard_constraints:
 
 def all_inputs(wildcards):
     inputs = []
-    for genome in config['genome']:
-        dbs = set(list(config['genome'][genome]['dbs'].split()))
+    for genome in config['genomes']:
+        dbs = set(list(config['genomes'][genome]['dbs'].split()))
         for db in dbs:
-            odir = genome if db == 'fasta' else "%s/21_dbs/%s" % (genome, config[db]['odir'])
+            odir = genome if db == 'fasta' else "%s/21_dbs/%s" % (genome, config[db]['xdir'])
             if db == 'fasta':
                 odir = "%s" % genome
                 inputs.append("%s/10_genome.fna" % odir)
@@ -54,7 +54,10 @@ def all_inputs(wildcards):
             if db == 'gatk':
                 inputs.append("%s/db.fasta" % odir)
                 inputs.append("%s/db.dict" % odir)
+            if db == 'hisat2':
+                inputs.append("%s/db.1.ht2" % odir)
     return inputs
+localrules: all, fasta, blat_index, gatk_index
 rule all:
     input:
         all_inputs

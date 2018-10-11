@@ -10,8 +10,8 @@ rule fasta:
     params:
         wdir = lambda wildcards: "%s" % wildcards.genome,
         odir = "08_seq_map",
-        gap = lambda wildcards: config['genome'][wildcards.genome]['gap'],
-        prefix = lambda wildcards: config['genome'][wildcards.genome]['prefix'],
+        gap = lambda wildcards: config['genomes'][wildcards.genome]['gap'],
+        prefix = lambda wildcards: config['genomes'][wildcards.genome]['prefix'],
     shell:
         """
         rm -rf {output.fna}* {output.fai}*
@@ -41,14 +41,14 @@ rule fasta:
         fasta gaps {output.fna} > {output.gap_bed}
         """
 
-rule blat:
+rule blat_index:
     input:
         "{genome}/10_genome.fna"
     output:
-        "{genome}/21_dbs/%s/db.2bit" % config['blat']['odir'],
-        "{genome}/21_dbs/%s/db.2bit.tile11.ooc" % config['blat']['odir'],
+        "{genome}/21_dbs/%s/db.2bit" % config['blat']['xdir'],
+        "{genome}/21_dbs/%s/db.2bit.tile11.ooc" % config['blat']['xdir'],
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['blat']['odir'])
+        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['blat']['xdir'])
     shell:
         """
         rm -rf {params.odir}
@@ -57,13 +57,13 @@ rule blat:
         blat {output[0]} tmp.fas tmp.out -makeOoc={output[1]}
         """
 
-rule bwa:
+rule bwa_index:
     input:
         "{genome}/10_genome.fna"
     output:
-        "{genome}/21_dbs/%s/db.bwt" % config['bwa']['odir']
+        "{genome}/21_dbs/%s/db.bwt" % config['bwa']['xdir']
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['bwa']['odir'])
+        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['bwa']['xdir'])
     shell:
         """
         rm -rf {params.odir}
@@ -71,16 +71,16 @@ rule bwa:
         bwa index -a bwtsw -p {params.odir}/db {input}
         """
 
-rule star:
+rule star_index:
     input:
         fna = "{genome}/10_genome.fna",
         gtf = "{genome}/50_annotation/10.gtf"
     output:
-        "{genome}/21_dbs/%s/SA" % config['star']['odir']
+        "{genome}/21_dbs/%s/SA" % config['star']['xdir']
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['star']['odir'])
+        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['star']['xdir'])
     threads:
-        config['star']['threads']
+        config['star']['xthreads']
     shell:
         """
         rm -rf {params.odir}
@@ -90,14 +90,14 @@ rule star:
                 --genomeFastaFiles {input.fna} --sjdbGTFfile {input.gtf}
         """
 
-rule gatk:
+rule gatk_index:
     input:
         "{genome}/10_genome.fna"
     output:
-        "{genome}/21_dbs/%s/db.fasta" % config['gatk']['odir'],
-        "{genome}/21_dbs/%s/db.dict" % config['gatk']['odir'],
+        "{genome}/21_dbs/%s/db.fasta" % config['gatk']['xdir'],
+        "{genome}/21_dbs/%s/db.dict" % config['gatk']['xdir'],
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['gatk']['odir'])
+        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['gatk']['xdir'])
     shell:
         """
         rm -rf {params.odir}
@@ -105,6 +105,26 @@ rule gatk:
         cp -f {input} {output[0]}
         gatk CreateSequenceDictionary -R {output[0]}
         samtools faidx {output[0]}
+        """
+
+rule hisat2_index:
+    input:
+        fna = "{genome}/10_genome.fna",
+        gtf = "{genome}/50_annotation/10.gtf"
+    output:
+        "{genome}/21_dbs/%s/db.1.ht2" % config['hisat2']['xdir']
+    params:
+        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['hisat2']['xdir'])
+    threads:
+        config['hisat2']['xthreads']
+    shell:
+        """
+        rm -rf {params.odir}
+        mkdir -p {params.odir}
+        hisat2_extract_exons.py {input.gtf} > {params.odir}/db.exon
+        hisat2_extract_splice_sites.py {input.gtf} > {params.odir}/db.ss
+        hisat2-build -p {threads} --ss {params.odir}/db.ss \
+                --exon {params.odir}/db.exon {input.fna} {params.odir}/db
         """
 
 

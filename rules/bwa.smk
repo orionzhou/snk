@@ -9,7 +9,7 @@ rule bwa_se:
     output:
         temp("%s/{sid}.sam" % config['bwa']['odir1'])
     params:
-        index = config["bwa"]["index"],
+        index = config['genomes'][config['reference']]["bwa"],
         extra = bwa_extra
     threads:
         config["bwa"]["threads"]
@@ -32,7 +32,7 @@ rule bwa_pe:
     log:
         "%s/bwa/{sid}.log" % config['dirl']
     params:
-        index = config["bwa"]["index"],
+        index = config['genomes'][config['reference']]["bwa"],
         extra = bwa_extra
     threads:
         config["bwa"]["threads"]

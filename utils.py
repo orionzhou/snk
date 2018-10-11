@@ -26,7 +26,46 @@ def str2bool(v):
 def make_symlink(dst, src):
     if op.isdir(src):
         os.system("rm -rf %s" % src)
+    elif op.islink(src):
+        os.system("rm %s" % src)
     os.system("ln -sf %s %s" % (dst, src))
+
+def check_genome(genome, dbs, c):
+    dirw = op.join(c['dirg'], c['genomes'][genome]['gdir'])
+    ref, size, regions, gtf = [op.join(dirw, x) for x in [
+        '10_genome.fna',
+        '15_intervals/01.chrom.sizes',
+        '15_intervals/20.gap.sep.60win.tsv',
+        '50_annotation/10.gtf']]
+    for fi in [ref, size, gtf]:
+        assert op.isfile(fi), "%s not found" % fi
+    c['genomes'][genome]['ref'] = ref
+    c['genomes'][genome]['size'] = size 
+    c['genomes'][genome]['gtf'] = gtf
+    if op.isfile(regions):
+        c['genomes'][genome]['regions'] = regions
+    
+    if isinstance(dbs, str): dbs = [dbs]
+    for db in dbs:
+        dirx = op.join(dirw, '21_dbs', c[db]['xdir'])
+        fos = []
+        if db in ['star', 'bwa', 'hisat2']:
+            xpre, xout = c[db]['xpre'], c[db]['xout']
+            fp, fo = op.join(dirx, xpre), op.join(dirx, xout)
+            if genome == 'B73' and db == 'hisat2': ### use snp-corrected ref
+                dirx1 = op.join(dirw, '21_dbs', 'hisat2_snp')
+                fp, fo = op.join(dirx1, xpre), op.join(dirx1, xout)
+            c['genomes'][genome][db] = fp
+            fos = [fo]
+        elif db == 'blat':
+            fos = [op.join(dirx, c[db][x]) for x in ['x.2bit', 'x.ooc']]
+        elif db == 'gatk':
+            fos = [op.join(dirx, c[db][x]) for x in ['xref', 'xref.fai', 'xref.dict']]
+        else:
+            print("unknown db: %s" % db)
+            sys.exit(1)
+        for fo in fos:
+            assert op.isfile(fo), "%s not found" % fo
 
 def check_config(c):
     for fn in [c['studylist'], c['config_default']]:
@@ -40,15 +79,17 @@ def check_config(c):
     study = c['study']
     t = Table.read(c['studylist'], format = 'ascii.tab')
     dic_study = { t['sid'][i]: {x: t[x][i] for x in t.colnames} for i in range(len(t)) }
-    if study not in dic_study:
-        print("study not in config file: %s" % study)
-        sys.exit(1)
+    assert study in dic_study, "study not in config file: %s" % study
     c['source'] = dic_study[study]['source']
     c['readtype'] = dic_study[study]['readtype']
     c['stranded'] = dic_study[study]['stranded']
+    c['reference'] = dic_study[study]['reference']
+    c['mapper'] = dic_study[study]['mapper']
     assert c['source'] in ['sra', 'local', 'local_interleaved'], "unknown source: %s" % c['source']
     assert c['stranded'] in ['yes', 'no', 'reverse'], "unknown strand: %s" % c['stranded']
     assert c['readtype'] in ['illumina', 'solid', '3rnaseq'], "unknown readtype: %s" % c['readtype']
+    assert c['mapper'] in ['star', 'hisat2', 'bwa'], "unknown mapper: %s" % c['mapper']
+    check_genome(c['reference'], c['mapper'], c)
    
     dir_project, dir_cache = c['dir_project'], c['dir_cache']
     dirw = op.join(dir_cache, study)
@@ -82,7 +123,7 @@ def check_config(c):
             sdic['paired'] = str2bool(sdic['paired'])
         c['t'][sid] = sdic
 
-    if 'regions' in c['db'] and op.isfile(c['db']['regions']):
+    if 'regions' in c['genomes'][c['reference']] and op.isfile(c['genomes'][c['reference']]['regions']):
         fr = c['db']['regions']
         c['regions'] = dict()
         tr = Table.read(fr, format = 'ascii.tab')

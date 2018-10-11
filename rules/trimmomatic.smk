@@ -10,6 +10,8 @@ rule trimmomatic_se:
         trimmer = [
             "ILLUMINACLIP:%s:2:30:10:8:no" % config['trimmomatic']['adapter_se'],
             "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:15", "MINLEN:35"]
+    threads:
+        config["trimmomatic"]["threads"]
     shell:
         "trimmomatic SE {params.extra} "
         "{input} {output} "
@@ -32,6 +34,8 @@ rule trimmomatic_pe:
         trimmer = [
             "ILLUMINACLIP:%s:2:30:10:8:no" % config['trimmomatic']['adapter_pe'],
             "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:15", "MINLEN:35"]
+    threads:
+        config["trimmomatic"]["threads"]
     shell:
         "trimmomatic PE {params.extra} "
         "{input.r1} {input.r2} "

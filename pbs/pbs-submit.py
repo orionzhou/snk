@@ -85,7 +85,7 @@ if 'e' in cc: se = " -e " + cc['e']
 #if 'r' in cc: r = " -r " + cc['r']
  
 if args.depend:
-    for m in args.depend.split(" "):
+    for m in set(args.depend.split(" ")):
         depend = depend + ":" + m
 if depend:
     depend = " -W \"depend=afterok" + depend + "\""

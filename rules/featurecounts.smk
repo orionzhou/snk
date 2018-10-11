@@ -18,7 +18,7 @@ rule featurecounts:
         "%s/featurecounts/{sid}.log" % config['dirl']
     params:
         cmd = config['featurecounts']['cmd'],
-        gtf = config['featurecounts']['gtf'],
+        gtf = config['genomes'][config['reference']]['gtf'],
         extra = featurecounts_extra,
     threads:
         config["featurecounts"]["threads"]

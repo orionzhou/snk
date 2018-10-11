@@ -8,6 +8,8 @@ threads: 1
 dirl: logs
 dirp: pbs
 dird: data
+zip_re: (\.gz|\.zip|\.bz2)
+dirg: /home/springer/zhoux379/data/genome
 
 db:
     ref: /home/springer/zhoux379/data/genome/B73/10_genome.fna
@@ -19,11 +21,22 @@ annotation:
     gtf: /home/springer/zhoux379/data/genome/B73/51.gtf
     bed: /home/springer/zhoux379/data/genome/B73/v37/gene.bed
 
-zip_re: (\.gz|\.zip|\.bz2)
+genomes:
+    B73:
+        gdir: B73
+    Mo17:
+        gdir: Mo17
+    W22:
+        gdir: W22
+    PH207:
+        gdir: PH207
+    PHB47:
+        gdir: PHB47
 
-fq_rename:
-    idir: 09_raw_fastq
+fq_compress:
+    idir: 09_fastq_raw
     odir: 10_fastq
+    threads: 6
 
 fastq_dump:
     odir: 10_fastq_slow
@@ -35,6 +48,7 @@ fasterq_dump:
 deinterleave:
     idir: 09_fq_interleaved
     odir: 10_fastq
+    threads: 10
     extra: ''
 
 trimmomatic:
@@ -53,24 +67,37 @@ bbduk:
         - /home/springer/zhoux379/source/bbmap/resources/truseq.fa.gz
     extra: k=13 ktrim=r useshortkmers=t mink=5 qtrim=r trimq=10 minlength=20
 
+blat:
+    xdir: blat
+    xpre: db
+    x.2bit: db.2bit
+    x.ooc: db.2bit.tile11.ooc
+
+bowtie2:
+    xdir: bowtie2
+
 fastqc:
     idir: 14_trim
     extra: ''
 
 bwa:
+    xdir: bwa
+    xpre: db
+    xout: db.bwt
     idir: 14_trim
     odir1: 21_bwa
     odir2: 22_bam
-    index: /home/springer/zhoux379/data/genome/B73/21_dbs/bwa/db
-    threads: 12
     extra: ''
+    threads: 12
 
 star:
+    xdir: star
+    xpre: '' 
+    xout: SA
+    xthreads: 4
     idir: 14_trim
     odir1: 21_star
     odir2: 22_bam
-    #index: /home/springer/zhoux379/data/genome/B73/21_star
-    index: /home/springer/zhoux379/data/genome/B73/21_dbs/star
     extra: "--outSAMmapqUnique 60
         --outFilterType BySJout 
         --outFilterMultimapNmax 20 
@@ -85,10 +112,13 @@ star:
     threads: 8
 
 hisat2:
+    xdir: hisat2
+    xpre: db
+    xout: db.1.ht2
+    xthreads: 4
     idir: 14_trim
     odir1: 21_hisat2
     odir2: 22_bam
-    index: /home/springer/zhoux379/data/genome/B73/21_hisat2/maize
     extra: --new-summary
     threads: 8
 
@@ -106,8 +136,6 @@ featurecounts:
     odir: 31_featurecounts
     out: featurecounts.tsv
     cmd: featureCounts
-    #gtf: /home/springer/zhoux379/data/genome/B73/51.gtf
-    gtf: /home/springer/zhoux379/data/genome/B73/50_annotation/10.gtf
     extra: --primary -Q 20 -t exon -g gene_id --byReadGroup
     threads: 4
 
@@ -118,8 +146,6 @@ callvnt:
     outfile: 26.vcf.gz
 
 bcftools:
-    #ref: /home/springer/zhoux379/data/genome/B73/11_genome.fas
-    ref: /home/springer/zhoux379/data/genome/B73/10_genome.fna
     call:
         threads: 1
         extra: ''
@@ -135,14 +161,12 @@ bcftools:
         extra: -G 1
 
 gatk:
+    xdir: gatk
+    xref: db.fasta
+    xref.fai: db.fasta.fai
+    xref.dict: db.dict
     cmd: gatk
     java_mem: 20G
-    #ref: /home/springer/zhoux379/data/genome/B73/21_gatk/maize.fasta
-    #ref.fai: /home/springer/zhoux379/data/genome/B73/21.gatk/maize.fasta.fai
-    #ref.dict: /home/springer/zhoux379/data/genome/B73/21.gatk/maize.dict
-    ref: /home/springer/zhoux379/data/genome/B73/21_dbs/gatk/db.fasta
-    ref.fai: /home/springer/zhoux379/data/genome/B73/21_dbs/gatk/db.fasta.fai
-    ref.dict: /home/springer/zhoux379/data/genome/B73/21_dbs/gatk/db.dict
     haplotype_caller:
         java_mem: 14G
         threads: 1
@@ -167,39 +191,4 @@ ase:
 
 multiqc:
     extra: ''
-
-wgc:
-    genomes:
-        B73:
-            assembly: /home/springer/zhoux379/data/genome/B73/10_genome.fna
-            annotation: /home/springer/zhoux379/data/genome/B73/50_annotation/10.gtb
-            chroms: B01 B02 B03 B04 B05 B06 B07 B08 B09 B10 B99
-        Mo17:
-            assembly: /home/springer/zhoux379/data/genome/Mo17/10_genome.fna
-            annotation: /home/springer/zhoux379/data/genome/Mo17/51.gtb
-            #chroms: M01 M02 M03 M04 M05 M06 M07 M08 M09 M10 M99
-        W22:
-            assembly: /home/springer/zhoux379/data/genome/W22/10_genome.fna
-            annotation: /home/springer/zhoux379/data/genome/W22/51.gtb
-            #chroms: W01 W02 W03 W04 W05 W06 W07 W08 W09 W10 W99
-        PH207:
-            assembly: /home/springer/zhoux379/data/genome/PH207/10_genome.fna
-            annotation: /home/springer/zhoux379/data/genome/PH207/51.gtb
-            #chroms: P01 P02 P03 P04 P05 P06 P07 P08 P09 P10 P99
-    dirg: 01_genomes
-    dira: 11_align
-    dirc: 12_merged
-    npieces: 30
-    prepare:
-        threads: 1
-        extra: ''
-    align:
-        threads: 4
-        extra: ''
-    merge:
-        threads: 1
-        extra: ''
-    chain:
-        threads: 1
-        extra: ''
 

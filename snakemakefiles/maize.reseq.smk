@@ -26,6 +26,8 @@ if config['source'] == 'sra':
     include: "rules/fasterq_dump.smk"
 elif config['source'] == 'local_interleaved':
     include: "rules/fq_deinterleave.smk"
+elif config['source'] == 'local':
+    include: "rules/fq_compress.smk"
 if config['readtype'] in ['illumina', 'solid']:
     include: "rules/trimmomatic.smk"
 elif config['readtype'] == '3rnaseq':
