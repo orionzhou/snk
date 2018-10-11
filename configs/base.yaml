@@ -11,16 +11,6 @@ dird: data
 zip_re: (\.gz|\.zip|\.bz2)
 dirg: /home/springer/zhoux379/data/genome
 
-db:
-    ref: /home/springer/zhoux379/data/genome/B73/10_genome.fna
-    chrom_sizes: /home/springer/zhoux379/data/genome/B73/15_intervals/01.chrom.sizes
-    regions: /home/springer/zhoux379/data/genome/B73/15_intervals/20.gap.sep.60win.tsv
-    #regions: /home/springer/zhoux379/data/genome/B73/17_regions/11.chrom.10win.tsv
-
-annotation:
-    gtf: /home/springer/zhoux379/data/genome/B73/51.gtf
-    bed: /home/springer/zhoux379/data/genome/B73/v37/gene.bed
-
 genomes:
     B73:
         gdir: B73
@@ -36,27 +26,41 @@ genomes:
 fq_compress:
     idir: 09_fastq_raw
     odir: 10_fastq
-    threads: 6
+    ppn: 6
+    walltime: 5:00:00
+    mem: 30GB
 
 fastq_dump:
     odir: 10_fastq_slow
 fasterq_dump:
     odir: 10_fastq
-    threads: 4
-    mem: 10GB
+    ppn: 4
+    walltime: 10:00:00
+    mem: 11GB
 
 deinterleave:
     idir: 09_fq_interleaved
     odir: 10_fastq
-    threads: 10
     extra: ''
+    ppn: 10
+    walltime: 10:00:00
+    mem: 20GB
+
+fastqc:
+    idir: 14_trim
+    extra: ''
+    ppn: 1
+    walltime: 5:00:00
+    mem: 10GB
 
 trimmomatic:
     idir: 10_fastq
     odir: 14_trim
     adapter_pe: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-PE.fa 
     adapter_se: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-SE.fa 
-    threads: 8
+    ppn: 8
+    walltime: 12:00:00
+    mem: 10GB
 
 bbduk:
     idir: 10_fastq
@@ -66,19 +70,19 @@ bbduk:
         - /home/springer/zhoux379/source/bbmap/resources/polyA.fa.gz
         - /home/springer/zhoux379/source/bbmap/resources/truseq.fa.gz
     extra: k=13 ktrim=r useshortkmers=t mink=5 qtrim=r trimq=10 minlength=20
+    ppn: 1
+    walltime: 12:00:00
+    mem: 10GB
 
 blat:
     xdir: blat
     xpre: db
     x.2bit: db.2bit
     x.ooc: db.2bit.tile11.ooc
+    mem: 10GB
 
 bowtie2:
     xdir: bowtie2
-
-fastqc:
-    idir: 14_trim
-    extra: ''
 
 bwa:
     xdir: bwa
@@ -88,7 +92,9 @@ bwa:
     odir1: 21_bwa
     odir2: 22_bam
     extra: ''
-    threads: 12
+    ppn: 12
+    walltime: 30:00:00
+    mem: 40GB
 
 star:
     xdir: star
@@ -109,7 +115,9 @@ star:
         --alignIntronMax 1000000 
         --alignMatesGapMax 1000000 
         --outSAMunmapped Within KeepPairs"
-    threads: 8
+    ppn: 8
+    walltime: 10:00:00
+    mem: 35GB
 
 hisat2:
     xdir: hisat2
@@ -120,16 +128,21 @@ hisat2:
     odir1: 21_hisat2
     odir2: 22_bam
     extra: --new-summary
-    threads: 8
+    ppn: 8
+    walltime: 10:00:00
+    mem: 20GB
 
 sambamba:
-    threads: 8
+    ppn: 8
+    walltime: 8:00:00
+    mem: 12GB
     sort:
         extra: -m 11GB
     merge:
         extra: ''
     flagstat:
         extra: ''
+        walltime: 4:00:00
 
 featurecounts:
     idir: 22_bam
@@ -137,7 +150,9 @@ featurecounts:
     out: featurecounts.tsv
     cmd: featureCounts
     extra: --primary -Q 20 -t exon -g gene_id --byReadGroup
-    threads: 4
+    ppn: 4
+    walltime: 5:00:00
+    mem: 15GB
 
 callvnt:
     idir: 22_bam
@@ -146,19 +161,26 @@ callvnt:
     outfile: 26.vcf.gz
 
 bcftools:
+    ppn: 1
     call:
-        threads: 1
-        extra: ''
+        ppn: 1
+        walltime: 60:00:00
+        mem: 50GB
     merge:
-        threads: 2
-        extra: ''
+        ppn: 2
+        walltime: 23:00:00
+        mem: 20GB
     concat:
-        threads: 1
-        extra: ''
+        ppn: 1
+        walltime: 10:00:00
+        mem: 15GB
     gtcheck:
         odir: 27_gtcheck
         vcf: /home/springer/zhoux379/projects/biomap/data/variants/62biomAP.snp.vcf.gz
         extra: -G 1
+        ppn: 1
+        walltime: 1:00:00
+        mem: 5GB
 
 gatk:
     xdir: gatk
@@ -169,26 +191,31 @@ gatk:
     java_mem: 20G
     haplotype_caller:
         java_mem: 14G
-        threads: 1
-        extra: ''
+        ppn: 1
+        walltime: 15:00:00
+        mem: 15GB
     gather_vcfs:
-        threads: 1
-        extra: ''
+        ppn: 1
+        walltime: 5:00:00
+        mem: 10GB
     genotype_gvcfs:
         java_mem: 20G
-        threads: 4
-        extra: ''
+        ppn: 4
+        walltime: 50:00:00
+        mem: 40GB
     variant_filtration:
-        threads: 1
-        extra: ''
+        ppn: 1
+        walltime: 5:00:00
+        mem: 20GB
 
 ase:
     idir: 22_bam
     odir: 33_ase
     variant_dir: /home/springer/zhoux379/projects/biomap/data/variants_reseq
     variant_dir2: /home/springer/zhoux379/projects/biomap/data/variants_rnaseq
-    extra: ''
 
 multiqc:
-    extra: ''
+    ppn: 1
+    walltime: 10:00:00
+    mem: 20GB
 
