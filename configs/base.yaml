@@ -213,6 +213,9 @@ ase:
     odir: 33_ase
     variant_dir: /home/springer/zhoux379/projects/biomap/data/variants_reseq
     variant_dir2: /home/springer/zhoux379/projects/biomap/data/variants_rnaseq
+    ppn: 1
+    walltime: 20:00:00
+    mem: 20GB
 
 multiqc:
     ppn: 1
