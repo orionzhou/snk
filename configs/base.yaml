@@ -100,7 +100,6 @@ star:
     xdir: star
     xpre: '' 
     xout: SA
-    xthreads: 4
     idir: 14_trim
     odir1: 21_star
     odir2: 22_bam
@@ -123,7 +122,6 @@ hisat2:
     xdir: hisat2
     xpre: db
     xout: db.1.ht2
-    xthreads: 4
     idir: 14_trim
     odir1: 21_hisat2
     odir2: 22_bam

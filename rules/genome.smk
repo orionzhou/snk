@@ -10,8 +10,8 @@ rule fasta:
     params:
         wdir = lambda wildcards: "%s" % wildcards.genome,
         odir = "08_seq_map",
-        gap = lambda wildcards: config['genomes'][wildcards.genome]['gap'],
-        prefix = lambda wildcards: config['genomes'][wildcards.genome]['prefix'],
+        gap = lambda wildcards: config[wildcards.genome]['gap'],
+        prefix = lambda wildcards: config[wildcards.genome]['prefix'],
     shell:
         """
         rm -rf {output.fna}* {output.fai}*
@@ -63,7 +63,11 @@ rule bwa_index:
     output:
         "{genome}/21_dbs/%s/db.bwt" % config['bwa']['xdir']
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['bwa']['xdir'])
+        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['bwa']['xdir']),
+        ppn = config['bwa_index']['ppn'],
+        walltime = config['bwa_index']['walltime'],
+        mem = config['bwa_index']['mem']
+    threads: config['bwa_index']['ppn']
     shell:
         """
         rm -rf {params.odir}
@@ -78,9 +82,11 @@ rule star_index:
     output:
         "{genome}/21_dbs/%s/SA" % config['star']['xdir']
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['star']['xdir'])
-    threads:
-        config['star']['xthreads']
+        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['star']['xdir']),
+        ppn = config['star_index']['ppn'],
+        walltime = config['star_index']['walltime'],
+        mem = config['star_index']['mem']
+    threads: config['star_index']['ppn']
     shell:
         """
         rm -rf {params.odir}
@@ -114,9 +120,12 @@ rule hisat2_index:
     output:
         "{genome}/21_dbs/%s/db.1.ht2" % config['hisat2']['xdir']
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['hisat2']['xdir'])
-    threads:
-        config['hisat2']['xthreads']
+        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['hisat2']['xdir']),
+        q = config['hisat2_index']['q'],
+        ppn = config['hisat2_index']['ppn'],
+        walltime = config['hisat2_index']['walltime'],
+        mem = config['hisat2_index']['mem']
+    threads: config['hisat2_index']['ppn']
     shell:
         """
         rm -rf {params.odir}

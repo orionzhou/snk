@@ -9,6 +9,7 @@ def check_config(c):
     config_default = yaml.load(fy)
     update_config(config_default, c)
     c = config_default
+    c['genomes'] = c['genomes'].split(" ")
     
     for subdir in [c['dirw'], c['tmpdir']]:
         if not op.isdir(subdir):
@@ -33,7 +34,7 @@ wildcard_constraints:
 def all_inputs(wildcards):
     inputs = []
     for genome in config['genomes']:
-        dbs = set(list(config['genomes'][genome]['dbs'].split()))
+        dbs = set(list(config[genome]['dbs'].split()))
         for db in dbs:
             odir = genome if db == 'fasta' else "%s/21_dbs/%s" % (genome, config[db]['xdir'])
             if db == 'fasta':
