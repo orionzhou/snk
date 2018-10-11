@@ -36,8 +36,10 @@ rule star_se:
         outprefix = "%s/{sid}/" % config['star']['odir1'],
         readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input[0].endswith(".gz") else "",
         extra = star_extra
-    threads:
-        config["star"]["threads"]
+        ppn = config['star']['ppn'],
+        walltime = config['star']['walltime'],
+        mem = config['star']['mem']
+    threads: config['star']['ppn']
     shell:
         """
         STAR {params.extra} --runThreadN {threads} \

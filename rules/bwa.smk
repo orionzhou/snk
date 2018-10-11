@@ -6,10 +6,10 @@ def bwa_extra(wildcards):
 rule bwa_se:
     input: 
         "%s/{sid}.fq.gz" % config['bwa']['idir']
-    output:
-        temp("%s/{sid}.sam" % config['bwa']['odir1'])
     log:
         "%s/bwa/{sid}.log" % config['dirl']
+    output:
+        temp("%s/{sid}.sam" % config['bwa']['odir1'])
     params:
         index = config[config['reference']]["bwa"],
         extra = bwa_extra,

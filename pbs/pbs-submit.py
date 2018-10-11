@@ -75,6 +75,11 @@ depend=""
 resourceparams=""
 extras=""
 
+nodes=""
+ppn=""
+mem=""
+walltime=""
+
 cc = job_properties['cluster']
 if 'q' in cc: q = " -q " + cc['q']
 if 'm' in cc: mail = " -m " + cc['m']
@@ -83,6 +88,10 @@ if 'N' in cc: jname = " -N " + cc['N']
 if 'o' in cc: so = " -o " + cc['o']
 if 'e' in cc: se = " -e " + cc['e']
 #if 'r' in cc: r = " -r " + cc['r']
+if 'nodes' in cc: nodes = "nodes=" + str(cc["nodes"])
+if 'ppn' in cc: ppn = "ppn=" + str(cc["ppn"])
+if 'mem' in cc: mem = "mem=" + str(cc["mem"])
+if 'walltime' in cc: walltime = "walltime=" + str(cc["walltime"])
  
 if args.depend:
     for m in set(args.depend.split(" ")):
@@ -120,18 +129,21 @@ if args.V: eall = " -V"
 if args.w: wd = " -w " + args.w
 if args.W: add= " -W \"" + args.W + "\""
 
-nodes=""
-ppn=""
-mem=""
-walltime=""
-
-if 'nodes' in cc: nodes = "nodes=" + str(cc["nodes"])
-if 'ppn' in cc: ppn = "ppn=" + str(cc["ppn"])
-if 'mem' in cc: mem = "mem=" + str(cc["mem"])
-if 'walltime' in cc: walltime = "walltime=" + str(cc["walltime"])
-
 if "threads" in job_properties:
     ppn = "ppn=" + str(job_properties["threads"])
+
+if "params" in job_properties:
+    params = job_properties["params"]
+    if 'q' in params: q = " -q " + params['q']
+    if 'm' in params: mail = " -m " + params['m']
+    if 'M' in params: mailuser = " -M " + params['M']
+    if 'N' in params: jname = " -N " + params['N']
+    if 'o' in params: so = " -o " + params['o']
+    if 'e' in params: se = " -e " + params['e']
+    if "nodes" in params: nodes="nodes=" + str(params["nodes"])
+    if ppn and not nodes : nodes="nodes=1"
+    if "mem" in params: mem="mem=" + str(params["mem"])
+    if "walltime" in params: walltime="walltime=" + str(params["walltime"])
 
 if "resources" in job_properties:
     resources = job_properties["resources"]
