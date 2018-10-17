@@ -12,6 +12,7 @@ rule genie3:
         "%s/{nid}.pkl" % config['genie3']['odir']
     params:
         extra = genie3_extra,
+        N = lambda w: "genie3.%s" % (w.nid),
         ppn = config['genie3']['ppn'],
         walltime = config['genie3']['walltime'],
         mem = config['genie3']['mem']

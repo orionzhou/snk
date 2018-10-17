@@ -9,6 +9,7 @@ rule trimmomatic_se:
         trimmer = [
             "ILLUMINACLIP:%s:2:30:10:8:no" % config['trimmomatic']['adapter_se'],
             "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:15", "MINLEN:35"],
+        N = lambda w: "trim.%s" % (w.sid),
         ppn = config['trimmomatic']['ppn'],
         walltime = config['trimmomatic']['walltime'],
         mem = config['trimmomatic']['mem']
@@ -34,6 +35,7 @@ rule trimmomatic_pe:
         trimmer = [
             "ILLUMINACLIP:%s:2:30:10:8:no" % config['trimmomatic']['adapter_pe'],
             "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:15", "MINLEN:35"],
+        N = lambda w: "trim.%s" % (w.sid),
         ppn = config['trimmomatic']['ppn'],
         walltime = config['trimmomatic']['walltime'],
         mem = config['trimmomatic']['mem']

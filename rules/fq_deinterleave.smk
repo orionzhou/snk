@@ -6,6 +6,7 @@ rule deinterleave:
         r2 = protected("%s/{sid}_2.fq.gz" % config['deinterleave']['odir'])
     params:
         extra = config["deinterleave"]["extra"],
+        N = lambda w: "fqdev.%s" % (w.sid),
         ppn = config['deinterleave']['ppn'],
         walltime = config['deinterleave']['walltime'],
         mem = config['deinterleave']['mem']

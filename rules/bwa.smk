@@ -13,6 +13,7 @@ rule bwa_se:
     params:
         index = config[config['reference']]["bwa"],
         extra = bwa_extra,
+        N = lambda w: "bwa.%s" % (w.sid),
         ppn = config['bwa']['ppn'],
         walltime = config['bwa']['walltime'],
         mem = config['bwa']['mem']
@@ -38,6 +39,7 @@ rule bwa_pe:
     params:
         index = config[config['reference']]["bwa"],
         extra = bwa_extra,
+        N = lambda w: "bwa.%s" % (w.sid),
         ppn = config['bwa']['ppn'],
         walltime = config['bwa']['walltime'],
         mem = config['bwa']['mem']
@@ -79,6 +81,7 @@ rule sambamba_sort:
         sorted_u1 = "%s/{sid}_u1.sorted.bam" % config['bwa']['odir1'], 
         sorted_u2 = "%s/{sid}_u2.sorted.bam" % config['bwa']['odir1'], 
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
+        N = lambda w: "sbb.%s" % (w.sid),
         ppn = config['sambamba']['ppn'],
         walltime = config['sambamba']['walltime'],
         mem = config['sambamba']['mem']
@@ -97,6 +100,20 @@ rule sambamba_sort:
             shell("sambamba view -S -f bam -t {threads} {input.sam} -o {params.bam}")
             shell("sambamba sort {params.extra} -t {threads} -o {output[0]} {params.bam}")
 
+rule bam_stat:
+    input:
+        "%s/{sid}.bam" % config['bwa']['odir2']
+    output:
+        protected("%s/{sid}.tsv" % config['bwa']['odir2'])
+    params:
+        N = lambda w: "bamst.%s" % (w.sid),
+        ppn = config['bam_stat']['ppn'],
+        walltime = config['bam_stat']['walltime'],
+        mem = config['bam_stat']['mem']
+    threads: config['bam_stat']['ppn']
+    shell:
+        "bam stat {input} > {output}"
+
 rule sambamba_flagstat:
     input:
         "%s/{sid}.bam" % config['bwa']['odir2']
@@ -104,6 +121,7 @@ rule sambamba_flagstat:
         protected("%s/{sid}.txt" % config['bwa']['odir2'])
     params:
         extra = config['sambamba']['flagstat']['extra'],
+        N = lambda w: "flagst.%s" % (w.sid),
         ppn = config['sambamba']['ppn'],
         walltime = config['sambamba']['flagstat']['walltime'],
         mem = config['sambamba']['mem']

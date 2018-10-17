@@ -1,0 +1,141 @@
+__default__:
+  q: small
+  nodes: 1
+  ppn: 1
+  walltime: 8:00:00
+  mem: 4GB
+  M: zhoux379@umn.edu
+  m: a
+  r: n
+  N: s.{rule}.{wildcards}
+  o: pbs/{rule}/{wildcards}.out 
+  e: pbs/{rule}/{wildcards}.err
+
+fasterq_dump_pe:
+  ppn: 4
+  walltime: 10:00:00
+  mem: 11GB
+fasterq_dump_se:
+  ppn: 4
+  walltime: 10:00:00
+  mem: 11GB
+
+deinterleave:
+  ppn: 10
+  walltime: 10:00:00
+  mem: 20GB
+
+fq_compress:
+  ppn: 6
+  walltime: 5:00:00
+  mem: 30GB
+
+fastqc:
+  ppn: 1
+  walltime: 5:00:00
+  mem: 10GB
+
+trimmomatic_pe:
+  ppn: 8
+  walltime: 12:00:00
+  mem: 10GB
+trimmomatic_se:
+  ppn: 8
+  walltime: 12:00:00
+  mem: 10GB
+
+bbduk_se:
+  ppn: 1
+  walltime: 12:00:00
+  mem: 10GB
+
+star_pe:
+  ppn: 8
+  walltime: 10:00:00
+  mem: 35GB
+star_se:
+  ppn: 8
+  walltime: 10:00:00
+  mem: 35GB
+
+hisat2:
+  ppn: 8
+  walltime: 10:00:00
+  mem: 20GB
+
+bwa_se:
+  ppn: 12
+  walltime: 40:00:00
+  mem: 40GB
+bwa_pe:
+  ppn: 12
+  walltime: 40:00:00
+  mem: 40GB
+
+sambamba_sort:
+  ppn: 8
+  walltime: 8:00:00
+  mem: 12GB
+sambamba_merge:
+  ppn: 8
+  walltime: 8:00:00
+  mem: 12GB
+sambamba_flagstat:
+  ppn: 8
+  walltime: 4:00:00
+  mem: 12GB
+
+bcftools_call:
+  ppn: 1
+  walltime: 60:00:00
+  mem: 50GB
+bcftools_merge:
+  ppn: 2
+  walltime: 23:00:00
+  mem: 20GB
+bcftools_concat:
+  ppn: 1
+  walltime: 10:00:00
+  mem: 15GB
+bcftools_gtcheck:
+  ppn: 1
+  walltime: 1:00:00
+  mem: 5GB
+
+featurecounts:
+  ppn: 4
+  walltime: 5:00:00
+  mem: 15GB
+
+ase:
+  ppn: 1
+  walltime: 20:00:00
+  mem: 20GB
+
+gatk_haplotype_caller:
+  ppn: 1
+  walltime: 15:00:00
+  mem: 15GB
+gatk_gather_vcfs:
+  ppn: 1
+  walltime: 5:00:00
+  mem: 10GB
+gatk_combine_gvcfs:
+  ppn: 1
+  walltime: 20:00:00
+  mem: 30GB
+gatk_genotype_gvcfs:
+  ppn: 4
+  walltime: 50:00:00
+  mem: 40GB
+gatk_variant_filtration:
+  ppn: 1
+  walltime: 5
+  mem: 20GB
+
+multiqc:
+  ppn: 1
+  walltime: 10:00:00
+  mem: 20GB
+
+

@@ -145,7 +145,7 @@ if "params" in job_properties:
     if "mem" in params: mem="mem=" + str(params["mem"])
     if "walltime" in params: walltime="walltime=" + str(params["walltime"])
 
-if "resources" in job_properties:
+if "resources" in job_properties and 1 == 2:
     resources = job_properties["resources"]
     if "nodes" in resources: nodes="nodes=" + str(resources["nodes"])
     if ppn and not nodes : nodes="nodes=1"

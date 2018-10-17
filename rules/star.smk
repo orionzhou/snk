@@ -35,7 +35,8 @@ rule star_se:
         input_str = lambda wildcards, input: " ".join(input),
         outprefix = "%s/{sid}/" % config['star']['odir1'],
         readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input[0].endswith(".gz") else "",
-        extra = star_extra
+        extra = star_extra,
+        N = lambda w: "star.%s" % (w.sid),
         ppn = config['star']['ppn'],
         walltime = config['star']['walltime'],
         mem = config['star']['mem']
@@ -72,6 +73,7 @@ rule star_pe:
         outprefix_u = "%s/{sid}_u/" % config['star']['odir1'],
         readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input.fq1.endswith(".gz") else "",
         extra = star_extra,
+        N = lambda w: "star.%s" % (w.sid),
         ppn = config['star']['ppn'],
         walltime = config['star']['walltime'],
         mem = config['star']['mem']
@@ -115,6 +117,7 @@ rule sambamba_sort:
         sorted_p = "%s/{sid}_p/Aligned.out.sorted.bam" % (config['star']['odir1']),
         sorted_u = "%s/{sid}_u/Aligned.out.sorted.bam" % (config['star']['odir1']),
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
+        N = lambda w: "sbb.%s" % (w.sid),
         ppn = config['sambamba']['ppn'],
         walltime = config['sambamba']['walltime'],
         mem = config['sambamba']['mem']
@@ -127,4 +130,19 @@ rule sambamba_sort:
             shell("rm {params.sorted_p} {params.sorted_u}")
         else:
             shell("sambamba sort {params.extra} -t {threads} -o {output} {input.bam}")
+
+rule bam_stat:
+    input:
+        "%s/{sid}.bam" % config['star']['odir2']
+    output:
+        protected("%s/{sid}.tsv" % config['star']['odir2'])
+    params:
+        N = lambda w: "bamst.%s" % (w.sid),
+        ppn = config['bam_stat']['ppn'],
+        walltime = config['bam_stat']['walltime'],
+        mem = config['bam_stat']['mem']
+    threads: config['bam_stat']['ppn']
+    shell:
+        "bam stat {input} > {output}"
+
 

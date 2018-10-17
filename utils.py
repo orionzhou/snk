@@ -145,7 +145,7 @@ def check_config(c):
     return c
 
 def check_config_ase(c):
-    for subdir in [c['ase']['variant_dir']]: 
+    for subdir in [c['ase']['vdir']]: 
         if not op.isdir(subdir):
             mkdir(subdir)
     t = c['t']
@@ -153,15 +153,15 @@ def check_config_ase(c):
     c['vbed'] = dict()
     for sid in c['SampleID']:
         gt = t[sid]['Genotype']
-        fv = op.join(c['ase']['variant_dir'], "%s.vcf" % gt)
-        fb = op.join(c['ase']['variant_dir'], "%s.bed" % gt)
+        fv = op.join(c['ase']['vdir'], "%s.vcf" % gt)
+        fb = op.join(c['ase']['vdir'], "%s.bed" % gt)
         if not op.isfile(fb):
-            fv = op.join(c['ase']['variant_dir2'], "%s.vcf" % gt)
-            fb = op.join(c['ase']['variant_dir2'], "%s.bed" % gt)
+            fv = op.join(c['ase']['vdir2'], "%s.vcf" % gt)
+            fb = op.join(c['ase']['vdir2'], "%s.bed" % gt)
         assert op.isfile(fv), "no vcf found: %s" % fv
         assert op.isfile(fb), "no variant-bed found: %s" % fb
-        c['vcf'][gt] = fv
-        c['vbed'][gt] = fb
+        c['vcf'][sid] = fv
+        c['vbed'][sid] = fb
 
 # From https://github.com/giampaolo/psutil/blob/master/scripts/meminfo.py
 def bytes2human(n):

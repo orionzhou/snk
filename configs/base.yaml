@@ -145,8 +145,6 @@ sambamba:
 featurecounts:
     idir: 22_bam
     odir: 31_featurecounts
-    out: featurecounts.tsv
-    cmd: featureCounts
     extra: --primary -Q 20 -t exon -g gene_id --byReadGroup
     ppn: 4
     walltime: 5:00:00
@@ -190,7 +188,7 @@ gatk:
     haplotype_caller:
         java_mem: 14G
         ppn: 1
-        walltime: 15:00:00
+        walltime: 40:00:00
         mem: 15GB
     gather_vcfs:
         ppn: 1
@@ -198,10 +196,11 @@ gatk:
         mem: 10GB
     combine_gvcfs:
         ppn: 1
+        walltime: 20:00:00
+        mem: 30GB
     genotype_gvcfs:
-        java_mem: 20G
         ppn: 4
-        walltime: 50:00:00
+        walltime: 30:00:00
         mem: 40GB
     variant_filtration:
         ppn: 1
@@ -211,13 +210,32 @@ gatk:
 ase:
     idir: 22_bam
     odir: 33_ase
-    variant_dir: /home/springer/zhoux379/projects/biomap/data/variants_reseq
-    variant_dir2: /home/springer/zhoux379/projects/biomap/data/variants_rnaseq
+    gene_bed: /home/springer/zhoux379/data/genome/B73/50_annotation/10.ase.bed
+    vdir: /home/springer/zhoux379/projects/biomap/data/variants/ase29
+    vdir2: /home/springer/zhoux379/projects/biomap/data/variants/ase35
     ppn: 1
     walltime: 20:00:00
     mem: 20GB
 
+bam_stat:
+    ppn: 1
+    walltime: 8:00:00
+    mem: 4GB
+
+merge_featurecounts:
+    idir: 31_featurecounts
+    out: featurecounts.tsv
+
+merge_bamstats:
+    idir: 22_bam
+    out: bamstats.tsv
+
+merge_ase:
+    idir: 33_ase
+    out: ase.tsv
+
 multiqc:
+    out: multiqc.html
     ppn: 1
     walltime: 10:00:00
     mem: 20GB

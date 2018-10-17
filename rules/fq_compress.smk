@@ -3,6 +3,8 @@ rule fq_compress_se:
         i1 = "%s/{sid}.fq" % config['fq_compress']['idir']
     output:
         o1 = protected("%s/{sid}.fq.gz" % config['fq_compress']['odir'])
+    params:
+        N = lambda w: "fqcomp.%s" % (w.sid),
         ppn = config['fq_compress']['ppn'],
         walltime = config['fq_compress']['walltime'],
         mem = config['fq_compress']['mem']
@@ -17,6 +19,8 @@ rule fq_compress_pe:
     output:
         o1 = protected("%s/{sid}_1.fq.gz" % config['fq_compress']['odir']),
         o2 = protected("%s/{sid}_2.fq.gz" % config['fq_compress']['odir'])
+    params:
+        N = lambda w: "fqcomp.%s" % (w.sid),
         ppn = config['fq_compress']['ppn'],
         walltime = config['fq_compress']['walltime'],
         mem = config['fq_compress']['mem']

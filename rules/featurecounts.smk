@@ -17,22 +17,14 @@ rule featurecounts:
     log:
         "%s/featurecounts/{sid}.log" % config['dirl']
     params:
-        cmd = config['featurecounts']['cmd'],
-        gtf = config['genomes'][config['reference']]['gtf'],
+        gtf = config[config['reference']]['gtf'],
         extra = featurecounts_extra,
         ppn = config['featurecounts']['ppn'],
         walltime = config['featurecounts']['walltime'],
         mem = config['featurecounts']['mem']
     threads: config['featurecounts']['ppn']
     shell:
-        "{params.cmd} -T {threads} {params.extra} "
+        "featureCounts -T {threads} {params.extra} "
         "-a {params.gtf} -o {output[0]} {input} "
         ">{log} 2>&1"
 
-rule merge_featurecounts:
-    input:
-        expand(["%s/{sid}.txt" % config['featurecounts']['odir']], sid = config['SampleID'])
-    output:
-        protected("%s/%s" % (config['dird'], config['featurecounts']['out']))
-    shell:
-        "merge.featurecounts.R -o {output} {input}"

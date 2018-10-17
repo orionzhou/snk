@@ -8,6 +8,7 @@ rule bbduk_se:
         cmd = config['bbduk']['cmd'],
         extra = "ref=%s %s" % 
             (','.join(config['bbduk']['refs']), config['bbduk']['extra']),
+        N = lambda w: "bbduk.%s" % (w.sid),
         ppn = config['bbduk']['ppn'],
         walltime = config['bbduk']['walltime'],
         mem = config['bbduk']['mem']

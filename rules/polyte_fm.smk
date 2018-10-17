@@ -86,6 +86,7 @@ rule fm3_bwa:
         tgt_db = lambda wildcards: "$genome/%s/21_dbs/bwa/db" % config['t'][wildcards.sid]['tgt'],
         opt = lambda wildcards: config['t'][wildcards.sid]['opt'],
         mode = lambda wildcards: config['t'][wildcards.sid]['mode'],
+        N = lambda w: "fm3.%s" % (w.sid),
         ppn = config['fm']['bwa']['ppn'],
         walltime = config['fm']['bwa']['walltime'],
         mem = config['fm']['bwa']['mem'],
@@ -127,6 +128,7 @@ rule fm4_coord:
         pre = lambda wildcards: "%s/%s" % (config['fm']['odir4'], wildcards.sid),
         tgt = lambda wildcards: config['t'][wildcards.sid]['tgt'],
         tgt_chain = lambda wildcards: "$genome/%s/08_seq_map/mapb.chain" % config['t'][wildcards.sid]['tgt'],
+        N = lambda w: "fm4.%s" % (w.sid),
     shell:
         """
         source activate py27

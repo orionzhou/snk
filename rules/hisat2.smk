@@ -39,6 +39,7 @@ rule hisat2:
         index = config[config['reference']]["hisat2"],
         input_str = hisat2_input_str,
         extra = hisat2_extra,
+        N = lambda w: "hisat.%s" % (w.sid),
         ppn = config['hisat2']['ppn'],
         walltime = config['hisat2']['walltime'],
         mem = config['hisat2']['mem']
@@ -58,6 +59,7 @@ rule sambamba_sort:
         protected("%s/{sid}.bam" % config['hisat2']['odir2'])
     params:
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
+        N = lambda w: "sbb.%s" % (w.sid),
         ppn = config['sambamba']['ppn'],
         walltime = config['sambamba']['walltime'],
         mem = config['sambamba']['mem']
@@ -66,4 +68,19 @@ rule sambamba_sort:
         """
         sambamba sort {params.extra} -t {threads} -o {output} {input}
         """
- 
+
+rule bam_stat:
+    input:
+        "%s/{sid}.bam" % config['hisat2']['odir2']
+    output:
+        protected("%s/{sid}.tsv" % config['hisat2']['odir2'])
+    params:
+        N = lambda w: "bamst.%s" % (w.sid),
+        ppn = config['bam_stat']['ppn'],
+        walltime = config['bam_stat']['walltime'],
+        mem = config['bam_stat']['mem']
+    threads: config['bam_stat']['ppn']
+    shell:
+        "bam stat {input} > {output}"
+
+

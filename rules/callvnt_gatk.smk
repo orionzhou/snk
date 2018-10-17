@@ -1,15 +1,12 @@
-def gatk_hc_cmd(wildcards):
-    java_mem = config['java']['mem']
-    if 'java_mem' in config['gatk']:
-        java_mem = config['gatk']['java_mem']
-    if 'java_mem' in config['gatk']['haplotype_caller']:
-        java_mem = config['gatk']['haplotype_caller']['java_mem']
-    java_tmpdir = config['tmpdir']
-    if 'tmpdir' in config['java']:
-        java_tmpdir = config['java']['tmpdir']
-    java_options = "-Xmx%s -Djava.io.tmpdir=%s" % (java_mem, java_tmpdir)
-    cmd = "%s --java-options \"%s\"" % (config['gatk']['cmd'], java_options)
-    return cmd
+def gatk_hc_walltime(attempt):
+    seconds = config['gatk']['haplotype_caller']['walltime']
+    seconds_extra = (attempt-1) * 15 * 3600 
+    return seconds + seconds_extra 
+
+def gatk_hc_mem(attempt):
+    memstr = config['gatk']['haplotype_caller']['mem']
+    mem_gb = int(memstr.replace("GB", ""))
+    return (mem_gb + (attempt-1) * 10)
 
 rule gatk_haplotype_caller:
     input:
@@ -20,18 +17,27 @@ rule gatk_haplotype_caller:
     log:
         "%s/gatk/{sid}/{rid}.log" % config['dirl']
     params:
-        cmd = gatk_hc_cmd,
+        cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
-        region = lambda wildcards: config[config['reference']]['regions'][wildcards.rid],
-        extra = '',
+        region = lambda w: config[config['reference']]['regions'][w.rid],
+        tmp = config['tmpdir'],
+        extra = '-pairHMM LOGLESS_CACHING --use-jdk-deflater --use-jdk-inflater',
+        N = lambda w: "hc.%s.%s" % (w.sid, w.rid),
         ppn = config['gatk']['haplotype_caller']['ppn'],
-        walltime = config['gatk']['haplotype_caller']['walltime'],
-        mem = config['gatk']['haplotype_caller']['mem']
+        #walltime = config['gatk']['haplotype_caller']['walltime'],
+        #mem = config['gatk']['haplotype_caller']['mem'],
+        walltime = lambda w, resources: resources.walltime,
+        mem = lambda w, resources: '%dGB' % resources.mem
+    resources:
+        walltime = lambda w, attempt: gatk_hc_walltime(attempt),
+        mem = lambda w, attempt: gatk_hc_mem(attempt),
     threads: config['gatk']['haplotype_caller']['ppn']
     shell:
         #-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation \
         """
-        {params.cmd} HaplotypeCaller \
+        {params.cmd} \
+        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
+        HaplotypeCaller \
         -R {params.ref} \
         -ERC GVCF \
         -L {params.region} \
@@ -63,29 +69,20 @@ rule gatk_gather_vcfs:
     params:
         cmd = config['gatk']['cmd'],
         input_str = lambda wildcards, input: ["-I %s" % x for x in input.vcfs],
-        extra = '',
+        tmp = config['tmpdir'],
+        N = lambda w: "gather.%s" % (w.sid),
         ppn = config['gatk']['gather_vcfs']['ppn'],
         walltime = config['gatk']['gather_vcfs']['walltime'],
         mem = config['gatk']['gather_vcfs']['mem']
     threads: config['gatk']['gather_vcfs']['ppn']
     shell:
         """
-        {params.cmd} GatherVcfs {params.input_str} -O {output.vcf} >{log} 2>&1
+        {params.cmd} \
+        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
+        GatherVcfs \
+        {params.input_str} -O {output.vcf} >{log} 2>&1
         tabix -p vcf {output.vcf}
         """
-
-def gatk_gg_cmd(wildcards):
-    java_mem = config['java']['mem']
-    if 'java_mem' in config['gatk']:
-        java_mem = config['gatk']['java_mem']
-    if 'java_mem' in config['gatk']['genotype_gvcfs']:
-        java_mem = config['gatk']['genotype_gvcfs']['java_mem']
-    java_tmpdir = config['tmpdir']
-    if 'tmpdir' in config['java']:
-        java_tmpdir = config['java']['tmpdir']
-    java_options = "-Xmx%s -Djava.io.tmpdir=%s" % (java_mem, java_tmpdir)
-    cmd = "%s --java-options \"%s\"" % (config['gatk']['cmd'], java_options)
-    return cmd
 
 rule gatk_combine_gvcfs:
     input:
@@ -97,15 +94,23 @@ rule gatk_combine_gvcfs:
         vcf = protected("%s/all.g.vcf.gz" % config['callvnt']['odir2']),
         tbi = protected("%s/all.g.vcf.gz.tbi" % config['callvnt']['odir2']),
     params:
-        cmd = gatk_gg_cmd,
+        cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
         gvcfs = lambda wildcards, input: ["-V %s" % x for x in input.vcfs],
+        extra = '-pairHMM LOGLESS_CACHING --use-jdk-deflater --use-jdk-inflater',
+        tmp = config['tmpdir'],
+        N = lambda w: 'combine.gvcf',
         ppn = config['gatk']['combine_gvcfs']['ppn'],
+        walltime = config['gatk']['combine_gvcfs']['walltime'],
+        mem = config['gatk']['combine_gvcfs']['mem']
     threads: config['gatk']['combine_gvcfs']['ppn']
     shell:
         """
-        {params.cmd} CombineGVCFs \
+        {params.cmd} \
+        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
+        CombineGVCFs \
         -R {params.ref} \
+        {params.extra} \
         {params.gvcfs} -O {output.vcf}
         """
 
@@ -117,17 +122,23 @@ rule gatk_genotype_gvcfs:
         vcf = protected("%s/{rid}.vcf.gz" % config['callvnt']['odir2']),
         tbi = protected("%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2']),
     params:
-        cmd = gatk_gg_cmd,
+        cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
         region = lambda wildcards: config[config['reference']]['regions'][wildcards.rid],
+        extra = '-pairHMM LOGLESS_CACHING --use-jdk-deflater --use-jdk-inflater',
+        tmp = config['tmpdir'],
+        N = lambda w: 'gg.%s' % w.rid,
         ppn = config['gatk']['genotype_gvcfs']['ppn'],
         walltime = config['gatk']['genotype_gvcfs']['walltime'],
         mem = config['gatk']['genotype_gvcfs']['mem']
     threads: config['gatk']['genotype_gvcfs']['ppn']
     shell:
         """
-        {params.cmd} GenotypeGVCFs \
+        {params.cmd} \
+        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
+        GenotypeGVCFs \
         -nt {threads} \
+        {params.extra} \
         -R {params.ref} -L {params.region} \
         -V {input.vcf} -O {output.vcf}
         """
@@ -144,12 +155,17 @@ rule gatk_gather_vcfs2:
     params:
         cmd = config['gatk']['cmd'],
         input_str = lambda wildcards, input: ["-I %s" % x for x in input.vcfs],
+        tmp = config['tmpdir'],
+        N = lambda w: 'gather.vcf',
         ppn = config['gatk']['gather_vcfs']['ppn'],
         walltime = config['gatk']['gather_vcfs']['walltime'],
         mem = config['gatk']['gather_vcfs']['mem']
     threads: config["gatk"]['gather_vcfs']["ppn"]
     shell:
         """
-        {params.cmd} GatherVcfs {params.input_str} -O {output.vcf}
-        tabix -p vcf {output.vcf}
+        {params.cmd} \
+        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
+        GatherVcfs \
+        {params.input_str} -O {output.vcf}
+        bcftools index -t {output.vcf}
         """

@@ -64,6 +64,7 @@ rule bwa_index:
         "{genome}/21_dbs/%s/db.bwt" % config['bwa']['xdir']
     params:
         odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['bwa']['xdir']),
+        N = lambda w: "bwa.%s" % (w.genome),
         ppn = config['bwa_index']['ppn'],
         walltime = config['bwa_index']['walltime'],
         mem = config['bwa_index']['mem']
@@ -83,6 +84,7 @@ rule star_index:
         "{genome}/21_dbs/%s/SA" % config['star']['xdir']
     params:
         odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['star']['xdir']),
+        N = lambda w: "star.%s" % (w.genome),
         ppn = config['star_index']['ppn'],
         walltime = config['star_index']['walltime'],
         mem = config['star_index']['mem']
@@ -121,6 +123,7 @@ rule hisat2_index:
         "{genome}/21_dbs/%s/db.1.ht2" % config['hisat2']['xdir']
     params:
         odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['hisat2']['xdir']),
+        N = lambda w: "hisat.%s" % (w.genome),
         q = config['hisat2_index']['q'],
         ppn = config['hisat2_index']['ppn'],
         walltime = config['hisat2_index']['walltime'],

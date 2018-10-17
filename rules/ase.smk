@@ -1,9 +1,3 @@
-def ase_gbed(wildcards):
-    gbed = config['annotation']['bed']
-    if 'gene_bed' in config['ase']:
-        gbed = config['ase']['gene_bed']
-    return gbed
-
 rule ase:
     input:
         "%s/{sid}.bam" % config['ase']['idir']
@@ -13,9 +7,10 @@ rule ase:
         "%s/ase/{sid}.log" % config['dirl']
     params:
         pre = "%s/{sid}" % config['ase']['odir'],
-        gbed = ase_gbed,
-        vbed = lambda wildcards: config['vbed'][wildcards.gt],
+        gbed = config['ase']['gene_bed'],
+        vbed = lambda wildcards: config['vbed'][wildcards.sid],
         extra = '',
+        N = lambda w: "ase.%s" % (w.sid),
         ppn = config['ase']['ppn'],
         walltime = config['ase']['walltime'],
         mem = config['ase']['mem']
@@ -34,4 +29,13 @@ rule ase:
         rm {params.pre}.[1-8].*
         rm -rf {params.pre}
         """
+
+rule merge_ase:
+    input:
+        expand(["%s/{sid}.tsv" % config['merge_ase']['idir']], sid = config['SampleID'])
+    output:
+        protected("%s/%s" % (config['dird'], config['merge_ase']['out']))
+    shell:
+        "merge.ase.R -o {output} {input}"
+
 
