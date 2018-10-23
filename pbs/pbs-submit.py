@@ -4,7 +4,7 @@ import sys
 import argparse
 import subprocess
 
-from snakemake.utils import read_job_properties
+from snakemake.utils import read_job_properties, makedirs
 
 parser=argparse.ArgumentParser(add_help=False)
 parser.add_argument("--depend", help="Space separated list of ids for jobs this job should depend on.")
@@ -80,18 +80,24 @@ ppn=""
 mem=""
 walltime=""
 
+jobe, jobo = '', ''
+
 cc = job_properties['cluster']
 if 'q' in cc: q = " -q " + cc['q']
 if 'm' in cc: mail = " -m " + cc['m']
 if 'M' in cc: mailuser = " -M " + cc['M']
 if 'N' in cc: jname = " -N " + cc['N']
-if 'o' in cc: so = " -o " + cc['o']
-if 'e' in cc: se = " -e " + cc['e']
+if 'o' in cc: 
+    so = " -o " + cc['o']
+    jobo = cc['o']
+if 'e' in cc: 
+    se = " -e " + cc['e']
+    jobe = cc['e']
 #if 'r' in cc: r = " -r " + cc['r']
 if 'nodes' in cc: nodes = "nodes=" + str(cc["nodes"])
 if 'ppn' in cc: ppn = "ppn=" + str(cc["ppn"])
-if 'mem' in cc: mem = "mem=" + str(cc["mem"])
-if 'walltime' in cc: walltime = "walltime=" + str(cc["walltime"])
+if 'mem' in cc: mem = "mem=" + str(cc["mem"]) + 'gb'
+if 'runtime' in cc: walltime = "walltime=" + str(cc["runtime"]*3600)
  
 if args.depend:
     for m in set(args.depend.split(" ")):
@@ -138,19 +144,29 @@ if "params" in job_properties:
     if 'm' in params: mail = " -m " + params['m']
     if 'M' in params: mailuser = " -M " + params['M']
     if 'N' in params: jname = " -N " + params['N']
-    if 'o' in params: so = " -o " + params['o']
-    if 'e' in params: se = " -e " + params['e']
+    if 'o' in params: 
+        so = " -o " + params['o']
+        jobo = params['o']
+    if 'e' in params:
+        se = " -e " + params['e']
+        jobe = params['e']
     if "nodes" in params: nodes="nodes=" + str(params["nodes"])
+    if 'ppn' in params: ppn = "ppn=" + str(params["ppn"])
     if ppn and not nodes : nodes="nodes=1"
-    if "mem" in params: mem="mem=" + str(params["mem"])
-    if "walltime" in params: walltime="walltime=" + str(params["walltime"])
+    if "mem" in params: mem="mem=" + str(params["mem"]) + 'gb'
+    if "runtime" in params: walltime="walltime=" + str(params["runtime"]*3600)
 
-if "resources" in job_properties and 1 == 2:
+if "resources" in job_properties:
     resources = job_properties["resources"]
     if "nodes" in resources: nodes="nodes=" + str(resources["nodes"])
+    if 'ppn' in resources: ppn = "ppn=" + str(resources["ppn"])
     if ppn and not nodes : nodes="nodes=1"
-    if "mem" in resources: mem="mem=" + str(resources["mem"])
-    if "walltime" in resources: walltime="walltime=" + str(resources["walltime"])
+    if "mem" in resources: mem="mem=" + str(resources["mem"]) + 'gb'
+    if "runtime" in resources: walltime="walltime=" + str(resources["runtime"]*3600)
+
+for jdir in set([os.path.dirname(p) for p in [jobe, jobo]]):
+    if not os.path.isdir(jdir):
+        makedirs(jdir)
 
 if nodes or ppn or mem or walltime: resourceparams = " -l \""
 if nodes: resourceparams = resourceparams + nodes

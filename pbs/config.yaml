@@ -6,4 +6,5 @@ jobscript: "pbs-jobscript.sh"
 jobs: 10
 immediate-submit: False
 verbose: False
+#verbose: True
 notemp: True

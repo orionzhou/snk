@@ -2,8 +2,10 @@ __default__:
   q: small
   nodes: 1
   ppn: 1
-  walltime: 8:00:00
-  mem: 8GB
+  runtime: 8
+  mem: 8
+  aruntime: 8
+  amem: 8
   M: zhoux379@umn.edu
   m: a
   r: n

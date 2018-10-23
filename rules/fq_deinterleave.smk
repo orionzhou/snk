@@ -6,10 +6,16 @@ rule deinterleave:
         r2 = protected("%s/{sid}_2.fq.gz" % config['deinterleave']['odir'])
     params:
         extra = config["deinterleave"]["extra"],
-        N = lambda w: "fqdev.%s" % (w.sid),
-        ppn = config['deinterleave']['ppn'],
-        walltime = config['deinterleave']['walltime'],
-        mem = config['deinterleave']['mem']
+        N = lambda w: "%s.%s" % (config['deinterleave']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['deinterleave']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['deinterleave']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'deinterleave')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'deinterleave')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'deinterleave')['mem']
     threads: config['deinterleave']['ppn']
     shell:
         "zcat {input} | "

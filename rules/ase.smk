@@ -4,16 +4,22 @@ rule ase:
     output:
         protected("%s/{sid}.tsv" % config['ase']['odir'])
     log:
-        "%s/ase/{sid}.log" % config['dirl']
+        "%s/%s/{sid}.log" % (config['dirl'], config['ase']['id'])
     params:
         pre = "%s/{sid}" % config['ase']['odir'],
         gbed = config['ase']['gene_bed'],
-        vbed = lambda wildcards: config['vbed'][wildcards.sid],
+        vbed = lambda w: config['vbed'][w.sid],
         extra = '',
-        N = lambda w: "ase.%s" % (w.sid),
-        ppn = config['ase']['ppn'],
-        walltime = config['ase']['walltime'],
-        mem = config['ase']['mem']
+        N = lambda w: "%s.%s" % (config['ase']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['ase']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['ase']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt: get_resource(config, attempt, 'ase')['ppn'],
+        runtime = lambda w, attempt: get_resource(config, attempt, 'ase')['runtime'],
+        mem = lambda w, attempt: get_resource(config, attempt, 'ase')['mem']
     threads: config['ase']['ppn']
     shell:
         """

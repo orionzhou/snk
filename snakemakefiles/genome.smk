@@ -3,6 +3,7 @@ import os.path as op
 from snakemake.utils import update_config, makedirs
 from astropy.table import Table, Column
 import yaml
+from snk.utils import get_resource
 
 def check_config(c):
     fy = open(c['config_default'], 'r')
@@ -64,10 +65,6 @@ rule all:
         all_inputs
 
 include: "rules/genome.smk"
-
-for rule in workflow.rules:
-    if rule.name != 'all':
-        snakemake.utils.makedirs(op.join(config['dirp'], rule.name))
 
 onsuccess:
     shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))

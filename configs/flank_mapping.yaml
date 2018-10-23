@@ -10,11 +10,15 @@ fm:
     odir4: 15_coord
     bwa:
         ppn: 8
-        walltime: 10:00:00
-        mem: 20GB
+        runtime: 10
+        mem: 20
+        aruntime: 10
+        amem: 10
 lastz:
     idir: 31_te_windows
     odir: 32_lastz
     ppn: 1
-    walltime: 60:00:00
-    mem: 20GB
+    runtime: 60
+    mem: 20
+    aruntime: 20
+    amem: 10

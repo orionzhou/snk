@@ -2,10 +2,10 @@ def multiqc_inputs(wildcards):
     inputs = []
     for sid in config['SampleID']:
         paired = config['t'][sid]['paired']
-        suf = 'pe' if paired else 'se'
         
         trimmer = "bbduk" if config['readtype'] == '3rnaseq' else "trimmomatic"
-        inputs.append("%s/%s_%s/%s.log" % (config['dirl'], trimmer, suf, sid))
+        trimmer_suf = 'pe' if paired else 'se'
+        inputs.append("%s/%s_%s/%s.log" % (config['dirl'], config[trimmer]['id'], trimmer_suf, sid))
         
         if config['mapper'] == 'hisat2':
             inputs.append("%s/%s.txt" % (config['hisat2']['odir1'], sid))
@@ -28,15 +28,21 @@ rule multiqc:
     output:
         "%s/%s" % (config['dird'], config['multiqc']['out']),
     log:
-        "%s/multiqc.log" % config['dirl']
+        "%s/%s.log" % (config['dirl'], config['multiqc']['id'])
     params:
         outdir = lambda w, output: op.dirname(output[0]),
         outfile = lambda w, output: op.basename(output[0]),
         extra = '',
-        N = lambda w: "multiqc",
-        ppn = config['multiqc']['ppn'],
-        walltime = config['multiqc']['walltime'],
-        mem = config['multiqc']['mem']
+        N = lambda w: "%s" % (config['multiqc']['id']),
+        e = lambda w: "%s/%s.e" % (config['dirp'], config['multiqc']['id']),
+        o = lambda w: "%s/%s.o" % (config['dirp'], config['multiqc']['id']),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'multiqc')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'multiqc')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'multiqc')['mem']
     threads: config['multiqc']['ppn']
     shell:
         "multiqc {params.extra} --force "
@@ -48,14 +54,26 @@ rule multiqc:
 rule merge_featurecounts:
     input:
         expand(["%s/{sid}.txt" % config['merge_featurecounts']['idir']], sid = config['SampleID'])
+    params:
+        N = lambda w: "%s" % (config['merge_featurecounts']['id']),
+        e = lambda w: "%s/%s.e" % (config['dirp'], config['merge_featurecounts']['id']),
+        o = lambda w: "%s/%s.o" % (config['dirp'], config['merge_featurecounts']['id']),
     output:
         protected("%s/%s" % (config['dird'], config['merge_featurecounts']['out']))
     shell:
         "merge.featurecounts.R -o {output} {input}"
 
+def bamstat_dir():
+    dirb = ''
+    if config['mapper'] in ['star','hisat2']:
+        dirb = config[config['mapper']]['odir2']
+    elif config['mapper'] in ['bwa']:
+        dirb = config['cleanbam']['odir2']
+    return dirb 
+
 rule merge_bamstats:
     input:
-        expand(["%s/{sid}.tsv" % config['merge_bamstats']['idir']], sid = config['SampleID'])
+        expand("%s/{sid}.tsv" % bamstat_dir(), sid = config['SampleID'])
     output:
         protected("%s/%s" % (config['dird'], config['merge_bamstats']['out']))
     shell:

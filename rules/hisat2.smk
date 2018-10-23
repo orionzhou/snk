@@ -39,10 +39,16 @@ rule hisat2:
         index = config[config['reference']]["hisat2"],
         input_str = hisat2_input_str,
         extra = hisat2_extra,
-        N = lambda w: "hisat.%s" % (w.sid),
-        ppn = config['hisat2']['ppn'],
-        walltime = config['hisat2']['walltime'],
-        mem = config['hisat2']['mem']
+        N = lambda w: "%s.%s" % (config['hisat2']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['hisat2']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['hisat2']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['mem']
     threads: config['hisat2']['ppn']
     shell:
         """
@@ -59,10 +65,16 @@ rule sambamba_sort:
         protected("%s/{sid}.bam" % config['hisat2']['odir2'])
     params:
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
-        N = lambda w: "sbb.%s" % (w.sid),
-        ppn = config['sambamba']['ppn'],
-        walltime = config['sambamba']['walltime'],
-        mem = config['sambamba']['mem']
+        N = lambda w: "%s.%s" % (config['sambamba']['sort']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['sambamba']['sort']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['sambamba']['sort']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['mem']
     threads: config['sambamba']['ppn']
     shell:
         """
@@ -75,10 +87,16 @@ rule bam_stat:
     output:
         protected("%s/{sid}.tsv" % config['hisat2']['odir2'])
     params:
-        N = lambda w: "bamst.%s" % (w.sid),
-        ppn = config['bam_stat']['ppn'],
-        walltime = config['bam_stat']['walltime'],
-        mem = config['bam_stat']['mem']
+        N = lambda w: "%s.%s" % (config['bam_stat']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bam_stat']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bam_stat']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
     threads: config['bam_stat']['ppn']
     shell:
         "bam stat {input} > {output}"

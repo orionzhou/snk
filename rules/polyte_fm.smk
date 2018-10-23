@@ -87,9 +87,13 @@ rule fm3_bwa:
         opt = lambda wildcards: config['t'][wildcards.sid]['opt'],
         mode = lambda wildcards: config['t'][wildcards.sid]['mode'],
         N = lambda w: "fm3.%s" % (w.sid),
-        ppn = config['fm']['bwa']['ppn'],
-        walltime = config['fm']['bwa']['walltime'],
-        mem = config['fm']['bwa']['mem'],
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt: get_resource(attempt, 'fm', 'bwa')['ppn'],
+        runtime = lambda w, attempt: get_resource(attempt, 'fm', 'bwa')['runtime'],
+        mem = lambda w, attempt: get_resource(attempt, 'fm', 'bwa')['mem']
     threads: config["fm"]['bwa']["ppn"]
     run:
         makedirs(config['fm']['odir3']) 
@@ -129,6 +133,13 @@ rule fm4_coord:
         tgt = lambda wildcards: config['t'][wildcards.sid]['tgt'],
         tgt_chain = lambda wildcards: "$genome/%s/08_seq_map/mapb.chain" % config['t'][wildcards.sid]['tgt'],
         N = lambda w: "fm4.%s" % (w.sid),
+		ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt: get_resource(attempt, 'fm', 'coord')['ppn'],
+        runtime = lambda w, attempt: get_resource(attempt, 'fm', 'coord')['runtime'],
+        mem = lambda w, attempt: get_resource(attempt, 'fm', 'coord')['mem']
     shell:
         """
         source activate py27

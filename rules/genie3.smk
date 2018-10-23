@@ -12,10 +12,16 @@ rule genie3:
         "%s/{nid}.pkl" % config['genie3']['odir']
     params:
         extra = genie3_extra,
-        N = lambda w: "genie3.%s" % (w.nid),
-        ppn = config['genie3']['ppn'],
-        walltime = config['genie3']['walltime'],
-        mem = config['genie3']['mem']
+        N = lambda w: "%s.%s" % (config['genie3']['id'], w.nid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['genie3']['id'], w.nid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['genie3']['id'], w.nid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'genie3')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'genie3')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'genie3')['mem']
     threads: config['genie3']['ppn']
     shell:
         "genie3.py -p {threads} {params.extra} {input} {output}"

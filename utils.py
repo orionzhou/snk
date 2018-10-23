@@ -30,18 +30,52 @@ def make_symlink(dst, src):
         os.system("rm %s" % src)
     os.system("ln -sf %s %s" % (dst, src))
 
+def get_resource(config, attempt, k1, k2 = ''):
+    assert k1 in config, '%s not in config' % k1
+    c = config[k1]
+    runtime, aruntime = 8, 8
+    mem, amem = 10, 10
+    ppn, appn = 1, 0
+    if k2 != '':
+        assert k2 in config[k1], '%s not in config[%s]' % (k2, k1)
+        c2 = config[k1][k2]
+        if 'ppn' in c2: ppn = c2['ppn']
+        elif 'ppn' in c: ppn = c['ppn']
+        if 'appn' in c2: appn = c2['ppn']
+        elif 'appn' in c: appn = c['appn']
+        if 'runtime' in c2: runtime = c2['runtime']
+        elif 'runtime' in c: runtime = c['runtime']
+        if 'aruntime' in c2: aruntime = c2['aruntime']
+        elif 'runtime' in c: aruntime = c['aruntime']
+        if 'mem' in c2: mem = c2['mem']
+        elif 'mem' in c: mem = c['mem']
+        if 'amem' in c2: amem = c2['amem']
+        elif 'amem' in c: amem = c['amem']
+    else:
+        if 'ppn' in c: ppn = c['ppn']
+        if 'appn' in c: appn = c['appn']
+        if 'runtime' in c: runtime = c['runtime']
+        if 'aruntime' in c: aruntime = c['aruntime']
+        if 'mem' in c: mem = c['mem']
+        if 'amem' in c: amem = c['amem']
+    return {'ppn': ppn + appn * (attempt - 1),
+            'runtime': runtime + aruntime * (attempt - 1),
+            'mem': mem + amem * (attempt - 1)}
+
 def check_genome(genome, dbs, c):
     dirw = op.join(c['dirg'], c[genome]['gdir'])
-    ref, size, regions, gtf = [op.join(dirw, x) for x in [
+    ref, size, regions, gtf, gtb = [op.join(dirw, x) for x in [
         '10_genome.fna',
         '15_intervals/01.chrom.sizes',
         '15_intervals/20.gap.sep.60win.tsv',
-        '50_annotation/10.gtf']]
+        '50_annotation/10.gtf',
+        '50_annotation/10.gtb']]
     for fi in [ref, size, gtf]:
         assert op.isfile(fi), "%s not found" % fi
     c[genome]['ref'] = ref
     c[genome]['size'] = size 
     c[genome]['gtf'] = gtf
+    c[genome]['gtb'] = gtb
     if op.isfile(regions):
         fr = regions
         c[genome]['regions'] = dict() 
@@ -77,6 +111,9 @@ def check_genome(genome, dbs, c):
         elif db == 'gatk':
             ks = ['xref', 'xref.fai', 'xref.dict']
             c[genome][db] = {x: op.join(dirx, c[db][x]) for x in ks}
+            f_vcf = op.join(dirx, c['gatk']['known_sites'])
+            if op.isfile(f_vcf):
+                c[genome]['gatk']['known_sites'] = f_vcf
             fos = list(c[genome][db].values())
         else:
             print("unknown db: %s" % db)
@@ -84,15 +121,32 @@ def check_genome(genome, dbs, c):
         for fo in fos:
             assert op.isfile(fo), "%s not found" % fo
 
-def check_config(c):
-    for fn in [c['studylist'], c['config_default']]:
+def check_config_default(c):
+    for fn in [c['config_default']]:
         assert op.isfile(fn), "cannot read %s" % fn
-
+    
     fy = open(c['config_default'], 'r')
     config_default = yaml.load(fy)
     update_config(config_default, c)
     c = config_default
     
+    assert 'dirw' in c, 'dirw not defined'
+    dir_project, dir_cache = c['dir_project'], c['dir_cache']
+    dirw = c['dirw']
+    for subdir in [c['dirw'], c['tmpdir']]:
+        if not op.isdir(subdir):
+            makedirs(subdir)
+    for rsubdir in [c['dirl'], c['dirp']]: 
+        subdir = op.join(c['dirw'], rsubdir)
+        if not op.isdir(subdir):
+            makedirs(subdir)
+
+    return c
+
+def check_config_ngs(c):
+    for fn in [c['studylist']]:
+        assert op.isfile(fn), "cannot read %s" % fn
+
     study = c['study']
     t = Table.read(c['studylist'], format = 'ascii.tab')
     dic_study = { t['sid'][i]: {x: t[x][i] for x in t.colnames} for i in range(len(t)) }
@@ -108,32 +162,32 @@ def check_config(c):
     assert c['mapper'] in ['star', 'hisat2', 'bwa'], "unknown mapper: %s" % c['mapper']
     c['genome'] = c['reference']
     dbs = [c['mapper']]
-    check_genome(c['reference'], dbs, c)
    
     dir_project, dir_cache = c['dir_project'], c['dir_cache']
     dirw = op.join(dir_cache, study)
-    samplelist = "%s/data/05_read_list/%s.tsv" % (dir_project, study)
+    samplelist = "%s/data/05_read_list/%s.c.tsv" % (dir_project, study)
+    if not op.isfile(samplelist):
+        samplelist = "%s/data/05_read_list/%s.tsv" % (dir_project, study)
     assert op.isfile(samplelist), "samplelist not found: %s" % samplelist
-    dir_raw = "%s/data/08_raw_output/%s" % (dir_project, study)
     c['dirw'], c['samplelist'] = dirw, samplelist
-   
-    for subdir in [c['dirw'], dir_raw, c['tmpdir']]:
-        if not op.isdir(subdir):
-            makedirs(subdir)
-    for rsubdir in [c['dirl'], c['dirp']]: 
-        subdir = op.join(c['dirw'], rsubdir)
-        if not op.isdir(subdir):
-            makedirs(subdir)
+    dir_raw = "%s/data/08_raw_output/%s" % (dir_project, study)
+    if not op.isdir(dir_raw):
+        makedirs(dir_raw)
+    
+    c = check_config_default(c)
+    check_genome(c['reference'], dbs, c)
     
     dir_cachelink = op.join(dir_project, 'data', 'cache')
     make_symlink(dir_cache, dir_cachelink)
     dir_rawlink = op.join(dirw, c['dird'])
     make_symlink(dir_raw, dir_rawlink)
-
+    
     t = Table.read(c['samplelist'], format = 'ascii.tab')
+    print("sample list read from %s" % samplelist)
     #tm = Table(names = ("sid", "gt", "vpre", "opre", "vcf"), dtype = ['O'] * 5)
     c['SampleID'] = t['SampleID']
     c['t'] = dict()
+    c['gt'] = dict()
     cols = t.colnames
     for i in range(len(t)):
         sid = t['SampleID'][i]
@@ -141,27 +195,15 @@ def check_config(c):
         if 'paired' in sdic:
             sdic['paired'] = str2bool(sdic['paired'])
         c['t'][sid] = sdic
+        if 'Genotype' in sdic and sdic['Genotype']:
+            gt = sdic['Genotype']
+            if gt not in c['gt']:
+                c['gt'][gt] = []
+            c['gt'][gt].append(sid)
+    c['Genotypes'] = list(c['gt'].keys())
 
     return c
 
-def check_config_ase(c):
-    for subdir in [c['ase']['vdir']]: 
-        if not op.isdir(subdir):
-            mkdir(subdir)
-    t = c['t']
-    c['vcf'] = dict()
-    c['vbed'] = dict()
-    for sid in c['SampleID']:
-        gt = t[sid]['Genotype']
-        fv = op.join(c['ase']['vdir'], "%s.vcf" % gt)
-        fb = op.join(c['ase']['vdir'], "%s.bed" % gt)
-        if not op.isfile(fb):
-            fv = op.join(c['ase']['vdir2'], "%s.vcf" % gt)
-            fb = op.join(c['ase']['vdir2'], "%s.bed" % gt)
-        assert op.isfile(fv), "no vcf found: %s" % fv
-        assert op.isfile(fb), "no variant-bed found: %s" % fb
-        c['vcf'][sid] = fv
-        c['vbed'][sid] = fb
 
 # From https://github.com/giampaolo/psutil/blob/master/scripts/meminfo.py
 def bytes2human(n):

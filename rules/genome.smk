@@ -63,11 +63,17 @@ rule bwa_index:
     output:
         "{genome}/21_dbs/%s/db.bwt" % config['bwa']['xdir']
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['bwa']['xdir']),
-        N = lambda w: "bwa.%s" % (w.genome),
-        ppn = config['bwa_index']['ppn'],
-        walltime = config['bwa_index']['walltime'],
-        mem = config['bwa_index']['mem']
+        odir = lambda w: "%s/21_dbs/%s" % (w.genome, config['bwa']['xdir']),
+        N = lambda w: "%s.%s" % (config['bwa_index']['id'], w.genome),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bwa_index']['id'], w.genome),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bwa_index']['id'], w.genome),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'bwa_index')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'bwa_index')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'bwa_index')['mem']
     threads: config['bwa_index']['ppn']
     shell:
         """
@@ -83,11 +89,17 @@ rule star_index:
     output:
         "{genome}/21_dbs/%s/SA" % config['star']['xdir']
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['star']['xdir']),
-        N = lambda w: "star.%s" % (w.genome),
-        ppn = config['star_index']['ppn'],
-        walltime = config['star_index']['walltime'],
-        mem = config['star_index']['mem']
+        odir = lambda w: "%s/21_dbs/%s" % (w.genome, config['star']['xdir']),
+        N = lambda w: "%s.%s" % (config['star_index']['id'], w.genome),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['star_index']['id'], w.genome),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['star_index']['id'], w.genome),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'star_index')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'star_index')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'star_index')['mem']
     threads: config['star_index']['ppn']
     shell:
         """
@@ -105,7 +117,7 @@ rule gatk_index:
         "{genome}/21_dbs/%s/db.fasta" % config['gatk']['xdir'],
         "{genome}/21_dbs/%s/db.dict" % config['gatk']['xdir'],
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['gatk']['xdir'])
+        odir = lambda w: "%s/21_dbs/%s" % (w.genome, config['gatk']['xdir'])
     shell:
         """
         rm -rf {params.odir}
@@ -122,12 +134,18 @@ rule hisat2_index:
     output:
         "{genome}/21_dbs/%s/db.1.ht2" % config['hisat2']['xdir']
     params:
-        odir = lambda wildcards: "%s/21_dbs/%s" % (wildcards.genome, config['hisat2']['xdir']),
-        N = lambda w: "hisat.%s" % (w.genome),
+        odir = lambda w: "%s/21_dbs/%s" % (w.genome, config['hisat2']['xdir']),
+        N = lambda w: "%s.%s" % (config['hisat2_index']['id'], w.genome),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['hisat2_index']['id'], w.genome),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['hisat2_index']['id'], w.genome),
         q = config['hisat2_index']['q'],
-        ppn = config['hisat2_index']['ppn'],
-        walltime = config['hisat2_index']['walltime'],
-        mem = config['hisat2_index']['mem']
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'hisat2_index')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'hisat2_index')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'hisat2_index')['mem']
     threads: config['hisat2_index']['ppn']
     shell:
         """

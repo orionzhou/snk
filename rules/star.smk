@@ -29,17 +29,26 @@ rule star_se:
         temp("%s/{sid}/Aligned.out.bam" % config['star']['odir1']),
         protected("%s/{sid}/Log.final.out" % config['star']['odir1'])
     log:
-        "%s/star/{sid}.log" % config['dirl']
+        "%s/%s/{sid}.log" % (config['dirl'], config['star']['id'])
     params:
         index = config[config['reference']]["star"],
         input_str = lambda wildcards, input: " ".join(input),
         outprefix = "%s/{sid}/" % config['star']['odir1'],
         readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input[0].endswith(".gz") else "",
         extra = star_extra,
-        N = lambda w: "star.%s" % (w.sid),
-        ppn = config['star']['ppn'],
-        walltime = config['star']['walltime'],
-        mem = config['star']['mem']
+        N = lambda w: "%s.%s" % (config['star']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['star']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['star']['id'], w.sid),
+		ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'star')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'star')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'star')['mem']
+    resources:
+        walltime = lambda w, attempt: config['star']['walltime'] + (attempt-1)*3600*15,
+        mem = lambda w, attempt: config['star']['mem'] + (attempt-1)*15
     threads: config['star']['ppn']
     shell:
         """
@@ -64,7 +73,7 @@ rule star_pe:
         protected("%s/{sid}_p/Log.final.out" % config['star']['odir1']),
         protected("%s/{sid}_u/Log.final.out" % config['star']['odir1'])
     log:
-        "%s/star/{sid}.log" % config['dirl']
+        "%s/%s/{sid}.log" % (config['dirl'], config['star']['id'])
     params:
         index = config[config['reference']]["star"],
         input_str_p = lambda wildcards, input: "%s %s" % (input.fq1, input.fq2),
@@ -73,10 +82,16 @@ rule star_pe:
         outprefix_u = "%s/{sid}_u/" % config['star']['odir1'],
         readcmd = lambda wildcards, input: "--readFilesCommand zcat" if input.fq1.endswith(".gz") else "",
         extra = star_extra,
-        N = lambda w: "star.%s" % (w.sid),
-        ppn = config['star']['ppn'],
-        walltime = config['star']['walltime'],
-        mem = config['star']['mem']
+        N = lambda w: "%s.%s" % (config['star']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['star']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['star']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'star')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'star')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'star')['mem']
     threads: config['star']['ppn']
     shell:
         """
@@ -117,10 +132,16 @@ rule sambamba_sort:
         sorted_p = "%s/{sid}_p/Aligned.out.sorted.bam" % (config['star']['odir1']),
         sorted_u = "%s/{sid}_u/Aligned.out.sorted.bam" % (config['star']['odir1']),
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
-        N = lambda w: "sbb.%s" % (w.sid),
-        ppn = config['sambamba']['ppn'],
-        walltime = config['sambamba']['walltime'],
-        mem = config['sambamba']['mem']
+        N = lambda w: "%s.%s" % (config['sambamba']['sort']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['sambamba']['sort']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['sambamba']['sort']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['mem']
     threads: config['sambamba']['ppn']
     run:
         if config['t'][wildcards.sid]['paired']:
@@ -137,10 +158,16 @@ rule bam_stat:
     output:
         protected("%s/{sid}.tsv" % config['star']['odir2'])
     params:
-        N = lambda w: "bamst.%s" % (w.sid),
-        ppn = config['bam_stat']['ppn'],
-        walltime = config['bam_stat']['walltime'],
-        mem = config['bam_stat']['mem']
+        N = lambda w: "%s.%s" % (config['bam_stat']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bam_stat']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bam_stat']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
     threads: config['bam_stat']['ppn']
     shell:
         "bam stat {input} > {output}"

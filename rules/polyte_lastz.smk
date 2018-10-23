@@ -7,9 +7,13 @@ rule lastz:
         dummy = "%s/dummy" % config['lastz']['idir'],
         odir = lambda wildcards: "%s/%s_%s" % (config['lastz']['odir'], wildcards.genotype, wildcards.tgt),
         fcmd = lambda wildcards: "%s/%s_%s.sh" % (config['lastz']['odir'], wildcards.genotype, wildcards.tgt),
-        ppn = config['lastz']['ppn'],
-        walltime = config['lastz']['walltime'],
-        mem = config['lastz']['mem'],
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'lastz')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'lastz')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'lastz')['mem']
     threads: config['lastz']["ppn"]
     shell:
         """

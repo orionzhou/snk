@@ -6,5 +6,7 @@ genie3:
     odir: 12_output_fpkm
     #q: ram256g
     ppn: 12
-    walltime: 50:00:00
-    mem: 30GB
+    runtime: 20
+    mem: 30
+    aruntime: 30
+    amem: 5

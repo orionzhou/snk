@@ -1,57 +1,60 @@
-def gatk_hc_walltime(attempt):
-    seconds = config['gatk']['haplotype_caller']['walltime']
-    seconds_extra = (attempt-1) * 15 * 3600 
-    return seconds + seconds_extra 
+def gatk_extra(opt = ''):
+    extra = ''
+    if opt == 'hc':
+        extra += ' -pairHMM LOGLESS_CACHING'
+        extra += ' --use-jdk-deflater --use-jdk-inflater'
+    if opt == 'picard':
+        extra += ' --TMP_DIR %s' % config['tmpdir']
+    else:
+        extra += ' --tmp-dir %s' % config['tmpdir']
+    return extra
 
-def gatk_hc_mem(attempt):
-    memstr = config['gatk']['haplotype_caller']['mem']
-    mem_gb = int(memstr.replace("GB", ""))
-    return (mem_gb + (attempt-1) * 10)
+def gatk_hc_inputs(w):
+    sids = config['gt'][w.gt]
+    return expand("%s/{sid}.bam" % config['callvnt']['idir'], sid = sids)
 
 rule gatk_haplotype_caller:
     input:
-        "%s/{sid}.bam" % config['callvnt']['idir']
+        gatk_hc_inputs
     output:
-        temp("%s/{sid}/{rid}.g.vcf.gz" % config['callvnt']['odir1']),
-        temp("%s/{sid}/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir1'])
+        temp("%s/{gt}/{rid}.g.vcf.gz" % config['callvnt']['odir1']),
+        temp("%s/{gt}/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir1'])
     log:
-        "%s/gatk/{sid}/{rid}.log" % config['dirl']
+        "%s/%s/{gt}.{rid}.log" % (config['dirl'], config['gatk']['haplotype_caller']['id'])
     params:
         cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
+        input_str = lambda w, input: ["-I %s" % x for x in input],
         region = lambda w: config[config['reference']]['regions'][w.rid],
-        tmp = config['tmpdir'],
-        extra = '-pairHMM LOGLESS_CACHING --use-jdk-deflater --use-jdk-inflater',
-        N = lambda w: "hc.%s.%s" % (w.sid, w.rid),
-        ppn = config['gatk']['haplotype_caller']['ppn'],
-        #walltime = config['gatk']['haplotype_caller']['walltime'],
-        #mem = config['gatk']['haplotype_caller']['mem'],
-        walltime = lambda w, resources: resources.walltime,
-        mem = lambda w, resources: '%dGB' % resources.mem
+        extra = gatk_extra(''),
+        N = lambda w: "%s.%s" % (config['gatk']['haplotype_caller']['id'], w.gt),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['haplotype_caller']['id'], w.gt),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['haplotype_caller']['id'], w.gt),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
     resources:
-        walltime = lambda w, attempt: gatk_hc_walltime(attempt),
-        mem = lambda w, attempt: gatk_hc_mem(attempt),
+        ppn = lambda w, attempt: get_resource(config, attempt, 'gatk', 'haplotype_caller')['ppn'],
+        runtime = lambda w, attempt: get_resource(config, attempt, 'gatk', 'haplotype_caller')['runtime'],
+        mem = lambda w, attempt: get_resource(config, attempt, 'gatk', 'haplotype_caller')['mem']
     threads: config['gatk']['haplotype_caller']['ppn']
     shell:
         #-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation \
         """
-        {params.cmd} \
-        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
-        HaplotypeCaller \
+        {params.cmd} --java-options "-Xmx{params.mem}G" HaplotypeCaller \
         -R {params.ref} \
         -ERC GVCF \
         -L {params.region} \
         {params.extra} \
-        -I {input} \
-        -O {output[0]} \
-        >{log} 2>&1
+        {params.input_str} -O {output[0]} \
+        >{log} 2>>&1
         """
 
-def gather_vcf_inputs(wildcards):
-    sid = wildcards.sid
-    vcfs = expand(["%s/%s/{rid}.g.vcf.gz" % (config['callvnt']['odir1'], sid)],
+def gather_vcf_inputs(w):
+    gt = w.gt
+    vcfs = expand("%s/%s/{rid}.g.vcf.gz" % (config['callvnt']['odir1'], gt),
                   rid = list(config[config['reference']]['regions'].keys()))
-    tbis = expand(["%s/%s/{rid}.g.vcf.gz.tbi" % (config['callvnt']['odir1'], sid)],
+    tbis = expand("%s/%s/{rid}.g.vcf.gz.tbi" % (config['callvnt']['odir1'], gt),
                   rid = list(config[config['reference']]['regions'].keys()))
     return {
         'vcfs': vcfs,
@@ -62,53 +65,61 @@ rule gatk_gather_vcfs:
     input:
         unpack(gather_vcf_inputs)
     output:
-        vcf = protected("%s/{sid}.g.vcf.gz" % config['callvnt']['odir1']),
-        tbi = protected("%s/{sid}.g.vcf.gz.tbi" % config['callvnt']['odir1'])
+        vcf = protected("%s/{gt}.g.vcf.gz" % config['callvnt']['odir1']),
+        tbi = protected("%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['odir1'])
     log:
-        "%s/gatk/{sid}.log" % config['dirl']
+        "%s/%s/{gt}.log" % (config['dirl'], config['gatk']['gather_vcfs']['id'])
     params:
         cmd = config['gatk']['cmd'],
-        input_str = lambda wildcards, input: ["-I %s" % x for x in input.vcfs],
-        tmp = config['tmpdir'],
-        N = lambda w: "gather.%s" % (w.sid),
-        ppn = config['gatk']['gather_vcfs']['ppn'],
-        walltime = config['gatk']['gather_vcfs']['walltime'],
-        mem = config['gatk']['gather_vcfs']['mem']
+        input_str = lambda w, input: ["-I %s" % x for x in input.vcfs],
+        extra = gatk_extra('picard'),
+        N = lambda w: "%s.%s" % (config['gatk']['gather_vcfs']['id'], w.gt),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['gather_vcfs']['id'], w.gt),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['gather_vcfs']['id'], w.gt),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['mem']
     threads: config['gatk']['gather_vcfs']['ppn']
     shell:
         """
-        {params.cmd} \
-        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
-        GatherVcfs \
+        {params.cmd} --java-options "-Xmx{params.mem}G" GatherVcfs \
+        {params.extra} \
         {params.input_str} -O {output.vcf} >{log} 2>&1
         tabix -p vcf {output.vcf}
         """
 
 rule gatk_combine_gvcfs:
     input:
-        vcfs = expand(["%s/{sid}.g.vcf.gz" % config['callvnt']['odir1']], 
-                sid = config['SampleID']),
-        tbis = expand(["%s/{sid}.g.vcf.gz.tbi" % config['callvnt']['odir1']], 
-                sid = config['SampleID'])
+        vcfs = expand("%s/{gt}.g.vcf.gz" % config['callvnt']['odir1'], 
+                gt = config['Genotypes']),
+        tbis = expand("%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['odir1'], 
+                gt = config['Genotypes'])
     output:
         vcf = protected("%s/all.g.vcf.gz" % config['callvnt']['odir2']),
         tbi = protected("%s/all.g.vcf.gz.tbi" % config['callvnt']['odir2']),
     params:
         cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
-        gvcfs = lambda wildcards, input: ["-V %s" % x for x in input.vcfs],
-        extra = '-pairHMM LOGLESS_CACHING --use-jdk-deflater --use-jdk-inflater',
-        tmp = config['tmpdir'],
-        N = lambda w: 'combine.gvcf',
-        ppn = config['gatk']['combine_gvcfs']['ppn'],
-        walltime = config['gatk']['combine_gvcfs']['walltime'],
-        mem = config['gatk']['combine_gvcfs']['mem']
+        gvcfs = lambda w, input: ["-V %s" % x for x in input.vcfs],
+        extra = gatk_extra,
+        N = lambda w: "%s" % (config['gatk']['combine_gvcfs']['id']),
+        e = lambda w: "%s/%s.e" % (config['dirp'], config['gatk']['combine_gvcfs']['id']),
+        o = lambda w: "%s/%s.o" % (config['dirp'], config['gatk']['combine_gvcfs']['id']),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['mem']
     threads: config['gatk']['combine_gvcfs']['ppn']
     shell:
         """
-        {params.cmd} \
-        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
-        CombineGVCFs \
+        {params.cmd} --java-options "-Xmx{params.mem}G" CombineGVCFs \
         -R {params.ref} \
         {params.extra} \
         {params.gvcfs} -O {output.vcf}
@@ -124,20 +135,22 @@ rule gatk_genotype_gvcfs:
     params:
         cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
-        region = lambda wildcards: config[config['reference']]['regions'][wildcards.rid],
-        extra = '-pairHMM LOGLESS_CACHING --use-jdk-deflater --use-jdk-inflater',
-        tmp = config['tmpdir'],
-        N = lambda w: 'gg.%s' % w.rid,
-        ppn = config['gatk']['genotype_gvcfs']['ppn'],
-        walltime = config['gatk']['genotype_gvcfs']['walltime'],
-        mem = config['gatk']['genotype_gvcfs']['mem']
+        region = lambda w: config[config['reference']]['regions'][w.rid],
+        extra = gatk_extra,
+        N = lambda w: "%s.%s" % (config['gatk']['genotype_gvcfs']['id'], w.rid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['genotype_gvcfs']['id'], w.rid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['genotype_gvcfs']['id'], w.rid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'genotype_gvcfs')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'genotype_gvcfs')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'genotype_gvcfs')['mem']
     threads: config['gatk']['genotype_gvcfs']['ppn']
     shell:
         """
-        {params.cmd} \
-        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
-        GenotypeGVCFs \
-        -nt {threads} \
+        {params.cmd} --java-options "-Xmx{params.mem}G" GenotypeGVCFs \
         {params.extra} \
         -R {params.ref} -L {params.region} \
         -V {input.vcf} -O {output.vcf}
@@ -145,27 +158,32 @@ rule gatk_genotype_gvcfs:
 
 rule gatk_gather_vcfs2:
     input:
-        vcfs = expand(["%s/{rid}.vcf.gz" % config['callvnt']['odir2']], 
+        vcfs = expand("%s/{rid}.vcf.gz" % config['callvnt']['odir2'], 
                 rid = list(config[config['reference']]['regions'].keys())),
-        tbis = expand(["%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2']], 
+        tbis = expand("%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2'], 
                 rid = list(config[config['reference']]['regions'].keys()))
     output:
         vcf = protected("%s" % config['callvnt']['outfile']),
         tbi = protected("%s.tbi" % config['callvnt']['outfile'])
     params:
         cmd = config['gatk']['cmd'],
-        input_str = lambda wildcards, input: ["-I %s" % x for x in input.vcfs],
-        tmp = config['tmpdir'],
-        N = lambda w: 'gather.vcf',
-        ppn = config['gatk']['gather_vcfs']['ppn'],
-        walltime = config['gatk']['gather_vcfs']['walltime'],
-        mem = config['gatk']['gather_vcfs']['mem']
+        input_str = lambda w, input: ["-I %s" % x for x in input.vcfs],
+        extra = gatk_extra('picard'),
+        N = lambda w: "%s" % (config['gatk']['gather_vcfs']['id']),
+        e = lambda w: "%s/%s.e" % (config['dirp'], config['gatk']['gather_vcfs']['id']),
+        o = lambda w: "%s/%s.o" % (config['dirp'], config['gatk']['gather_vcfs']['id']),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['mem']
     threads: config["gatk"]['gather_vcfs']["ppn"]
     shell:
         """
-        {params.cmd} \
-        --java_options "-Xmx{params.mem} -Djava.io.tmpdir={params.tmp}" \
-        GatherVcfs \
+        {params.cmd} --java-options "-Xmx{params.mem}G" GatherVcfs \
+        {params.extra} \
         {params.input_str} -O {output.vcf}
         bcftools index -t {output.vcf}
         """

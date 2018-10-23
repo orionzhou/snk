@@ -2,7 +2,7 @@
 tmpdir: /scratch.global/zhoux379/temp
 email: zhoux379@umn.edu
 java:
-    mem: 8G
+    mem: 8
     tmpdir: /scratch.global/zhoux379/temp
 dirl: logs
 dirp: pbs
@@ -24,45 +24,68 @@ PHB47:
 
 ### software
 fq_compress:
+    id: fqGz
     idir: 09_fastq_raw
     odir: 10_fastq
     ppn: 6
-    walltime: 5:00:00
-    mem: 30GB
+    runtime: 5
+    mem: 30
+    aruntime: 10
+    amem: 5
 
 fastq_dump:
+    id: fqDump
     odir: 10_fastq_slow
+    jdir: fq_dump
+    ppn: 1
+    runtime: 20
+    mem: 20
+    aruntime: 10
+    amem: 5
 fasterq_dump:
+    id: fqDump
     odir: 10_fastq
     ppn: 4
-    walltime: 10:00:00
-    mem: 11GB
+    runtime: 10
+    mem: 11
+    aruntime: 10
+    amem: 5
 
 deinterleave:
+    id: fqDiv
     idir: 09_fq_interleaved
     odir: 10_fastq
     extra: ''
     ppn: 10
-    walltime: 10:00:00
-    mem: 20GB
+    runtime: 10
+    mem: 20
+    aruntime: 10
+    amem: 5
 
 fastqc:
+    id: fqc
     idir: 14_trim
     extra: ''
     ppn: 1
-    walltime: 5:00:00
-    mem: 10GB
+    runtime: 5
+    mem: 10
+    aruntime: 10
+    amem: 5
 
 trimmomatic:
+    id: trimm
     idir: 10_fastq
     odir: 14_trim
     adapter_pe: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-PE.fa 
     adapter_se: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-SE.fa 
     ppn: 8
-    walltime: 12:00:00
-    mem: 10GB
+    runtime: 12
+    mem: 10
+    aruntime: 10
+    amem: 5
 
 bbduk:
+    id: bbduk
     idir: 10_fastq
     odir: 14_trim
     cmd: bbduk.sh
@@ -71,20 +94,33 @@ bbduk:
         - /home/springer/zhoux379/source/bbmap/resources/truseq.fa.gz
     extra: k=13 ktrim=r useshortkmers=t mink=5 qtrim=r trimq=10 minlength=20
     ppn: 1
-    walltime: 12:00:00
-    mem: 10GB
+    runtime: 12
+    mem: 10
+    aruntime: 10
+    amem: 5
 
 blat:
+    id: blat
     xdir: blat
     xpre: db
     x.2bit: db.2bit
     x.ooc: db.2bit.tile11.ooc
-    mem: 10GB
+    runtime: 12
+    mem: 10
+    aruntime: 10
+    amem: 5
 
 bowtie2:
+    id: bowti
     xdir: bowtie2
+    ppn: 4
+    runtime: 20
+    mem: 20
+    aruntime: 10
+    amem: 5
 
 bwa:
+    id: bwa
     xdir: bwa
     xpre: db
     xout: db.bwt
@@ -93,10 +129,13 @@ bwa:
     odir2: 22_bam
     extra: ''
     ppn: 12
-    walltime: 30:00:00
-    mem: 40GB
+    runtime: 20
+    mem: 30
+    aruntime: 20
+    amem: 10
 
 star:
+    id: star
     xdir: star
     xpre: '' 
     xout: SA
@@ -115,10 +154,13 @@ star:
         --alignMatesGapMax 1000000 
         --outSAMunmapped Within KeepPairs"
     ppn: 8
-    walltime: 10:00:00
-    mem: 35GB
+    runtime: 15
+    mem: 20
+    aruntime: 15
+    amem: 10
 
 hisat2:
+    id: hisat
     xdir: hisat2
     xpre: db
     xout: db.1.ht2
@@ -127,116 +169,185 @@ hisat2:
     odir2: 22_bam
     extra: --new-summary
     ppn: 8
-    walltime: 10:00:00
-    mem: 20GB
+    runtime: 15
+    mem: 20
+    aruntime: 15
+    amem: 10
 
 sambamba:
     ppn: 8
-    walltime: 8:00:00
-    mem: 12GB
+    runtime: 8
+    mem: 12
+    aruntime: 10
+    amem: 12
     sort:
+        id: sbbS
         extra: -m 11GB
     merge:
+        id: sbbM
         extra: ''
     flagstat:
+        id: sbbF
         extra: ''
-        walltime: 4:00:00
+        runtime: 4
 
 featurecounts:
+    id: featuecnts
     idir: 22_bam
     odir: 31_featurecounts
     extra: --primary -Q 20 -t exon -g gene_id --byReadGroup
     ppn: 4
-    walltime: 5:00:00
-    mem: 15GB
+    runtime: 5
+    mem: 15
+    aruntime: 10
+    amem: 10
+
+cleanbam:
+    id: cleanBam
+    idir: 22_bam
+    odir1: 23_mark_dup
+    odir2: 24_base_recal
 
 callvnt:
-    idir: 22_bam
+    id: callvnt
+    idir: 24_base_recal
     odir1: 25_gvcf
     odir2: 26_vcf_by_region
     outfile: 26.vcf.gz
 
 bcftools:
-    ppn: 1
     call:
+        id: bcfCa
         ppn: 1
-        walltime: 60:00:00
-        mem: 50GB
+        runtime: 60
+        mem: 50
     merge:
+        id: bcfM
         ppn: 2
-        walltime: 23:00:00
-        mem: 20GB
+        runtime: 23
+        mem: 20
     concat:
+        id: bcfCo
         ppn: 1
-        walltime: 10:00:00
-        mem: 15GB
+        runtime: 10
+        mem: 15
     gtcheck:
+        id: bcfGt
         odir: 27_gtcheck
         vcf: /home/springer/zhoux379/projects/biomap/data/variants/62biomAP.snp.vcf.gz
         extra: -G 1
         ppn: 1
-        walltime: 1:00:00
-        mem: 5GB
+        runtime: 1
+        mem: 5
 
 gatk:
     xdir: gatk
     xref: db.fasta
     xref.fai: db.fasta.fai
     xref.dict: db.dict
+    known_sites: known_sites.vcf.gz
     cmd: gatk
-    java_mem: 20G
+    mark_duplicates:
+        id: markD
+        picard: True
+        ppn: 1
+        runtime: 20
+        mem: 15
+        aruntime: 20
+        amem: 5
+    base_recalibrator:
+        id: baseR
+        ppn: 1
+        runtime: 20
+        mem: 15
+        aruntime: 10
+        amem: 5
+    apply_bqsr:
+        id: applB
+        ppn: 1
+        runtime: 20
+        mem: 20
+        aruntime: 20
+        amem: 5
     haplotype_caller:
-        java_mem: 14G
+        id: haplC
         ppn: 1
-        walltime: 40:00:00
-        mem: 15GB
+        runtime: 30
+        mem: 15
+        aruntime: 20
+        amem: 5
     gather_vcfs:
+        id: gathV
+        picard: True
         ppn: 1
-        walltime: 5:00:00
-        mem: 10GB
+        runtime: 5
+        mem: 10
+        aruntime: 5
+        amem: 5
     combine_gvcfs:
+        id: combG
         ppn: 1
-        walltime: 20:00:00
-        mem: 30GB
+        runtime: 20
+        mem: 30
+        aruntime: 20
+        amem: 5
     genotype_gvcfs:
-        ppn: 4
-        walltime: 30:00:00
-        mem: 40GB
-    variant_filtration:
+        id: genoG
         ppn: 1
-        walltime: 5:00:00
-        mem: 20GB
+        runtime: 30
+        mem: 30
+        aruntime: 20
+        amem: 5
+    variant_filtration:
+        id: variF
+        ppn: 1
+        runtime: 5
+        mem: 20
+        aruntime: 5
+        amem: 5
 
 ase:
+    id: ase
     idir: 22_bam
     odir: 33_ase
     gene_bed: /home/springer/zhoux379/data/genome/B73/50_annotation/10.ase.bed
     vdir: /home/springer/zhoux379/projects/biomap/data/variants/ase29
     vdir2: /home/springer/zhoux379/projects/biomap/data/variants/ase35
     ppn: 1
-    walltime: 20:00:00
-    mem: 20GB
+    runtime: 20
+    mem: 20
+    aruntime: 20
+    amem: 10
 
 bam_stat:
+    id: bamst 
     ppn: 1
-    walltime: 8:00:00
-    mem: 4GB
+    runtime: 8
+    mem: 4
+    aruntime: 8
+    amem: 4
 
 merge_featurecounts:
+    id: merge_feat
     idir: 31_featurecounts
     out: featurecounts.tsv
 
 merge_bamstats:
-    idir: 22_bam
+    id: merge_bamst
+    #idir: 22_bam
     out: bamstats.tsv
 
 merge_ase:
+    id: merge_ase
     idir: 33_ase
     out: ase.tsv
 
 multiqc:
+    id: multiqc
     out: multiqc.html
     ppn: 1
-    walltime: 10:00:00
-    mem: 20GB
+    runtime: 10
+    mem: 15
+    aruntime: 10
+    amem: 10
 

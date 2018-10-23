@@ -1,27 +1,39 @@
-def bwa_extra(wildcards):
+def bwa_extra(w):
     extras = [config["bwa"]["extra"]]
-    extras.append("-R '@RG\\tID:%s\\tSM:%s'" % (wildcards.sid, wildcards.sid))
+    sm = w.sid
+    if 'Genotype' in config['t'][w.sid]:
+        sm = config['t'][w.sid]['Genotype']
+    pl = 'ILLUMINA'
+    if config['readtype'] == 'solid':
+        pl = 'SOLID'
+    extras.append("-R '@RG\\tID:%s\\tSM:%s\\tPL:%s'" % (w.sid, sm, pl))
     return " ".join(extras)
 
 rule bwa_se:
     input: 
         "%s/{sid}.fq.gz" % config['bwa']['idir']
     log:
-        "%s/bwa/{sid}.log" % config['dirl']
+        "%s/%s/{sid}.log" % (config['dirl'], config['bwa']['id'])
     output:
         temp("%s/{sid}.sam" % config['bwa']['odir1'])
     params:
         index = config[config['reference']]["bwa"],
         extra = bwa_extra,
-        N = lambda w: "bwa.%s" % (w.sid),
-        ppn = config['bwa']['ppn'],
-        walltime = config['bwa']['walltime'],
-        mem = config['bwa']['mem']
+        N = lambda w: "%s.%s" % (config['bwa']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bwa']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bwa']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt: get_resource(config, attempt, 'bwa')['ppn'],
+        runtime = lambda w, attempt: get_resource(config, attempt, 'bwa')['runtime'],
+        mem = lambda w, attempt: get_resource(config, attempt, 'bwa')['mem']
     threads: config['bwa']['ppn']
     shell:
         """
         bwa mem -t {threads} {params.index} {params.extra} {input} \
-                >{output} 2>{log}
+                >{output} 2>>{log}
         """
 
 rule bwa_pe:
@@ -31,7 +43,7 @@ rule bwa_pe:
         fq1u = "%s/{sid}_1.unpaired.fq.gz" % config['bwa']['idir'],
         fq2u = "%s/{sid}_2.unpaired.fq.gz" % config['bwa']['idir']
     log:
-        "%s/bwa/{sid}.log" % config['dirl']
+        "%s/%s/{sid}.log" % (config['dirl'], config['bwa']['id'])
     output:
         temp("%s/{sid}_p.sam" % config['bwa']['odir1']),
         temp("%s/{sid}_u1.sam" % config['bwa']['odir1']),
@@ -39,15 +51,21 @@ rule bwa_pe:
     params:
         index = config[config['reference']]["bwa"],
         extra = bwa_extra,
-        N = lambda w: "bwa.%s" % (w.sid),
-        ppn = config['bwa']['ppn'],
-        walltime = config['bwa']['walltime'],
-        mem = config['bwa']['mem']
+        N = lambda w: "%s.%s" % (config['bwa']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bwa']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bwa']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt: get_resource(config, attempt, 'bwa')['ppn'],
+        runtime = lambda w, attempt: get_resource(config, attempt, 'bwa')['runtime'],
+        mem = lambda w, attempt: get_resource(config, attempt, 'bwa')['mem']
     threads: config['bwa']['ppn']
     shell:
         """
         bwa mem -t {threads} {params.index} {params.extra} {input.fq1} {input.fq2} \
-        >{output[0]} 2>{log}
+        >{output[0]} 2>>{log}
         bwa mem -t {threads} {params.index} {params.extra} {input.fq1u} \
         >{output[1]} 2>>{log}
         bwa mem -t {threads} {params.index} {params.extra} {input.fq2u} \
@@ -81,10 +99,16 @@ rule sambamba_sort:
         sorted_u1 = "%s/{sid}_u1.sorted.bam" % config['bwa']['odir1'], 
         sorted_u2 = "%s/{sid}_u2.sorted.bam" % config['bwa']['odir1'], 
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
-        N = lambda w: "sbb.%s" % (w.sid),
-        ppn = config['sambamba']['ppn'],
-        walltime = config['sambamba']['walltime'],
-        mem = config['sambamba']['mem']
+        N = lambda w: "%s.%s" % (config['sambamba']['sort']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['sambamba']['sort']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['sambamba']['sort']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt: get_resource(config, attempt, 'sambamba', 'sort')['ppn'],
+        runtime = lambda w, attempt: get_resource(config, attempt, 'sambamba', 'sort')['runtime'],
+        mem = lambda w, attempt: get_resource(config, attempt, 'sambamba', 'sort')['mem']
     threads: config['sambamba']['ppn']
     run:
         if config['t'][wildcards.sid]['paired']:
@@ -99,32 +123,3 @@ rule sambamba_sort:
         else:
             shell("sambamba view -S -f bam -t {threads} {input.sam} -o {params.bam}")
             shell("sambamba sort {params.extra} -t {threads} -o {output[0]} {params.bam}")
-
-rule bam_stat:
-    input:
-        "%s/{sid}.bam" % config['bwa']['odir2']
-    output:
-        protected("%s/{sid}.tsv" % config['bwa']['odir2'])
-    params:
-        N = lambda w: "bamst.%s" % (w.sid),
-        ppn = config['bam_stat']['ppn'],
-        walltime = config['bam_stat']['walltime'],
-        mem = config['bam_stat']['mem']
-    threads: config['bam_stat']['ppn']
-    shell:
-        "bam stat {input} > {output}"
-
-rule sambamba_flagstat:
-    input:
-        "%s/{sid}.bam" % config['bwa']['odir2']
-    output:
-        protected("%s/{sid}.txt" % config['bwa']['odir2'])
-    params:
-        extra = config['sambamba']['flagstat']['extra'],
-        N = lambda w: "flagst.%s" % (w.sid),
-        ppn = config['sambamba']['ppn'],
-        walltime = config['sambamba']['flagstat']['walltime'],
-        mem = config['sambamba']['mem']
-    threads: config['sambamba']['ppn']
-    shell:
-        "sambamba flagstat {params.extra} -t {threads} {input} > {output}"

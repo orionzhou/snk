@@ -1,9 +1,10 @@
 import os
 import os.path as op
-from snk.utils import check_config
+from snk.utils import check_config_ngs
+from snk.utils import get_resource
 
 configfile: 'config.yaml'
-config = check_config(config)
+config = check_config_ngs(config)
 workdir: config['dirw']
 
 wildcard_constraints:
@@ -38,10 +39,6 @@ elif config['mapper'] == 'hisat2':
 
 include: "rules/featurecounts.smk"
 include: "rules/multiqc.smk"
-
-for rule in workflow.rules:
-    if rule.name != 'all':
-        snakemake.utils.makedirs(op.join(config['dirp'], rule.name))
 
 onsuccess:
     shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))
