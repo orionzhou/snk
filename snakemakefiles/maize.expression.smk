@@ -11,12 +11,13 @@ wildcard_constraints:
     sid = "[a-zA-Z0-9]+",
     region = ".+(:[0-9]+-[0-9]+)?"
 
-localrules: all, merge_bamstats
+localrules: all, merge_bamstats, merge_trimstats
 
 rule all:
     input:
         #expand("%s/{sid}.bam" % config['star']['odir2'], sid = config['SampleID']),
         "%s/%s" % (config['dird'], config['merge_featurecounts']['out']),
+        "%s/%s" % (config['dird'], config['merge_trimstats']['out']),
         "%s/%s" % (config['dird'], config['merge_bamstats']['out']),
         "%s/%s" % (config['dird'], config['multiqc']['out']),
 
@@ -27,11 +28,7 @@ elif config['source'] == 'local_interleaved':
 elif config['source'] == 'local':
     include: "rules/fq_compress.smk"
 
-if config['readtype'] in ['illumina', 'solid']:
-    include: "rules/trimmomatic.smk"
-elif config['readtype'] == '3rnaseq':
-    include: "rules/bbduk.smk"
-
+include: "rules/fastp.smk"
 if config['mapper'] == 'star':
     include: "rules/star.smk"
 elif config['mapper'] == 'hisat2':

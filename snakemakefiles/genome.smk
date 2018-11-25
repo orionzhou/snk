@@ -10,7 +10,6 @@ def check_config(c):
     config_default = yaml.load(fy)
     update_config(config_default, c)
     c = config_default
-    c['genomes'] = c['genomes'].split(" ")
     
     for subdir in [c['dirw'], c['tmpdir']]:
         if not op.isdir(subdir):
@@ -45,26 +44,43 @@ def all_inputs(wildcards):
                 inputs.append("%s/15_intervals/01.chrom.bed" % odir)
                 inputs.append("%s/15_intervals/01.chrom.sizes" % odir)
                 inputs.append("%s/15_intervals/11.gap.bed" % odir)
+            if db in ['bowtie2','bwa','bismark','star','hisat2','blastn','blastp']:
+                inputs.append("%s/%s" % (odir, config[db]['xout']))
             if db == 'blat':
-                inputs.append("%s/db.2bit" % odir)
-            if db == 'bowtie2':
-                inputs.append("%sdb.rev.1.bt2" % odir)
-            if db == 'bwa':
-                inputs.append("%s/db.bwt" % odir)
-            if db == 'star':
-                inputs.append("%s/SA" % odir)
+                inputs.append("%s/%s" % (odir, config[db]['x.2bit']))
+                inputs.append("%s/%s" % (odir, config[db]['x.ooc']))
             if db == 'gatk':
-                inputs.append("%s/db.fasta" % odir)
-                inputs.append("%s/db.dict" % odir)
-            if db == 'hisat2':
-                inputs.append("%s/db.1.ht2" % odir)
+                inputs.append("%s/%s" % (odir, config[db]['xref']))
+                inputs.append("%s/%s" % (odir, config[db]['xref.dict']))
+            if db == 'snpeff':
+                inputs.append("%s/%s/%s" % (odir, genome, config[db]['xout']))
+        if any(x in dbs for x in 'star hisat2 snpeff blastn blastp'.split()):
+            inputs.append("%s/%s/15.gff.db" % (genome, config['adir']))
+            #inputs.append("%s/%s/25.tandup.tsv" % (genome, config['adir']))
+            inputs.append("%s/%s/22.tandup.pro.tsv" % (genome, config['adir']))
+            inputs.append("%s/55.rda" % genome)
     return inputs
-localrules: all, fasta, blat_index, gatk_index
+localrules: all, blast_index, anno1_clean, prepR
 rule all:
     input:
         all_inputs
 
-include: "rules/genome.smk"
+include: "rules/genome.seq.smk"
+include: "rules/genome.gff.smk"
+rule prepR:
+    input:
+        chrom_bed = "{genome}/15_intervals/01.chrom.bed",
+        chrom_size = "{genome}/15_intervals/01.chrom.sizes",
+        gap_bed = "{genome}/15_intervals/11.gap.bed",
+        gene_tsv = "{genome}/%s/15.tsv" % config['adir'],
+    output:
+        "{genome}/55.rda"
+    params:
+        wdir = lambda w: "%s" % w.genome,
+    shell:
+        """
+        genome.prep.R {wildcards.genome}
+        """
 
 onsuccess:
     shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))

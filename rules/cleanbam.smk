@@ -1,12 +1,16 @@
-def gatk_extra(opt = ''):
+def gatk_extra(picard = False, jdk = False, hc = False):
     extra = ''
-    if opt == 'hc':
-        extra += ' -pairHMM LOGLESS_CACHING'
-        extra += ' --use-jdk-deflater --use-jdk-inflater'
-    if opt == 'picard':
+    if picard:
         extra += ' --TMP_DIR %s' % config['tmpdir']
     else:
         extra += ' --tmp-dir %s' % config['tmpdir']
+    if jdk:
+        if picard:
+            extra += ' --USE_JDK_DEFLATER --USE_JDK_INFLATER'
+        else:
+            extra += ' --use-jdk-deflater --use-jdk-inflater'
+    if hc:
+        extra += ' -pairHMM LOGLESS_CACHING'
     return extra
 
 rule gatk_mark_duplicates:
@@ -19,14 +23,16 @@ rule gatk_mark_duplicates:
         "%s/%s/{sid}.log" % (config['dirl'], config['gatk']['mark_duplicates']['id'])
     params:
         cmd = config['gatk']['cmd'],
-        extra = gatk_extra('picard'),
+        extra = gatk_extra(picard = True, jdk = True),
         N = lambda w: "%s.%s" % (config['gatk']['mark_duplicates']['id'], w.sid),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['mark_duplicates']['id'], w.sid),
         o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['mark_duplicates']['id'], w.sid),
+        q = lambda w, resources: resources.q,
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
+        q = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['q'],
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['mem']
@@ -37,7 +43,7 @@ rule gatk_mark_duplicates:
         {params.extra} \
         -I {input} -O {output[0]} \
         -M {output[1]} \
-        >{log} 2>&1
+        >>{log} 2>&1
         """
 
 rule gatk_base_recalibrator:
@@ -51,7 +57,7 @@ rule gatk_base_recalibrator:
         cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
         vcf = config[config['reference']]['gatk']['known_sites'],
-        extra = gatk_extra(''),
+        extra = gatk_extra(picard = False, jdk = True),
         N = lambda w: "%s.%s" % (config['gatk']['base_recalibrator']['id'], w.sid),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['base_recalibrator']['id'], w.sid),
         o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['base_recalibrator']['id'], w.sid),
@@ -71,7 +77,7 @@ rule gatk_base_recalibrator:
         -I {input} \
         --known-sites {params.vcf} \
         -O {output[0]} \
-        >{log} 2>&1
+        >>{log} 2>&1
         """
 
 rule gatk_apply_bqsr:
@@ -85,7 +91,7 @@ rule gatk_apply_bqsr:
     params:
         cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
-        extra = gatk_extra(''),
+        extra = gatk_extra(picard = False, jdk = True),
         N = lambda w: "%s.%s" % (config['gatk']['apply_bqsr']['id'], w.sid),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['apply_bqsr']['id'], w.sid),
         o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['apply_bqsr']['id'], w.sid),
@@ -105,7 +111,7 @@ rule gatk_apply_bqsr:
         -I {input[0]} \
         --bqsr-recal-file {input[1]} \
         -O {output[0]} \
-        >{log} 2>&1
+        >>{log} 2>&1
         """
 
 rule bam_stat:
@@ -126,7 +132,7 @@ rule bam_stat:
         mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
     threads: config['bam_stat']['ppn']
     shell:
-        "bam stat {input} > {output}"
+        "bam.py stat {input} > {output}"
 
 rule sambamba_flagstat:
     input:

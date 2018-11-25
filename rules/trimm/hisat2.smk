@@ -1,30 +1,32 @@
-def hisat2_inputs(w):
-    sid = w.sid
-    idir = config['hisat2']['idir']
+def hisat2_inputs(wildcards):
+    sid = wildcards.sid
     inputs = dict()
-    if config['t'][sid]['paired']:
-        inputs['fq1'] = "%s/%s_1.fq.gz" % (idir, sid)
-        inputs['fq2'] = "%s/%s_2.fq.gz" % (idir, sid)
+    if config['t'][wildcards.sid]['paired']:
+        inputs['fq1'] = "%s/%s_1.fq.gz" % (config['hisat2']['idir'], sid)
+        inputs['fq2'] = "%s/%s_2.fq.gz" % (config['hisat2']['idir'], sid)
+        inputs['fq1u'] = "%s/%s_1.unpaired.fq.gz" % (config['hisat2']['idir'], sid)
+        inputs['fq2u'] = "%s/%s_2.unpaired.fq.gz" % (config['hisat2']['idir'], sid)
     else:
-        inputs['fq'] = "%s/%s.fq.gz" % (idir, sid)
+        inputs['fq'] = "%s/%s.fq.gz" % (config['hisat2']['idir'], sid)
     return inputs
 
-def hisat2_input_str(w):
-    sid = w.sid
-    idir = config['hisat2']['idir']
+def hisat2_input_str(wildcards):
+    sid = wildcards.sid
     input_str = ''
-    if config['t'][sid]['paired']:
-        fq1 = "%s/%s_1.fq.gz" % (idir, sid)
-        fq2 = "%s/%s_2.fq.gz" % (idir, sid)
-        input_str = "-1 %s -2 %s" % (fq1, fq2)
+    if config['t'][wildcards.sid]['paired']:
+        fq1 = "%s/%s_1.fq.gz" % (config['hisat2']['idir'], sid)
+        fq2 = "%s/%s_2.fq.gz" % (config['hisat2']['idir'], sid)
+        fq1u = "%s/%s_1.unpaired.fq.gz" % (config['hisat2']['idir'], sid)
+        fq2u = "%s/%s_2.unpaired.fq.gz" % (config['hisat2']['idir'], sid)
+        input_str = "-1 %s -2 %s -U %s,%s" % (fq1, fq2, fq1u, fq2u)
     else:
-        fq = "%s/%s.fq.gz" % (idir, sid)
+        fq = "%s/%s.fq.gz" % (config['hisat2']['idir'], sid)
         input_str = "-U %s" % fq
     return input_str
 
-def hisat2_extra(w):
+def hisat2_extra(wildcards):
     extras = [config["hisat2"]["extra"]]
-    extras.append("--rg-id %s --rg SM:%s" % (w.sid, w.sid))
+    extras.append("--rg-id %s --rg SM:%s" % (wildcards.sid, wildcards.sid))
     return " ".join(extras)
 
 rule hisat2:
@@ -59,7 +61,7 @@ rule hisat2:
 rule sambamba_sort:
     input:
         "%s/{sid}.bam" % config['hisat2']['odir1']
-    output:
+    output: 
         protected("%s/{sid}.bam" % config['hisat2']['odir2'])
     params:
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
@@ -75,7 +77,9 @@ rule sambamba_sort:
         mem = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['mem']
     threads: config['sambamba']['ppn']
     shell:
-        "sambamba sort {params.extra} -t {threads} -o {output} {input}"
+        """
+        sambamba sort {params.extra} -t {threads} -o {output} {input}
+        """
 
 rule bam_stat:
     input:
@@ -95,5 +99,6 @@ rule bam_stat:
         mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
     threads: config['bam_stat']['ppn']
     shell:
-        "bam.py stat {input} > {output}"
+        "bam stat {input} > {output}"
+
 

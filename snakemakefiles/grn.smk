@@ -20,14 +20,12 @@ def check_config(c):
         if not op.isdir(subdir):
             makedirs(subdir)
     
-    t = Table.read(c['genie3']['cfg'], format = 'ascii.tab')
+    t = Table.read(c['grn']['cfg'], format = 'ascii.tab')
     c['nid'] = t['nid']
     c['t'] = dict()
     cols = t.colnames
     for i in range(len(t)):
         nid = t['nid'][i]
-        if nid not in ['n16b','n16c','n99b_1','nc01','nc02','nc03']:
-            continue
         c['t'][nid] = {x: t[x][i] for x in cols}
     
     return c
@@ -41,10 +39,12 @@ wildcard_constraints:
 
 rule all:
     input:
-        expand(["%s/{nid}.pkl" % config['genie3']['odir']], nid = config['nid']),
-        #expand(["%s/{nid}.pkl" % config['genie3']['odir']], nid = ['n13a','n13b']),
+        expand(["%s/{nid}.rda" % config['grn']['pkl2rda']['odir']], nid = config['nid']),
+        expand(["%s/{nid}_tf.rds" % config['grn']['eval']['odir']], nid = config['nid']),
+        expand(["%s/{nid}_br.rds" % config['grn']['eval']['odir']], nid = config['nid']),
+        expand(["%s/{nid}_bm.rds" % config['grn']['eval']['odir']], nid = config['nid']),
 
-include: "rules/genie3.smk"
+include: "rules/grn.smk"
 
 onsuccess:
     shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))

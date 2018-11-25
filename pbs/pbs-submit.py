@@ -45,6 +45,7 @@ if args.help :
 jobscript = sys.argv[-1]
 
 job_properties = read_job_properties(jobscript)
+qmap = {0:'small', 1:'ram256g', 2:'ram256g', 3:'ram256g'}
 
 atime=""
 acc_string=""
@@ -83,7 +84,7 @@ walltime=""
 jobe, jobo = '', ''
 
 cc = job_properties['cluster']
-if 'q' in cc: q = " -q " + cc['q']
+if 'q' in cc: q = " -q " + str(qmap[cc['q']])
 if 'm' in cc: mail = " -m " + cc['m']
 if 'M' in cc: mailuser = " -M " + cc['M']
 if 'N' in cc: jname = " -N " + cc['N']
@@ -127,7 +128,7 @@ if args.N: jname = " -N " + args.N
 if args.o: so = " -o " + args.o
 if args.p: priority = " -p " + args.p
 if args.P: proxy = " -P " + args.P
-if args.q: q = " -q " + args.q
+if args.q: q = " -q " + str(qmap[args.q])
 if args.t: ar = " -t " + args.ar
 if args.u: user = " -u " + args.u
 if args.v: ev = " -v " + args.v
@@ -140,15 +141,15 @@ if "threads" in job_properties:
 
 if "params" in job_properties:
     params = job_properties["params"]
-    if 'q' in params: q = " -q " + params['q']
-    if 'm' in params: mail = " -m " + params['m']
-    if 'M' in params: mailuser = " -M " + params['M']
-    if 'N' in params: jname = " -N " + params['N']
+    if 'q' in params: q = " -q " + str(qmap[params['q']])
+    if 'm' in params: mail = " -m " + str(params['m'])
+    if 'M' in params: mailuser = " -M " + str(params['M'])
+    if 'N' in params: jname = " -N " + str(params['N'])
     if 'o' in params: 
-        so = " -o " + params['o']
+        so = " -o " + str(params['o'])
         jobo = params['o']
     if 'e' in params:
-        se = " -e " + params['e']
+        se = " -e " + str(params['e'])
         jobe = params['e']
     if "nodes" in params: nodes="nodes=" + str(params["nodes"])
     if 'ppn' in params: ppn = "ppn=" + str(params["ppn"])
@@ -158,6 +159,7 @@ if "params" in job_properties:
 
 if "resources" in job_properties:
     resources = job_properties["resources"]
+    if 'q' in resources: q = " -q " + str(qmap[resources['q']])
     if "nodes" in resources: nodes="nodes=" + str(resources["nodes"])
     if 'ppn' in resources: ppn = "ppn=" + str(resources["ppn"])
     if ppn and not nodes : nodes="nodes=1"

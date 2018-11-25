@@ -52,6 +52,7 @@ wildcard_constraints:
     mode = "[a-zA-Z0-9]+",
     opt = "[a-zA-Z0-9\+]+",
 
+localrules: all, fm1_get_bed, fm2_get_seq, fm2_get_seq_se, fm2_get_seq_merged
 rule all:
     input:
         expand("%s/{sid}.filtered.tsv" % config['fm']['odir4'], sid = config['t'].keys()),
@@ -63,6 +64,7 @@ rule all:
         "%s/W22_B73.tsv" % config['lastz']['odir'],
         "%s/W22_PH207.tsv" % config['lastz']['odir'],
         "%s/W22_Mo17.tsv" % config['lastz']['odir'],
+        "%s/W22_PHB47.tsv" % config['lastz']['odir'],
 
 include: "rules/polyte_fm.smk"
 include: "rules/polyte_lastz.smk"

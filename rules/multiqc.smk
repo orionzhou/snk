@@ -1,23 +1,16 @@
-def multiqc_inputs(wildcards):
+def multiqc_inputs(w):
     inputs = []
     for sid in config['SampleID']:
         paired = config['t'][sid]['paired']
-        
-        trimmer = "bbduk" if config['readtype'] == '3rnaseq' else "trimmomatic"
-        trimmer_suf = 'pe' if paired else 'se'
-        inputs.append("%s/%s_%s/%s.log" % (config['dirl'], config[trimmer]['id'], trimmer_suf, sid))
-        
+#        trimmer = "bbduk" if config['readtype'] == '3rnaseq' else "trimmomatic"
+#        trimmer_suf = 'pe' if paired else 'se'
+#        inputs.append("%s/%s_%s/%s.log" % (config['dirl'], config[trimmer]['id'], trimmer_suf, sid))
         if config['mapper'] == 'hisat2':
             inputs.append("%s/%s.txt" % (config['hisat2']['odir1'], sid))
         elif config['mapper'] == 'star':
-            if paired:
-                inputs.append("%s/%s_p/Log.final.out" % (config['star']['odir1'], sid))
-                inputs.append("%s/%s_u/Log.final.out" % (config['star']['odir1'], sid))
-            else:
-                inputs.append("%s/%s/Log.final.out" % (config['star']['odir1'], sid))
+            inputs.append("%s/%s/Log.final.out" % (config['star']['odir1'], sid))
         #elif config['mapper'] == 'bwa':
         #    inputs.append("%s/%s.txt" % (config['bwa']['odir2'], sid))
-
         if config['mapper'] in ['star','hisat2']:
             inputs.append("%s/%s.txt.summary" % (config['featurecounts']['odir'], sid))
     return inputs
@@ -50,6 +43,20 @@ rule multiqc:
         "-n {params.outfile} "
         "{input} "
         ">{log} 2>&1"
+
+def merge_trimstats_inputs(w):
+    inputs = []
+    for sid in config['SampleID']:
+        pair_suf = 'pe' if config['t'][sid]['paired'] else 'se'
+        inputs.append("%s/%s.%s.json" % (config['fastp']['odir'], sid, pair_suf))
+    return inputs
+
+rule merge_trimstats:
+    input: merge_trimstats_inputs
+    output:
+        protected("%s/%s" % (config['dird'], config['merge_trimstats']['out']))
+    shell:
+        "jsonutil.py fastp {input} > {output}"
 
 rule merge_featurecounts:
     input:

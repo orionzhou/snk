@@ -1,12 +1,32 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
 dirw: /home/springer/zhoux379/projects/maize.grn/data
-genie3:
-    cfg: 10.dataset.tsv
-    idir: 11_input_fpkm
-    odir: 12_output_fpkm
-    #q: ram256g
+grn:
+  cfg: 10.dataset.tsv
+  genie3:
+    id: genie3
+    idir: 11_input
+    odir: 12_output
     ppn: 12
     runtime: 20
     mem: 30
     aruntime: 30
     amem: 5
+  pkl2rda:
+    id: pkl2rda
+    idir: 12_output
+    odir: 12_output
+    ppn: 1
+    runtime: 1
+    mem: 30
+    aruntime: 1
+    amem: 20
+  eval:
+    id: eval
+    idir: 12_output
+    odir: 13_eval
+    ppn: 1
+    runtime: 2
+    mem: 30
+    aruntime: 2
+    amem: 10
+

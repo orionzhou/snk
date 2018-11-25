@@ -19,7 +19,7 @@ rule featurecounts:
     params:
         gtf = config[config['reference']]['gtf'],
         extra = featurecounts_extra,
-        N = lambda w: "%s.%s" % (config['ase']['id'], w.sid),
+        N = lambda w: "%s.%s" % (config['featurecounts']['id'], w.sid),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['featurecounts']['id'], w.sid),
         o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['featurecounts']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,

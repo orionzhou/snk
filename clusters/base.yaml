@@ -1,5 +1,5 @@
 __default__:
-  q: small
+  q: 0
   nodes: 1
   ppn: 1
   runtime: 8
@@ -10,6 +10,6 @@ __default__:
   m: a
   r: n
   N: s.{rule}.{wildcards}
-  o: pbs/{rule}/{wildcards}.out 
+  o: pbs/{rule}/{wildcards}.out
   e: pbs/{rule}/{wildcards}.err
 

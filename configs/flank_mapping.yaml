@@ -3,22 +3,31 @@ dirw: /home/springer/zhoux379/projects/polyTE/data/flank_mapping
 cfg: 01.cfg.tsv
 species: maize
 fm:
-    idir: 05_gff
-    odir1: 11_loc
-    odir2: 12_seq
-    odir3: 14_bwa
-    odir4: 15_coord
-    bwa:
-        ppn: 8
-        runtime: 10
-        mem: 20
-        aruntime: 10
-        amem: 10
-lastz:
-    idir: 31_te_windows
-    odir: 32_lastz
-    ppn: 1
-    runtime: 60
+  idir: 05_gff
+  odir1: 11_loc
+  odir2: 12_seq
+  odir3: 14_bwa
+  odir4: 15_coord
+  bwa:
+    id: bwa
+    ppn: 8
+    runtime: 10
     mem: 20
-    aruntime: 20
+    aruntime: 10
     amem: 10
+  coord:
+    id: coord
+    ppn: 1
+    runtime: 10
+    mem: 20
+    aruntime: 10
+    amem: 10
+lastz:
+  id: lz
+  idir: 31_te_windows
+  odir: 32_lastz
+  ppn: 1
+  runtime: 60
+  mem: 20
+  aruntime: 20
+  amem: 10

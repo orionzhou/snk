@@ -30,10 +30,12 @@ def check_config(c):
     dir_rawlink = op.join(c['dirw'], c['dird'])
     make_symlink(dir_raw, dir_rawlink)
 
-    c['genomes'] = c['genomes'].split(" ")
-    for genome in c['genomes']:
-        check_genome(genome, ['blat'], c)
     c['comps'] = [x.split('-') for x in c['comps']]
+    for genome in set([i for subl in c['comps'] for i in subl]):
+        if c['genomes'][genome]['annotation']:
+            check_genome(genome, ['blat','gatk','snpeff'], c)
+        else:
+            check_genome(genome, ['blat','gatk'], c)
     return c
 
 configfile: 'config.yaml'
@@ -51,8 +53,13 @@ localrules: all, wgc1_prepare, wgc1_break_qry, wgc1_break_tgt
 def all_inputs(wildcards):
     inputs = []
     for qry, tgt in config['comps']:
-        fo = "%s/%s_%s/23.chain" % (config['wgc']['dir3'], qry, tgt)
-        inputs.append(fo)
+        dir4 = "%s/%s_%s" % (config['wgc']['dir4'], qry, tgt)
+        diro = "%s/%s_%s" % (config['dird'], qry, tgt)
+        inputs.append("%s/10.vnt.bed" % diro)
+        inputs.append("%s/15.%s.tsv" % (diro, tgt))
+        if config[qry]['annotation']:
+            inputs.append("%s/15.%s.tsv" % (diro, qry))
+#        inputs.append("%s/10.tsv" % diro)
     return inputs
 rule all:
     input:

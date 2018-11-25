@@ -24,14 +24,14 @@ rule ase:
     shell:
         """
         mkdir -p {params.pre}
-        bam2bed.py {input} {params.pre}.1.bed
+        ase.py bam2bed {input} {params.pre}.1.bed
         sort -T {params.pre} -k1,1 -k2,2n {params.pre}.1.bed -o {params.pre}.2.sorted.bed
         intersectBed -wa -wb -a {params.pre}.2.sorted.bed -b {params.vbed} > {params.pre}.3.bed
         sort -T {params.pre} -k4,4 -k1,1 -k2,2n {params.pre}.3.bed > {params.pre}.4.sorted.bed
-        bed.ase.py {params.pre}.4.sorted.bed {params.pre}.5.tsv {params.pre}.6.bed
+        ase.py bed_prep {params.pre}.4.sorted.bed {params.pre}.5.tsv {params.pre}.6.bed
         sort -T {params.pre} -k1,1 -k2,2n {params.pre}.6.bed -o {params.pre}.7.sorted.bed
         intersectBed -wa -wb -a {params.gbed} -b {params.pre}.7.sorted.bed > {params.pre}.8.bed
-        bed.ase.sum.py {params.pre}.5.tsv {params.pre}.8.bed {params.pre}.tsv
+        ase.py bed_summarise {params.pre}.5.tsv {params.pre}.8.bed {params.pre}.tsv
         rm {params.pre}.[1-8].*
         rm -rf {params.pre}
         """

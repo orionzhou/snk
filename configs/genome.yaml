@@ -1,40 +1,153 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
 dirw: /home/springer/zhoux379/data/genome
-genomes: B73 Mo17 W22 PH207 PHB47
+genomes:
+  - B73
+  - Mo17
+  - W22
+  - PH207
+  - PHB47
+  - B104
+  - CML247
+  - DK105
+  - EP1
+  - F7
+  - PE0075
+  - Sbicolor
+  - Osativa
+ddir: 21_dbs
+adir: 50_annotation
 B73:
-    prefix: B
-    gap: 10000
-    dbs: fasta blat bwa star gatk hisat2
+  prefix: B
+  gap: 10000
+  dbs: fasta blat bwa star gatk hisat2 snpeff blastn blastp bismark
 Mo17:
-    prefix: M
-    gap: 10000
-    dbs: fasta blat bwa star gatk hisat2
+  prefix: M
+  gap: 10000
+  dbs: fasta blat bwa star gatk hisat2 snpeff blastn blastp
 W22:
-    prefix: W
-    gap: 10000
-    dbs: fasta blat bwa star gatk
+  prefix: W
+  gap: 10000
+  dbs: fasta blat bwa star gatk snpeff blastn blastp
 PH207:
-    prefix: P
-    gap: 5000
-    dbs: fasta blat bwa star gatk
+  prefix: P
+  gap: 5000
+  dbs: fasta blat bwa star gatk snpeff blastn blastp
 PHB47:
-    prefix: PHB47_
-    gap: 10000
-    dbs: fasta blat bwa star gatk
-
-#fasta:
+  prefix: PHB47_
+  gap: 10000
+  dbs: fasta blat bwa star gatk snpeff blastn blastp
+B104:
+  prefix: B104_
+  gap: 10000
+  dbs: fasta blat bwa gatk star blastn blastp snpeff
+CML247:
+  prefix: CML247_
+  gap: 10000
+  dbs: fasta blat bwa gatk
+DK105:
+  prefix: DK105_
+  gap: 10000
+  dbs: fasta blat bwa gatk
+EP1:
+  prefix: EP1_
+  gap: 5000
+  dbs: fasta blat bwa gatk
+F7:
+  prefix: F7_
+  gap: 5000
+  dbs: fasta blat bwa gatk
+PE0075:
+  prefix: PE0075_
+  gap: 10000
+  dbs: fasta blat bwa gatk
+Sbicolor:
+  prefix: Sb
+  gap: 10000
+  dbs: fasta blat blastn blastp
+Osativa:
+  prefix: Os
+  gap: 10000
+  dbs: fasta blat blastn blastp
+# index databases
+fasta:
+  id: fasta
+  ppn: 1
+  runtime: 2
+  mem: 20
+blat_index:
+  id: blatIdx
+  ppn: 1
+  runtime: 1
+  mem: 20
+gatk_index:
+  id: gatkIdx
+  ppn: 1
+  runtime: 1
+  mem: 10
+blast_index:
+  id: blastIdx
+  ppn: 1
+  runtime: 2
+  mem: 20
 bwa_index:
-    ppn: 1
-    runtime: 10
-    mem: 20
-
+  id: bwaIdx
+  ppn: 1
+  runtime: 10
+  mem: 20
+  amem: 0
+  aruntime: 0
 star_index:
-    ppn: 4
-    runtime: 10
-    mem: 60
-
+  id: starIdx
+  ppn: 4
+  runtime: 10
+  mem: 60
+  amem: 0
+  aruntime: 0
 hisat2_index:
-    q: ram256g
-    ppn: 4
-    runtime: 5
-    mem: 150
+  id: hst2Idx
+  q: 1
+  ppn: 4
+  runtime: 5
+  mem: 150
+  amem: 0
+  aruntime: 0
+snpeff_index:
+  id: snpfIdx
+  ppn: 1
+  runtime: 5
+  mem: 30
+  amem: 0
+  aruntime: 0
+bismark_index:
+  id: bsmIdx
+  ppn: 1
+  runtime: 5
+  mem: 30
+  amem: 0
+  aruntime: 0
+# gff db
+anno1_clean:
+  out: 10.gff
+  id: 1cln
+  ppn: 1
+  runtime: 1
+  mem: 10
+anno2_index:
+  id: 2idx
+  ppn: 1
+  runtime: 3
+  mem: 15
+  aruntime: 1
+  amem: 5
+anno3_tandup:
+  id: 3dup
+  ppn: 8
+  runtime: 10
+  mem: 25
+  aruntime: 10
+  amem: 5
+prepR:
+  id: prepR
+  ppn: 1
+  runtime: 3
+  mem: 15

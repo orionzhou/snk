@@ -25,8 +25,8 @@ rule fm2_get_seq:
     shell:
         """
         mkdir -p {params.odir}
-        seqret.py --padding {wildcards.genotype} {input[0]} {output[0]}
-        seqret.py --padding {wildcards.genotype} {input[1]} {output[1]}
+        fasta.py extract --padding {wildcards.genotype} {input[0]} >{output[0]}
+        fasta.py extract --padding {wildcards.genotype} {input[1]} >{output[1]}
         """
 
 rule fm2_get_seq_se:
@@ -36,9 +36,7 @@ rule fm2_get_seq_se:
     output:
         "%s/{genotype}_{type}_{opt}.se.fna" % config['fm']['odir2'],
     shell:
-        """
-        fq.merge.py {input[0]} {input[1]} {output}
-        """
+        "fasta.py merge_pe {input[0]} {input[1]} {output}"
 
 rule fm2_get_seq_merged:
     input:
@@ -47,9 +45,7 @@ rule fm2_get_seq_merged:
     output:
         "%s/{genotype}_{type}_{opt}.merged.fna" % config['fm']['odir2'],
     shell:
-        """
-        fq.merge.py --join {input[0]} {input[1]} {output}
-        """
+        "fasta.py merge_pe --join {input[0]} {input[1]} {output}"
 
 def bwa_inputs(wildcards):
     sid = wildcards.sid
@@ -78,22 +74,22 @@ rule fm3_bwa:
         "%s/{sid}.filtered.tsv" % config['fm']['odir3']
     params:
         odir = config['fm']['odir3'],
-        sid = lambda wildcards: wildcards.sid,
-        pre = lambda wildcards: "%s/%s" % (config['fm']['odir3'], wildcards.sid),
-        type = lambda wildcards: config['t'][wildcards.sid]['type'],
-        genotype = lambda wildcards: config['t'][wildcards.sid]['genotype'],
-        tgt = lambda wildcards: config['t'][wildcards.sid]['tgt'],
-        tgt_db = lambda wildcards: "$genome/%s/21_dbs/bwa/db" % config['t'][wildcards.sid]['tgt'],
-        opt = lambda wildcards: config['t'][wildcards.sid]['opt'],
-        mode = lambda wildcards: config['t'][wildcards.sid]['mode'],
-        N = lambda w: "fm3.%s" % (w.sid),
+        sid = lambda w: w.sid,
+        pre = lambda w: "%s/%s" % (config['fm']['odir3'], w.sid),
+        type = lambda w: config['t'][w.sid]['type'],
+        genotype = lambda w: config['t'][w.sid]['genotype'],
+        tgt = lambda w: config['t'][w.sid]['tgt'],
+        tgt_db = lambda w: "$genome/%s/21_dbs/bwa/db" % config['t'][w.sid]['tgt'],
+        opt = lambda w: config['t'][w.sid]['opt'],
+        mode = lambda w: config['t'][w.sid]['mode'],
+        N = lambda w: "%s.%s" % (config['fm']['bwa']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt: get_resource(attempt, 'fm', 'bwa')['ppn'],
-        runtime = lambda w, attempt: get_resource(attempt, 'fm', 'bwa')['runtime'],
-        mem = lambda w, attempt: get_resource(attempt, 'fm', 'bwa')['mem']
+        ppn = lambda w, attempt: get_resource(config, attempt, 'fm', 'bwa')['ppn'],
+        runtime = lambda w, attempt: get_resource(config, attempt, 'fm', 'bwa')['runtime'],
+        mem = lambda w, attempt: get_resource(config, attempt, 'fm', 'bwa')['mem']
     threads: config["fm"]['bwa']["ppn"]
     run:
         makedirs(config['fm']['odir3']) 
@@ -101,24 +97,25 @@ rule fm3_bwa:
             shell("""
             bwa mem -t {threads} -a -T 30 -Y {params.tgt_db} \
                     {input.f1} {input.f2} > {params.pre}.sam
-            sam2tsv.py --paired {params.pre}.sam {params.pre}.tsv
+            sam.py 2tsv --paired {params.pre}.sam >{params.pre}.tsv
             """)
         elif params.mode == 'se':
             shell("""
             bwa mem -t {threads} -a -T 30 -Y {params.tgt_db} \
                     {input.f_se} > {params.pre}.sam
-            sam2tsv.py {params.pre}.sam {params.pre}.tsv
+            sam.py 2tsv {params.pre}.sam >{params.pre}.tsv
             """)
         elif parmas.mode == 'merged':
             shell("""
             bwa mem -t {threads} -a -T 30 -Y {params.tgt_db} \
                     {input.f_merged} > {params.pre}.sam
-            sam2tsv.py {params.pre}.sam {params.pre}.tsv
+            sam.py 2tsv {params.pre}.sam >{params.pre}.tsv
             """)
         shell("""
-        atv.filter.py --ident 0.9 --cov 0.9 --best \
-                {params.pre}.tsv {params.pre}.filtered.tsv
+        atv.py filter --ident 0.9 --cov 0.9 --best \
+                {params.pre}.tsv >{params.pre}.filtered.tsv
         """)
+
 
 rule fm4_coord:
     input:
@@ -128,26 +125,26 @@ rule fm4_coord:
         "%s/{sid}.filtered.tsv" % config['fm']['odir4']
     params:
         odir = config['fm']['odir4'],
-        sid = lambda wildcards: wildcards.sid,
-        pre = lambda wildcards: "%s/%s" % (config['fm']['odir4'], wildcards.sid),
-        tgt = lambda wildcards: config['t'][wildcards.sid]['tgt'],
-        tgt_chain = lambda wildcards: "$genome/%s/08_seq_map/mapb.chain" % config['t'][wildcards.sid]['tgt'],
-        N = lambda w: "fm4.%s" % (w.sid),
-		ppn = lambda w, resources: resources.ppn,
+        sid = lambda w: w.sid,
+        pre = lambda w: "%s/%s" % (config['fm']['odir4'], w.sid),
+        tgt = lambda w: config['t'][w.sid]['tgt'],
+        tgt_chain = lambda w: "$genome/%s/08_seq_map/mapb.chain" % config['t'][w.sid]['tgt'],
+        N = lambda w: "%s.%s" % (config['fm']['coord']['id'], w.sid),
+        ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt: get_resource(attempt, 'fm', 'coord')['ppn'],
-        runtime = lambda w, attempt: get_resource(attempt, 'fm', 'coord')['runtime'],
-        mem = lambda w, attempt: get_resource(attempt, 'fm', 'coord')['mem']
+        ppn = lambda w, attempt: get_resource(config, attempt, 'fm', 'coord')['ppn'],
+        runtime = lambda w, attempt: get_resource(config, attempt, 'fm', 'coord')['runtime'],
+        mem = lambda w, attempt: get_resource(config, attempt, 'fm', 'coord')['mem']
     shell:
         """
         source activate py27
         mkdir -p {params.odir}
         CrossMap.py bam {params.tgt_chain} {input} - |\
                 samtools view -h -O SAM -o {params.pre}.sam
-        sam2tsv.py {params.pre}.sam {params.pre}.tsv
-        atv.filter.py --ident 0.9 --cov 0.9 --best \
-                {params.pre}.tsv {params.pre}.filtered.tsv
+        sam.py 2tsv {params.pre}.sam >{params.pre}.tsv
+        atv.py filter --ident 0.9 --cov 0.9 --best \
+                {params.pre}.tsv >{params.pre}.filtered.tsv
         """
  

@@ -1,6 +1,6 @@
-def star_inputs(w):
+def bismark_inputs(w):
     sid = w.sid
-    idir = config['star']['idir']
+    idir = config['bismark']['idir']
     inputs = dict()
     if config['t'][sid]['paired']:
         inputs['fq1'] = "%s/%s_1.fq.gz" % (idir, sid)
@@ -9,73 +9,61 @@ def star_inputs(w):
         inputs['fq'] = "%s/%s.fq.gz" % (idir, sid)
     return inputs
 
-def star_input_str(w):
+def bismark_input_str(w):
     sid = w.sid
-    idir = config['star']['idir']
+    idir = config['bismark']['idir']
     input_str = ''
     if config['t'][sid]['paired']:
         fq1 = "%s/%s_1.fq.gz" % (idir, sid)
         fq2 = "%s/%s_2.fq.gz" % (idir, sid)
-        input_str = "%s %s" % (fq1, fq2)
+        input_str = "-1 %s -2 %s" % (fq1, fq2)
     else:
         fq = "%s/%s.fq.gz" % (idir, sid)
         input_str = "%s" % (fq)
     return input_str
 
-def star_extra(w):
-    extras = [config["star"]["extra"]]
-    extras.append("--outSAMattrRGline ID:%s SM:%s" % (w.sid, w.sid))
-    #if 'vcf' in config and wildcards.gt in config['vcf']:
-    if 1 == 2:
-        extras.append("--varVCFfile %s" % config['vcf'][w.gt]) 
-        extras.append("--waspOutputMode SAMtag")
-        extras.append("--outSAMattributes NH HI AS nM NM MD jM jI XS MC ch vG vA vW")
-    else:
-        extras.append("--outSAMattributes All")
+def bismark_extra(w):
+    extras = [config["bismark"]["extra"]]
+    sm = w.sid
+    if 'Genotype' in config['t'][w.sid]:
+        sm = config['t'][w.sid]['Genotype']
+    extras.append("--rg_tag --rg_id %s --rg_sample %s" % (w.sid, sm))
     return " ".join(extras)
 
-rule star:
+rule bismark:
     input:
-        unpack(star_inputs)
+        unpack(bismark_inputs)
     output:
-        temp("%s/{sid}/Aligned.out.bam" % config['star']['odir1']),
-        protected("%s/{sid}/Log.final.out" % config['star']['odir1'])
-    log:
-        "%s/%s/{sid}.log" % (config['dirl'], config['star']['id'])
+        temp("%s/{sid}.sam" % config['bismark']['odir1']),
     params:
-        index = config[config['reference']]["star"],
-        input_str = lambda w: star_input_str(w),
-        outprefix = lambda w: "%s/%s/" % (config['star']['odir1'], w.sid),
-        readcmd = "--readFilesCommand zcat",
-        extra = star_extra,
-        N = lambda w: "%s.%s" % (config['star']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['star']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['star']['id'], w.sid),
+        index = config[config['reference']]["bismark"],
+        input_str = lambda w: bismark_input_str(w),
+        odir = config['bismark']['odir1'],
+        extra = bismark_extra,
+        N = lambda w: "%s.%s" % (config['bismark']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bismark']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bismark']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        q = lambda w, attempt:  get_resource(config, attempt, 'star')['q'],
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'star')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'star')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'star')['mem']
-    threads: config['star']['ppn']
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'bismark')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'bismark')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'bismark')['mem']
+    threads: config['bismark']['ppn']
     shell:
         """
-        STAR {params.extra} --runThreadN {threads} \
-        --genomeDir {params.index} \
-        --readFilesIn {params.input_str} {params.readcmd} \
-        --outSAMtype BAM Unsorted \
-        --outFileNamePrefix {params.outprefix} \
-        --outStd Log \
-        >{log} 2>&1
+        bismark --parallel {threads} \
+        {params.index} {params.input_str} \
+        {params.extra} \
+        --output_dir {params.odir} --basename {wildcards.sid}
         """
 
 rule sambamba_sort:
     input:
-        "%s/{sid}/Aligned.out.bam" % config['star']['odir1']
+        "%s/{sid}.bam" % config['bismark']['odir1']
     output:
-        protected("%s/{sid}.bam" % config['star']['odir2'])
+        "%s/{sid}.bam" % config['bismark']['odir2']
     params:
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
         N = lambda w: "%s.%s" % (config['sambamba']['sort']['id'], w.sid),
@@ -94,9 +82,9 @@ rule sambamba_sort:
 
 rule bam_stat:
     input:
-        "%s/{sid}.bam" % config['star']['odir2']
+        "%s/{sid}.bam" % config['bismark']['odir2']
     output:
-        protected("%s/{sid}.tsv" % config['star']['odir2'])
+        "%s/{sid}.tsv" % config['bismark']['odir2']
     params:
         N = lambda w: "%s.%s" % (config['bam_stat']['id'], w.sid),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bam_stat']['id'], w.sid),
