@@ -7,6 +7,11 @@ comps:
   - PH207-B73
   - PHB47-B73
   - B104-B73
+  - CML247-B73
+  - DK105-B73
+  - EP1-B73
+  - F7-B73
+  - PE0075-B73
 wgc:
   dir1: 10_genomes
   dir2: 20_align
@@ -39,7 +44,7 @@ wgc:
     id: chain
     ppn: 1
     runtime: 20
-    mem: 20
+    mem: 30
     aruntime: 20
     amem: 10
   post:

@@ -39,7 +39,7 @@ rule star:
         unpack(star_inputs)
     output:
         temp("%s/{sid}/Aligned.out.bam" % config['star']['odir1']),
-        protected("%s/{sid}/Log.final.out" % config['star']['odir1'])
+        "%s/{sid}/Log.final.out" % config['star']['odir1']
     log:
         "%s/%s/{sid}.log" % (config['dirl'], config['star']['id'])
     params:
@@ -75,7 +75,7 @@ rule sambamba_sort:
     input:
         "%s/{sid}/Aligned.out.bam" % config['star']['odir1']
     output:
-        protected("%s/{sid}.bam" % config['star']['odir2'])
+        "%s/{sid}.bam" % config['star']['odir2']
     params:
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
         N = lambda w: "%s.%s" % (config['sambamba']['sort']['id'], w.sid),
@@ -92,24 +92,5 @@ rule sambamba_sort:
     shell:
         "sambamba sort {params.extra} -t {threads} -o {output} {input}"
 
-rule bam_stat:
-    input:
-        "%s/{sid}.bam" % config['star']['odir2']
-    output:
-        protected("%s/{sid}.tsv" % config['star']['odir2'])
-    params:
-        N = lambda w: "%s.%s" % (config['bam_stat']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bam_stat']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bam_stat']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
-    threads: config['bam_stat']['ppn']
-    shell:
-        "bam.py stat {input} > {output}"
 
 

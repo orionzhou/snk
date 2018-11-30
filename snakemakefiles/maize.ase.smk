@@ -4,7 +4,7 @@ from snk.utils import check_config_ngs
 from snk.utils import get_resource
 
 def check_config_ase(c):
-    for subdir in [c['ase']['vdir']]: 
+    for subdir in [c['ase']['vdir']]:
         if not op.isdir(subdir):
             mkdir(subdir)
     t = c['t']

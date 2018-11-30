@@ -58,7 +58,7 @@ rule bwa:
 rule sambamba_sort:
     input:
         "%s/{sid}.sam" % config['bwa']['odir1'],
-    output: 
+    output:
         "%s/{sid}.bam" % config['bwa']['odir2'],
         "%s/{sid}.bam.bai" % config['bwa']['odir2']
     params:

@@ -2,7 +2,7 @@ rule fq_compress_se:
     input:
         i1 = "%s/{sid}.fq" % config['fq_compress']['idir']
     output:
-        o1 = protected("%s/{sid}.fq.gz" % config['fq_compress']['odir'])
+        o1 = "%s/{sid}.fq.gz" % config['fq_compress']['odir']
     params:
         N = lambda w: "%s.%s" % (config['fq_compress']['id'], w.sid),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['fq_compress']['id'], w.sid),
@@ -23,8 +23,8 @@ rule fq_compress_pe:
         i1 = "%s/{sid}_1.fq" % config['fq_compress']['idir'],
         i2 = "%s/{sid}_2.fq" % config['fq_compress']['idir']
     output:
-        o1 = protected("%s/{sid}_1.fq.gz" % config['fq_compress']['odir']),
-        o2 = protected("%s/{sid}_2.fq.gz" % config['fq_compress']['odir'])
+        o1 = "%s/{sid}_1.fq.gz" % config['fq_compress']['odir'],
+        o2 = "%s/{sid}_2.fq.gz" % config['fq_compress']['odir']
     params:
         N = lambda w: "%s.%s" % (config['fq_compress']['id'], w.sid),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['fq_compress']['id'], w.sid),

@@ -54,8 +54,8 @@ rule gatk_gather_vcfs:
     input:
         unpack(gather_vcf_inputs)
     output:
-        vcf = protected("%s/{gt}.g.vcf.gz" % config['callvnt']['odir1']),
-        tbi = protected("%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['odir1'])
+        vcf = "%s/{gt}.g.vcf.gz" % config['callvnt']['odir1'],
+        tbi = "%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['odir1']
     log:
         "%s/%s/{gt}.log" % (config['dirl'], config['gatk']['gather_vcfs']['id'])
     params:
@@ -83,13 +83,13 @@ rule gatk_gather_vcfs:
 
 rule gatk_combine_gvcfs:
     input:
-        vcfs = expand("%s/{gt}.g.vcf.gz" % config['callvnt']['odir1'], 
+        vcfs = expand("%s/{gt}.g.vcf.gz" % config['callvnt']['odir1'],
                 gt = config['Genotypes']),
-        tbis = expand("%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['odir1'], 
+        tbis = expand("%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['odir1'],
                 gt = config['Genotypes'])
     output:
-        vcf = protected("%s/{rid}.g.vcf.gz" % config['callvnt']['odir2']),
-        tbi = protected("%s/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir2']),
+        vcf = "%s/{rid}.g.vcf.gz" % config['callvnt']['odir2'],
+        tbi = "%s/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir2'],
     params:
         cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
@@ -120,8 +120,8 @@ rule gatk_genotype_gvcfs:
         vcf = protected("%s/{rid}.g.vcf.gz" % config['callvnt']['odir2']),
         tbi = protected("%s/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir2']),
     output:
-        vcf = protected("%s/{rid}.vcf.gz" % config['callvnt']['odir2']),
-        tbi = protected("%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2']),
+        vcf = "%s/{rid}.vcf.gz" % config['callvnt']['odir2'],
+        tbi = "%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2'],
     params:
         cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
@@ -153,8 +153,8 @@ rule gatk_gather_vcfs2:
         tbis = expand("%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2'], 
                 rid = list(config[config['reference']]['regions'].keys()))
     output:
-        vcf = protected("%s/%s" % (config['dird'], config['callvnt']['out'])),
-        tbi = protected("%s/%s.tbi" % (config['dird'], config['callvnt']['out']))
+        vcf = "%s/%s" % (config['dird'], config['callvnt']['out']),
+        tbi = "%s/%s.tbi" % (config['dird'], config['callvnt']['out'])
     params:
         cmd = config['gatk']['cmd'],
         input_str = lambda w, input: ["-I %s" % x for x in input.vcfs],

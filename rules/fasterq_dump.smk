@@ -1,8 +1,8 @@
 rule fasterq_dump_pe:
     input:
     output:
-        protected("%s/{sid}_1.fq.gz" % config['fasterq_dump']['odir']),
-        protected("%s/{sid}_2.fq.gz" % config['fasterq_dump']['odir'])
+        "%s/{sid}_1.fq.gz" % config['fasterq_dump']['odir'],
+        "%s/{sid}_2.fq.gz" % config['fasterq_dump']['odir']
     log:
         "%s/%s/{sid}.log" % (config['dirl'], config['fasterq_dump']['id'])
     params:
@@ -19,7 +19,8 @@ rule fasterq_dump_pe:
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['mem']
+        mem = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['mem'],
+        load = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['load']
     threads: config['fasterq_dump']['ppn']
     shell:
         """
@@ -36,7 +37,7 @@ rule fasterq_dump_pe:
 rule fasterq_dump_se:
     input:
     output:
-        protected("%s/{sid}.fq.gz" % config['fasterq_dump']['odir'])
+        "%s/{sid}.fq.gz" % config['fasterq_dump']['odir']
     log:
         "%s/%s/{sid}.log" % (config['dirl'], config['fasterq_dump']['id'])
     params:
@@ -52,7 +53,8 @@ rule fasterq_dump_se:
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['mem']
+        mem = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['mem'],
+        load = lambda w, attempt:  get_resource(config, attempt, 'fasterq_dump')['load']
     threads: config['fasterq_dump']['ppn']
     shell:
         """

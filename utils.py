@@ -39,6 +39,7 @@ def get_resource(config, attempt, k1, k2 = ''):
     runtime, aruntime = 8, 8
     mem, amem = 10, 10
     ppn, appn = 1, 0
+    load = 1
     if k2 != '':
         assert k2 in config[k1], '%s not in config[%s]' % (k2, k1)
         c2 = config[k1][k2]
@@ -58,6 +59,8 @@ def get_resource(config, attempt, k1, k2 = ''):
         elif 'mem' in c: mem = c['mem']
         if 'amem' in c2: amem = c2['amem']
         elif 'amem' in c: amem = c['amem']
+        if 'load' in c2: load = c2['load']
+        elif 'load' in c: load = c['load']
     else:
         if 'q' in c: q = c['q']
         if 'aq' in c: aq = c['aq']
@@ -67,17 +70,22 @@ def get_resource(config, attempt, k1, k2 = ''):
         if 'aruntime' in c: aruntime = c['aruntime']
         if 'mem' in c: mem = c['mem']
         if 'amem' in c: amem = c['amem']
+        if 'load' in c: load = c['load']
     return {'q': q + aq * (attempt - 1),
             'ppn': ppn + appn * (attempt - 1),
             'runtime': runtime + aruntime * (attempt - 1),
-            'mem': mem + amem * (attempt - 1)}
+            'mem': mem + amem * (attempt - 1),
+            'load': load}
 
 def check_genome(genome, dbs, c):
     c[genome] = c['genomes'][genome]
     c['genomes'].pop(genome, None)
     dirw = op.join(c['dirg'], genome)
     dira = op.join(dirw, '50_annotation')
-    sdic = {'ref': '10_genome.fna', 'size': '15_intervals/01.chrom.sizes'}
+    sdic = {'ref': '10_genome.fna',
+            'chrom_size': '15_intervals/01.chrom.sizes',
+            'chrom_bed': '15_intervals/01.chrom.bed',
+            'gap': '15_intervals/11.gap.bed'}
     adic = {'gff':'10.gff', 'gtf':'10.gtf', 'faa':'10.faa',
             'lgff':'15.gff', 'lgtf':'15.gtf', 'lfaa':'15.faa'}
     for k, v in sdic.items():
@@ -92,7 +100,7 @@ def check_genome(genome, dbs, c):
     region_file = op.join(dirw, '15_intervals/20.gap.sep.60win.tsv')
     if op.isfile(region_file):
         fr = region_file
-        c[genome]['regions'] = dict() 
+        c[genome]['regions'] = dict()
         tr = pd.read_csv(fr, sep='\t', header=0)
         chroms = [str(x) for x in range(1,10)]
         for i in range(len(tr)):
@@ -102,10 +110,10 @@ def check_genome(genome, dbs, c):
             rid = tr['rid'][i]
             region_str = "%s:%d-%d" % (chrom, start, end)
             c[genome]['regions'][rid] = region_str
-        print("%d regions read for %s" % (len(c[genome]['regions']), genome))
+#        print("%d regions read for %s" % (len(c[genome]['regions']), genome))
 
     if isinstance(dbs, str): dbs = [dbs]
-    if 'bwa' in dbs and 'gatk' not in dbs:
+    if any([x in dbs for x in ['bwa','bismark']]) and 'gatk' not in dbs:
         dbs.append('gatk')
     for db in dbs:
         dirx = op.join(dirw, '21_dbs', c[db]['xdir'])
@@ -135,7 +143,7 @@ def check_genome(genome, dbs, c):
             c[genome][db] = fc
             fos = [fo]
         else:
-            print("unknown db: %s" % db)
+            logging.error("unknown db: %s" % db)
             sys.exit(1)
         for fo in fos:
             assert op.isfile(fo), "%s not found" % fo
@@ -221,8 +229,6 @@ def check_config_ngs(c):
     c['Genotypes'] = list(c['gt'].keys())
     return c
 
-
-# From https://github.com/giampaolo/psutil/blob/master/scripts/meminfo.py
 def bytes2human(n):
     # http://code.activestate.com/recipes/578019
     # >>> bytes2human(10000)
@@ -240,4 +246,4 @@ def bytes2human(n):
     return "%sB" % n
 
 if __name__ == '__main__':
-    print("you lost your way") 
+    print("you lost your way")

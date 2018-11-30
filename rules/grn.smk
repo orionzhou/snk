@@ -52,6 +52,7 @@ rule eval:
         "%s/{nid}.rda" % config['grn']['eval']['idir']
     output:
         tf = "%s/{nid}_tf.rds" % config['grn']['eval']['odir'],
+        go = "%s/{nid}_go.rds" % config['grn']['eval']['odir'],
         br = "%s/{nid}_br.rds" % config['grn']['eval']['odir'],
         bm = "%s/{nid}_bm.rds" % config['grn']['eval']['odir'],
     params:
@@ -69,6 +70,7 @@ rule eval:
     shell:
         """
         grn.eval.R {input} {output.tf} --opt tf
+        grn.eval.R {input} {output.go} --opt go
         grn.eval.R {input} {output.br} --opt briggs
         grn.eval.R {input} {output.bm} --opt biomap
         """

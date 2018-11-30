@@ -6,11 +6,10 @@ rule fasta:
         fai = "{genome}/10_genome.fna.fai",
         chrom_bed = "{genome}/15_intervals/01.chrom.bed",
         chrom_size = "{genome}/15_intervals/01.chrom.sizes",
-        gap_bed = "{genome}/15_intervals/11.gap.bed",
+        gap = "{genome}/15_intervals/11.gap.bed",
     params:
         wdir = lambda w: "%s" % w.genome,
         odir = "08_seq_map",
-        gap = lambda w: config[w.genome]['gap'],
         prefix = lambda w: config[w.genome]['prefix'],
         N = lambda w: "%s.%s" % (config['fasta']['id'], w.genome),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['fasta']['id'], w.genome),
@@ -26,7 +25,7 @@ rule fasta:
     shell:
         """
         rm -rf {output.fna}* {output.fai}*
-        rm -rf {output.chrom_bed} {output.chrom_size} {output.gap_bed}
+        rm -rf {output.chrom_bed} {output.chrom_size} {output.gap}
         
         mkdir -p {params.wdir}/{params.odir}
         cd {params.wdir}/{params.odir}
@@ -35,7 +34,7 @@ rule fasta:
         fasta.py size raw.fna > raw.sizes
 
         fasta.py rename raw.fna raw.sizes renamed.fna mapf.bed mapb.bed \
-                --merge_short --gap {params.gap} --prefix_chr {params.prefix}
+                --merge_short --gap {output.gap} --prefix_chr {params.prefix}
 
         fasta.py size renamed.fna > renamed.sizes
 
@@ -50,7 +49,7 @@ rule fasta:
         samtools faidx {output.fna}
         fasta.py size --bed {output.fna} > {output.chrom_bed}
         cut -f1,3 {output.chrom_bed} > {output.chrom_size}
-        fasta.py gaps {output.fna} > {output.gap_bed}
+        fasta.py gaps {output.fna} > {output.gap}
         """
 
 rule blat_index:
@@ -128,6 +127,7 @@ rule bismark_index:
         "{genome}/21_dbs/%s/%s" % (config['bismark']['xdir'], config['bismark']['xout'])
     params:
         odir = lambda w: "%s/21_dbs/%s" % (w.genome, config['bismark']['xdir']),
+        parallel = lambda w, resources: int(resources.ppn / 2),
         N = lambda w: "%s.%s" % (config['bismark_index']['id'], w.genome),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bismark_index']['id'], w.genome),
         o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bismark_index']['id'], w.genome),
@@ -145,7 +145,7 @@ rule bismark_index:
         mkdir -p {params.odir}
         cd {params.odir}
         ln -sf ../../10_genome.fna db.fa
-        bismark_genome_preparation --bowtie2 .
+        bismark_genome_preparation --bowtie2 --parallel {params.parallel} .
         """
 
 rule star_index:

@@ -18,7 +18,7 @@ rule gatk_mark_duplicates:
         "%s/{sid}.bam" % config['cleanbam']['idir']
     output:
         "%s/{sid}.bam" % config['cleanbam']['odir1'],
-        "%s/{sid}.txt" % config['cleanbam']['odir1'],
+        "%s/{sid}.dedup.txt" % config['cleanbam']['odir1'],
     log:
         "%s/%s/{sid}.log" % (config['dirl'], config['gatk']['mark_duplicates']['id'])
     params:
@@ -114,44 +114,4 @@ rule gatk_apply_bqsr:
         >>{log} 2>&1
         """
 
-rule bam_stat:
-    input:
-        "%s/{sid}.bam" % config['cleanbam']['odir2']
-    output:
-        protected("%s/{sid}.tsv" % config['cleanbam']['odir2'])
-    params:
-        N = lambda w: "%s.%s" % (config['bam_stat']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bam_stat']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bam_stat']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
-    threads: config['bam_stat']['ppn']
-    shell:
-        "bam.py stat {input} > {output}"
-
-rule sambamba_flagstat:
-    input:
-        "%s/{sid}.bam" % config['cleanbam']['odir2']
-    output:
-        protected("%s/{sid}.txt" % config['cleanbam']['odir2'])
-    params:
-        extra = config['sambamba']['flagstat']['extra'],
-        N = lambda w: "%s.%s" % (config['sambamba']['flagstat']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['sambamba']['flagstat']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['sambamba']['flagstat']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'flagstat')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'flagstat')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'flagstat')['mem']
-    threads: config['sambamba']['ppn']
-    shell:
-        "sambamba flagstat {params.extra} -t {threads} {input} > {output}"
 

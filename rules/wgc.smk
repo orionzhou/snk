@@ -1,9 +1,8 @@
 rule wgc1_prepare:
     input:
-        lambda w: config[w.genome]['ref']
+        fna = lambda w: config[w.genome]['ref'],
     output:
         fna = "%s/{genome}/10_genome.fna" % config['wgc']['dir1'],
-        size = "%s/{genome}/15_intervals/01.chrom.sizes" % config['wgc']['dir1'],
     params:
         odir = lambda w: "%s/%s" % (config['wgc']['dir1'], w.genome),
         cdir = lambda w: "%s/%s/11_chroms" % (config['wgc']['dir1'], w.genome),
@@ -26,8 +25,7 @@ rule wgc1_prepare:
 
 rule wgc1_break_tgt:
     input:
-        lambda w: config[w.genome]['ref'],
-        #"%s/{genome}/10_genome.fna" % config['wgc']['dir1']
+        fna = lambda w: config[w.genome]['ref'],
     output:
         expand("%s/{{genome}}/11_chroms/{tchrom}.fa" % config['wgc']['dir1'], \
                 tchrom = config['B73']['chroms'].split())
@@ -37,16 +35,18 @@ rule wgc1_break_tgt:
     shell:
         """
         mkdir -p {params.cdir}
-        faSplit byname {input} {params.cdir}/
+        faSplit byname {input.fna} {params.cdir}/
         """
 
 rule wgc1_break_qry:
     input:
-        lambda w: config[w.genome]['ref'],
-        #"%s/{genome}/10_genome.fna" % config['wgc']['dir1']
+        fna = lambda w: config[w.genome]['ref'],
+        chrom_size = lambda w: config[w.genome]['chrom_size'],
+        chrom_bed = lambda w: config[w.genome]['chrom_bed'],
+        gap = lambda w: config[w.genome]['gap'],
     output:
         fnas = expand("%s/{{genome}}/87_qrys/part.{idx}.fna" % \
-                config['wgc']['dir1'], 
+                config['wgc']['dir1'],
                 idx = range(1,config['wgc']['npieces']+1)),
         chain = "%s/{genome}/86.chain" % config['wgc']['dir1'],
     params:
@@ -55,17 +55,15 @@ rule wgc1_break_qry:
         npieces = config['wgc']['npieces'],
     shell:
         """
-        bed.py filter -min 5000 {params.odir}/15_intervals/11.gap.bed \
-                > {params.odir}/81.qry.gap.bed
-        subtractBed -nonamecheck -a {params.odir}/15_intervals/01.chrom.bed \
-                -b {params.odir}/81.qry.gap.bed | bed filter -min 100 - | \
-                bed makewindow -w 1000000 -s 995000 - \
-                > {params.odir}/85.qry.clean.bed
+        bed.py filter -min 5000 {input.gap} > {params.odir}/81.qry.gap.bed
+        subtractBed -nonamecheck -sorted -a {input.chrom_bed} \
+            -b {input.gap} | bed.py filter -min 100 - | \
+            bed.py makewindow -w 1000000 -s 995000 - \
+            > {params.odir}/85.qry.clean.bed
         bed.py size {params.odir}/85.qry.clean.bed
-        faSplit.R {params.odir}/85.qry.clean.bed {params.odir}/10_genome.fna \
-                {params.odir}/15_intervals/01.chrom.sizes \
-                {params.odir}/87_qrys \
-                --chain {params.odir}/86.chain -n {params.npieces}
+        faSplit.R {params.odir}/85.qry.clean.bed \
+            {input.fna} {input.chrom_size} {params.odir}/87_qrys \
+            --chain {params.odir}/86.chain -n {params.npieces}
         """
 
 rule wgc2_align:
@@ -109,15 +107,15 @@ rule wgc3_merge:
                 idx = range(1,config['wgc']['npieces']+1), \
                 tchrom = config['B73']['chroms'].split())
     output:
-        "%s/{qry}_{tgt}/02.coord.psl" % config['wgc']['dir3']
+        "%s/{qry}_{tgt}/02.coord.pass.psl" % config['wgc']['dir3']
     params:
         odir = lambda w: "%s/%s_%s" % (config['wgc']['dir3'], w.qry, w.tgt),
         chain = lambda w: "%s/%s/86.chain" %
             (config['wgc']['dir1'], w.qry),
         tbit = lambda w: config[w.tgt]['blat']['x.2bit'],
         qbit = lambda w: config[w.qry]['blat']['x.2bit'],
-        tsize = lambda w: config[w.tgt]['size'],
-        qsize = lambda w: config[w.qry]['size'],
+        tsize = lambda w: config[w.tgt]['chrom_size'],
+        qsize = lambda w: config[w.qry]['chrom_size'],
         N = lambda w: "%s.%s.%s" % (config['wgc']['merge']['id'], w.qry, w.tgt),
         e = lambda w: "%s/%s/%s.%s.e" % (config['dirp'], config['wgc']['merge']['id'], w.qry, w.tgt),
         o = lambda w: "%s/%s/%s.%s.o" % (config['dirp'], config['wgc']['merge']['id'], w.qry, w.tgt),
@@ -129,13 +127,15 @@ rule wgc3_merge:
         runtime = lambda w, attempt: get_resource(config, attempt, 'wgc', 'merge')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'wgc', 'merge')['mem']
     threads: config['wgc']['merge']['ppn']
+#        pslCat -nohead {input} > {params.odir}/01.psl
+#        psl.py coordQ {params.odir}/01.psl {params.qsize} \
+#                >{params.odir}/02.coord.psl
     shell:
         """
         mkdir -p {params.odir}
-        pslCat -nohead {input} > {params.odir}/01.psl
-        psl.py coordQ {params.odir}/01.psl {params.qsize} \
-                >{params.odir}/02.coord.psl
-        pslCheck {params.odir}/02.coord.psl
+        pslCheck {params.odir}/02.coord.psl \
+            -pass={params.odir}/02.coord.pass.psl \
+            -fail={params.odir}/02.coord.fail.psl || echo non_success
         """
         #pslSwap {params.odir}/01.psl {params.odir}/02.swap.psl
         #liftOver -pslT {params.odir}/02.swap.psl {params.chain} \
@@ -147,15 +147,15 @@ rule wgc3_merge:
 
 rule wgc4_chain:
     input:
-        "%s/{qry}_{tgt}/02.coord.psl" % config['wgc']['dir3']
+        "%s/{qry}_{tgt}/02.coord.pass.psl" % config['wgc']['dir3']
     output:
         "%s/{qry}_{tgt}/15.chain" % config['wgc']['dir3']
     params:
         odir = lambda w: "%s/%s_%s" % (config['wgc']['dir3'], w.qry, w.tgt),
         tbit = lambda w: config[w.tgt]['blat']['x.2bit'],
         qbit = lambda w: config[w.qry]['blat']['x.2bit'],
-        tsize = lambda w: config[w.tgt]['size'],
-        qsize = lambda w: config[w.qry]['size'],
+        tsize = lambda w: config[w.tgt]['chrom_size'],
+        qsize = lambda w: config[w.qry]['chrom_size'],
         N = lambda w: "%s.%s.%s" % (config['wgc']['chain']['id'], w.qry, w.tgt),
         e = lambda w: "%s/%s/%s.%s.e" % (config['dirp'], config['wgc']['chain']['id'], w.qry, w.tgt),
         o = lambda w: "%s/%s/%s.%s.o" % (config['dirp'], config['wgc']['chain']['id'], w.qry, w.tgt),
@@ -196,10 +196,12 @@ rule wgc5_post:
         "%s/{qry}_{tgt}/10.{qry}.vcf.gz" % (config['dird']),
     params:
         odir = lambda w: "%s/%s_%s" % (config['dird'], w.qry, w.tgt),
+        tpre = lambda w: "%s/%s_%s/10.%s" % (config['dird'], w.qry, w.tgt, w.tgt),
+        qpre = lambda w: "%s/%s_%s/10.%s" % (config['dird'], w.qry, w.tgt, w.qry),
         tfas = lambda w: config[w.tgt]['ref'],
         qfas = lambda w: config[w.qry]['ref'],
-        tsize = lambda w: config[w.tgt]['size'],
-        qsize = lambda w: config[w.qry]['size'],
+        tsize = lambda w: config[w.tgt]['chrom_size'],
+        qsize = lambda w: config[w.qry]['chrom_size'],
         tref = lambda w: config[w.tgt]['gatk']['xref'],
         qref = lambda w: config[w.qry]['gatk']['xref'],
         N = lambda w: "%s.%s.%s" % (config['wgc']['chain']['id'], w.qry, w.tgt),
@@ -217,41 +219,38 @@ rule wgc5_post:
         """
         chainStitchId {input} {params.odir}/01.stitched.chain
         chainFilter -minGapless=1000 {params.odir}/01.stitched.chain \
-                > {params.odir}/02.filtered.chain
+            > {params.odir}/02.filtered.chain
         chain.py 2bed {params.odir}/02.filtered.chain > {params.odir}/02.bed
         
         chainBedVnt.R {params.odir}/02.bed {params.odir}/05.itv.bed
         wgc.py callvnt {params.odir}/05.itv.bed {params.tfas} {params.qfas} \
-                --vnt {params.odir}/05.vnt.bed > {params.odir}/05.bed
+            --vnt {params.odir}/05.vnt.bed > {params.odir}/05.bed
         
         chainBedFilter.R {params.odir}/05.bed {params.odir}/10.bed \
-                {params.odir}/05.vnt.bed {params.odir}/10.vnt.bed
+            {params.odir}/05.vnt.bed {params.odir}/10.vnt.bed
         
         chain.py fromBed {params.odir}/10.bed {params.tsize} {params.qsize} \
-                > {params.odir}/10.{wildcards.tgt}_{wildcards.qry}.chain
+            > {params.odir}/10.{wildcards.tgt}_{wildcards.qry}.chain
         chainSwap {params.odir}/10.{wildcards.tgt}_{wildcards.qry}.chain \
-                {params.odir}/10.{wildcards.qry}_{wildcards.tgt}.chain
+            {params.odir}/10.{wildcards.qry}_{wildcards.tgt}.chain
 
         wgc.py bed2vcf --tgt {wildcards.tgt} --qry {wildcards.qry} \
-                {params.odir}/10.vnt.bed \
-                {params.odir}/10.{wildcards.tgt}.1.vcf \
-                {params.odir}/10.{wildcards.qry}.1.vcf
+            {params.odir}/10.vnt.bed \
+            {params.tpre}.1.vcf {params.qpre}.1.vcf
+        sortBed -header -i {params.tpre}.1.vcf >{params.tpre}.1.s.vcf
+        sortBed -header -i {params.qpre}.1.vcf >{params.qpre}.1.s.vcf
         gatk UpdateVCFSequenceDictionary -V \
-                {params.odir}/10.{wildcards.tgt}.1.vcf -R {params.tref} \
-                -O {params.odir}/10.{wildcards.tgt}.2.vcf
+            {params.tpre}.1.s.vcf -R {params.tref} -O {params.tpre}.2.vcf
         gatk UpdateVCFSequenceDictionary -V \
-                {params.odir}/10.{wildcards.qry}.1.vcf -R {params.qref} \
-                -O {params.odir}/10.{wildcards.qry}.2.vcf
+            {params.qpre}.1.s.vcf -R {params.qref} -O {params.qpre}.2.vcf
         bcftools norm -f {params.tfas} -c w -d all \
-                {params.odir}/10.{wildcards.tgt}.2.vcf -Ou |\
-                bcftools sort -Oz
-                -o {params.odir}/10.{wildcards.tgt}.vcf.gz
+            {params.tpre}.2.vcf -Ou |\
+            bcftools sort -Oz -o {params.tpre}.vcf.gz
         bcftools norm -f {params.qfas} -c w -d all \
-                {params.odir}/10.{wildcards.qry}.2.vcf -Ou |\
-                bcftools sort -Oz
-                -o {params.odir}/10.{wildcards.qry}.vcf.gz
-        rm {params.odir}/10.{wildcards.tgt}.[12].*
-        rm {params.odir}/10.{wildcards.qry}.[12].*
+            {params.qpre}.2.vcf -Ou |\
+            bcftools sort -Oz -o {params.qpre}.vcf.gz
+        rm {params.tpre}.[12].*
+        rm {params.qpre}.[12].*
         """
 
 rule wgc6_eff_t:
@@ -263,8 +262,8 @@ rule wgc6_eff_t:
         odir = lambda w: "%s/%s_%s" % (config['dird'], w.qry, w.tgt),
         tfas = lambda w: config[w.tgt]['ref'],
         qfas = lambda w: config[w.qry]['ref'],
-        tsize = lambda w: config[w.tgt]['size'],
-        qsize = lambda w: config[w.qry]['size'],
+        tsize = lambda w: config[w.tgt]['chrom_size'],
+        qsize = lambda w: config[w.qry]['chrom_size'],
         tref = lambda w: config[w.tgt]['gatk']['xref'],
         qref = lambda w: config[w.qry]['gatk']['xref'],
         txcfg = lambda w: config[w.tgt]['snpeff'],
@@ -295,8 +294,8 @@ rule wgc6_eff_q:
         odir = lambda w: "%s/%s_%s" % (config['dird'], w.qry, w.tgt),
         tfas = lambda w: config[w.tgt]['ref'],
         qfas = lambda w: config[w.qry]['ref'],
-        tsize = lambda w: config[w.tgt]['size'],
-        qsize = lambda w: config[w.qry]['size'],
+        tsize = lambda w: config[w.tgt]['chrom_size'],
+        qsize = lambda w: config[w.qry]['chrom_size'],
         tref = lambda w: config[w.tgt]['gatk']['xref'],
         qref = lambda w: config[w.qry]['gatk']['xref'],
         qxcfg = lambda w: config[w.qry]['snpeff'],

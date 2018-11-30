@@ -1,7 +1,7 @@
 import os
 import os.path as op
-from snk.utils import get_resource
 from snk.utils import check_config_ngs
+from snk.utils import get_resource
 
 configfile: 'config.yaml'
 config = check_config_ngs(config)
@@ -9,18 +9,15 @@ workdir: config['dirw']
 
 wildcard_constraints:
     sid = "[a-zA-Z0-9]+",
-    gt = "[a-zA-Z0-9\-_]+",
-    rid = "[a-zA-Z0-9]+",
+    region = ".+(:[0-9]+-[0-9]+)?"
 
 localrules: all, merge_bamstats, merge_trimstats
 
 rule all:
     input:
-        #expand("%s/{sid}.bam" % config['cleanbam']['odir2'], sid=config['SampleID']),
-        "%s/%s" % (config['dird'], config['callvnt']['out']),
+        expand(["%s/{sid}.tsv" % config['bismark_extract']['odir']], sid=config['SampleID']),
         "%s/%s" % (config['dird'], config['merge_trimstats']['out']),
         "%s/%s" % (config['dird'], config['merge_bamstats']['out']),
-        "%s/%s" % (config['dird'], config['multiqc']['out']),
 
 if config['source'] == 'sra':
     include: "rules/fasterq_dump.smk"
@@ -30,10 +27,10 @@ elif config['source'] == 'local':
     include: "rules/fq_compress.smk"
 
 include: "rules/fastp.smk"
-include: "rules/bwa.smk"
+include: "rules/bismark.smk"
+include: "rules/bismark_extract.smk"
 include: "rules/cleanbam.smk"
-include: "rules/callvnt_gatk.smk"
-include: "rules/multiqc.smk"
+include: "rules/report.smk"
 
 onsuccess:
     shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))

@@ -28,11 +28,11 @@ def hisat2_extra(w):
     return " ".join(extras)
 
 rule hisat2:
-    input: 
+    input:
         unpack(hisat2_inputs)
     output:
         temp("%s/{sid}.bam" % config['hisat2']['odir1']),
-        protected("%s/{sid}.txt" % config['hisat2']['odir1'])
+        "%s/{sid}.txt" % config['hisat2']['odir1']
     params:
         index = config[config['reference']]["hisat2"],
         input_str = hisat2_input_str,
@@ -60,7 +60,7 @@ rule sambamba_sort:
     input:
         "%s/{sid}.bam" % config['hisat2']['odir1']
     output:
-        protected("%s/{sid}.bam" % config['hisat2']['odir2'])
+        "%s/{sid}.bam" % config['hisat2']['odir2']
     params:
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
         N = lambda w: "%s.%s" % (config['sambamba']['sort']['id'], w.sid),
@@ -76,24 +76,4 @@ rule sambamba_sort:
     threads: config['sambamba']['ppn']
     shell:
         "sambamba sort {params.extra} -t {threads} -o {output} {input}"
-
-rule bam_stat:
-    input:
-        "%s/{sid}.bam" % config['hisat2']['odir2']
-    output:
-        protected("%s/{sid}.tsv" % config['hisat2']['odir2'])
-    params:
-        N = lambda w: "%s.%s" % (config['bam_stat']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bam_stat']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bam_stat']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
-    threads: config['bam_stat']['ppn']
-    shell:
-        "bam.py stat {input} > {output}"
 

@@ -1,8 +1,8 @@
 import os
 import os.path as op
-from snakemake.utils import update_config, makedirs
-from astropy.table import Table, Column
+import pandas as pd
 import yaml
+from snakemake.utils import update_config, makedirs
 from snk.utils import get_resource
 
 def check_config(c):
@@ -20,14 +20,14 @@ def check_config(c):
         if not op.isdir(subdir):
             makedirs(subdir)
     
-    t = Table.read(c['grn']['cfg'], format = 'ascii.tab')
-    c['nid'] = t['nid']
+    df = pd.read_excel(c['grn']['cfg'], sheet_name=0, header=0)
+    c['nid'] = []
     c['t'] = dict()
-    cols = t.colnames
-    for i in range(len(t)):
-        nid = t['nid'][i]
-        c['t'][nid] = {x: t[x][i] for x in cols}
-    
+    for i in range(len(df)):
+        nid = df['nid'][i]
+        if not nid.startswith('n99a'):
+            c['nid'].append(nid)
+            c['t'][nid] = {x: df[x][i] for x in list(df)}
     return c
 
 configfile: 'config.yaml'
@@ -41,6 +41,7 @@ rule all:
     input:
         expand(["%s/{nid}.rda" % config['grn']['pkl2rda']['odir']], nid = config['nid']),
         expand(["%s/{nid}_tf.rds" % config['grn']['eval']['odir']], nid = config['nid']),
+        expand(["%s/{nid}_go.rds" % config['grn']['eval']['odir']], nid = config['nid']),
         expand(["%s/{nid}_br.rds" % config['grn']['eval']['odir']], nid = config['nid']),
         expand(["%s/{nid}_bm.rds" % config['grn']['eval']['odir']], nid = config['nid']),
 

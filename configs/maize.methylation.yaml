@@ -1,5 +1,0 @@
-config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
-dir_project: /home/springer/zhoux379/projects/maize.methylation
-dir_cache: /scratch.global/zhoux379/maize.methylation
-studylist: /home/springer/zhoux379/projects/maize.methylation/data/01.cfg.xlsx
-study: sp014

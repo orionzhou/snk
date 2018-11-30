@@ -12,8 +12,8 @@ rule featurecounts:
     input:
         "%s/{sid}.bam" % config['featurecounts']['idir']
     output:
-        protected("%s/{sid}.txt" % config['featurecounts']['odir']),
-        protected("%s/{sid}.txt.summary" % config['featurecounts']['odir'])
+        "%s/{sid}.txt" % config['featurecounts']['odir'],
+        "%s/{sid}.txt.summary" % config['featurecounts']['odir']
     log:
         "%s/%s/{sid}.log" % (config['dirl'], config['featurecounts']['id'])
     params:

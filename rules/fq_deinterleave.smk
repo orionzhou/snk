@@ -2,8 +2,8 @@ rule deinterleave:
     input:
         "%s/{sid}.fq.gz" % config['deinterleave']['idir']
     output:
-        r1 = protected("%s/{sid}_1.fq.gz" % config['deinterleave']['odir']),
-        r2 = protected("%s/{sid}_2.fq.gz" % config['deinterleave']['odir'])
+        r1 = "%s/{sid}_1.fq.gz" % config['deinterleave']['odir'],
+        r2 = "%s/{sid}_2.fq.gz" % config['deinterleave']['odir']
     params:
         extra = config["deinterleave"]["extra"],
         N = lambda w: "%s.%s" % (config['deinterleave']['id'], w.sid),

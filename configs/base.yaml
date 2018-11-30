@@ -60,6 +60,7 @@ fastq_dump:
   mem: 20
   aruntime: 10
   amem: 5
+  load: 20
 fasterq_dump:
   id: fqDump
   odir: 10_fastq
@@ -68,6 +69,7 @@ fasterq_dump:
   mem: 11
   aruntime: 10
   amem: 5
+  load: 20
 deinterleave:
   id: fqDiv
   idir: 09_fq_interleaved
@@ -216,14 +218,14 @@ hisat2:
 bismark:
   id: bsm
   xdir: bismark
-  xpre: db
-  xout: db.0
+  xpre: ''
+  xout: Bisulfite_Genome/CT_conversion/BS_CT.rev.2.bt2
   idir: 14_trim
   odir1: 21_bismark
   odir2: 22_bam
   extra: -n 1
-  ppn: 4
-  runtime: 20
+  ppn: 8
+  runtime: 30
   mem: 30
   aruntime: 10
   amem: 10
@@ -243,6 +245,11 @@ sambamba:
     id: sbbF
     extra: ''
     runtime: 4
+cleanbam:
+  id: cleanBam
+  idir: 22_bam
+  odir1: 23_mark_dup
+  odir2: 24_base_recal
 featurecounts:
   id: featuecnts
   idir: 22_bam
@@ -253,17 +260,22 @@ featurecounts:
   mem: 15
   aruntime: 10
   amem: 10
-cleanbam:
-  id: cleanBam
-  idir: 22_bam
-  odir1: 23_mark_dup
-  odir2: 24_base_recal
+bismark_extract:
+  id: bsm_me
+  idir: 23_mark_dup
+  odir: 31_bismark_extract
+  ppn: 8
+  runtime: 20
+  mem: 30
+  aruntime: 10
+  amem: 10
 # variant calling
 callvnt:
   id: callvnt
   idir: 24_base_recal
   odir1: 25_gvcf
   odir2: 26_vcf_by_region
+  odir_gvcf: 05_gvcf
   out: 10.vcf.gz
 bcftools:
   call:
@@ -393,6 +405,9 @@ merge_featurecounts:
   id: merge_feat
   idir: 31_featurecounts
   out: featurecounts.tsv
+  ppn: 1
+  runtime: 3
+  mem: 10
 merge_bamstats:
   id: merge_bamst
   #idir: 22_bam

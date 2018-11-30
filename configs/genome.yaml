@@ -120,8 +120,8 @@ snpeff_index:
   aruntime: 0
 bismark_index:
   id: bsmIdx
-  ppn: 1
-  runtime: 5
+  ppn: 6
+  runtime: 20
   mem: 30
   amem: 0
   aruntime: 0

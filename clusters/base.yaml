@@ -6,6 +6,7 @@ __default__:
   mem: 8
   aruntime: 8
   amem: 8
+  load: 1
   M: zhoux379@umn.edu
   m: a
   r: n
