@@ -36,8 +36,8 @@ def get_resource(config, attempt, k1, k2 = ''):
     assert k1 in config, '%s not in config' % k1
     c = config[k1]
     q, aq = 0, 0
-    runtime, aruntime = 8, 8
-    mem, amem = 10, 10
+    runtime, aruntime = 8, 2
+    mem, amem = 10, 5
     ppn, appn = 1, 0
     load = 1
     if k2 != '':
@@ -85,7 +85,8 @@ def check_genome(genome, dbs, c):
     sdic = {'ref': '10_genome.fna',
             'chrom_size': '15_intervals/01.chrom.sizes',
             'chrom_bed': '15_intervals/01.chrom.bed',
-            'gap': '15_intervals/11.gap.bed'}
+            'gap': '15_intervals/11.gap.bed',
+            'rds': '55.rds'}
     adic = {'gff':'10.gff', 'gtf':'10.gtf', 'faa':'10.faa',
             'lgff':'15.gff', 'lgtf':'15.gtf', 'lfaa':'15.faa'}
     for k, v in sdic.items():
@@ -171,6 +172,65 @@ def check_config_default(c):
     return c
 
 def check_config_ngs(c):
+    for fn in [c['studylist']]:
+        assert op.isfile(fn), "cannot read %s" % fn
+
+    study = c['study']
+    df = pd.read_excel(c['studylist'], sheet_name=0, header=0)
+    dic_study = { df['sid'][i]: {x: df[x][i] for x in list(df)} for i in range(len(df)) }
+    assert study in dic_study, "study not in config file: %s" % study
+    c['source'] = dic_study[study]['source']
+    c['readtype'] = dic_study[study]['readtype']
+    c['stranded'] = dic_study[study]['stranded']
+    c['reference'] = dic_study[study]['reference']
+    c['mapper'] = dic_study[study]['mapper']
+    assert c['source'] in ['sra','local','local_interleaved'], "unknown source: %s" % c['source']
+    assert c['stranded'] in ['yes','no','reverse'], "unknown strand: %s" % c['stranded']
+    assert c['readtype'] in ['illumina','solid','3rnaseq'], "unknown readtype: %s" % c['readtype']
+    assert c['mapper'] in ['star','hisat2','bwa','bismark'], "unknown mapper: %s" % c['mapper']
+    c['genome'] = c['reference']
+    dbs = [c['mapper']]
+   
+    dir_project, dir_cache = c['dir_project'], c['dir_cache']
+    dirw = op.join(dir_cache, study)
+    samplelist = "%s/data/05_read_list/%s.c.tsv" % (dir_project, study)
+    if not op.isfile(samplelist):
+        samplelist = "%s/data/05_read_list/%s.tsv" % (dir_project, study)
+    assert op.isfile(samplelist), "samplelist not found: %s" % samplelist
+    c['dirw'], c['samplelist'] = dirw, samplelist
+    dir_raw = "%s/data/08_raw_output/%s" % (dir_project, study)
+    if not op.isdir(dir_raw):
+        makedirs(dir_raw)
+    
+    c = check_config_default(c)
+    check_genome(c['reference'], dbs, c)
+    
+    dir_cachelink = op.join(dir_project, 'data', 'cache')
+    make_symlink(dir_cache, dir_cachelink)
+    dir_rawlink = op.join(dirw, c['dird'])
+    make_symlink(dir_raw, dir_rawlink)
+    
+    df = pd.read_csv(samplelist, sep="\t", header=0)
+    print("sample list read from %s" % samplelist)
+    c['SampleID'] = df['SampleID'].tolist()
+    c['t'] = dict()
+    c['gt'] = dict()
+    cols = df.columns.values.tolist()
+    for i in range(len(df)):
+        sid = df['SampleID'][i]
+        sdic = {x: df[x][i] for x in cols}
+        # if 'paired' in sdic:
+            # sdic['paired'] = str2bool(sdic['paired'])
+        c['t'][sid] = sdic
+        if 'Genotype' in sdic and sdic['Genotype']:
+            gt = sdic['Genotype']
+            if gt not in c['gt']:
+                c['gt'][gt] = []
+            c['gt'][gt].append(sid)
+    c['Genotypes'] = list(c['gt'].keys())
+    return c
+
+def check_config_ngs_cross(c):
     for fn in [c['studylist']]:
         assert op.isfile(fn), "cannot read %s" % fn
 

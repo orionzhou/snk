@@ -27,10 +27,11 @@ rule bismark_extract:
     input:
         "%s/{sid}.rn.bam" % config['bismark_extract']['idir']
     output:
-        "%s/{sid}.tsv" % config['bismark_extract']['odir'],
+        "%s/{sid}.rds" % config['bismark_extract']['odir']
     params:
         index = config[config['reference']]["bismark"],
         odir = config['bismark_extract']['odir'],
+        cx_report = lambda w: "%s/%s.rn.CX_report.txt" % (config['bismark_extract']['odir'], w.sid),
         parallel = lambda w, resources: int(resources.ppn / 2),
         N = lambda w: "%s.%s" % (config['bismark_extract']['id'], w.sid),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bismark_extract']['id'], w.sid),
@@ -49,9 +50,12 @@ rule bismark_extract:
         --buffer_size {params.mem}G \
         --genome_folder {params.index} \
         -p --no_overlap \
-        --comprehensive \
-        --no_header --output {params.odir} \
+        --cytosine_report --CX \
+        --output {params.odir} \
         {input}
+        bsm2gr.R {params.cx_report} {output}
         """
 #--bedGraph --zero_based \
+#--comprehensive \
+# --no-header
 

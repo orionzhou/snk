@@ -4,8 +4,9 @@ __default__:
   ppn: 1
   runtime: 8
   mem: 8
-  aruntime: 8
-  amem: 8
+  aruntime: 1
+  amem: 5
+  aq: 0
   load: 1
   M: zhoux379@umn.edu
   m: a

@@ -99,7 +99,7 @@ if 'nodes' in cc: nodes = "nodes=" + str(cc["nodes"])
 if 'ppn' in cc: ppn = "ppn=" + str(cc["ppn"])
 if 'mem' in cc: mem = "mem=" + str(cc["mem"]) + 'gb'
 if 'runtime' in cc: walltime = "walltime=" + str(cc["runtime"]*3600)
- 
+
 if args.depend:
     for m in set(args.depend.split(" ")):
         depend = depend + ":" + m
@@ -145,7 +145,7 @@ if "params" in job_properties:
     if 'm' in params: mail = " -m " + str(params['m'])
     if 'M' in params: mailuser = " -M " + str(params['M'])
     if 'N' in params: jname = " -N " + str(params['N'])
-    if 'o' in params: 
+    if 'o' in params:
         so = " -o " + str(params['o'])
         jobo = params['o']
     if 'e' in params:

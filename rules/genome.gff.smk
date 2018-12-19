@@ -31,6 +31,7 @@ rule anno2_index:
         tsv = "{genome}/%s/10.tsv" % config['adir'],
         gtf = "{genome}/%s/10.gtf" % config['adir'],
         bed = "{genome}/%s/10.bed" % config['adir'],
+        des = "{genome}/%s/10.desc.tsv" % config['adir'],
         fna = "{genome}/%s/10.fna" % config['adir'],
         faa = "{genome}/%s/10.faa" % config['adir'],
         pgff = "{genome}/%s/15.gff" % config['adir'],
@@ -38,6 +39,7 @@ rule anno2_index:
         ptsv = "{genome}/%s/15.tsv" % config['adir'],
         pgtf = "{genome}/%s/15.gtf" % config['adir'],
         pbed = "{genome}/%s/15.bed" % config['adir'],
+        pdes = "{genome}/%s/15.desc.tsv" % config['adir'],
         pfna = "{genome}/%s/15.fna" % config['adir'],
         pfaa = "{genome}/%s/15.faa" % config['adir'],
     params:
@@ -64,6 +66,7 @@ rule anno2_index:
         gff.py 2tsv {input.gff} > {output.tsv}
         gff.py 2gtf {input.gff} > {output.gtf}
         gff.py 2bed12 {input.gff} > {output.bed}
+        gff.py note --attribute note1,note2 {input.gff} > {output.des}
         gff.py 2fas {input.gff} {params.ref} >{output.fna}
         fasta.py translate {output.fna} > {output.faa}
 
@@ -72,6 +75,7 @@ rule anno2_index:
         gff.py 2tsv {output.pgff} > {output.ptsv}
         gff.py 2gtf {output.pgff} > {output.pgtf}
         gff.py 2bed12 {output.pgff} > {output.pbed}
+        gff.py note --attribute note1,note2 {output.pgff} > {output.pdes}
         gff.py 2fas {output.pgff} {params.ref} > {output.pfna}
         fasta.py translate {output.pfna} > {output.pfaa}
         """

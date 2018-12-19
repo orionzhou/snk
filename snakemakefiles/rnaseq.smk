@@ -18,6 +18,7 @@ rule all:
         "%s/%s" % (config['dird'], config['merge_featurecounts']['out']),
         "%s/%s" % (config['dird'], config['merge_trimstats']['out']),
         "%s/%s" % (config['dird'], config['merge_bamstats']['out']),
+        "%s/%s" % (config['dird'], config['rc2cpm']['out']),
         "%s/%s" % (config['dird'], config['multiqc']['out']),
 
 if config['source'] == 'sra':

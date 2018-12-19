@@ -58,7 +58,7 @@ def all_inputs(wildcards):
             inputs.append("%s/%s/15.gff.db" % (genome, config['adir']))
             #inputs.append("%s/%s/25.tandup.tsv" % (genome, config['adir']))
             inputs.append("%s/%s/22.tandup.pro.tsv" % (genome, config['adir']))
-            inputs.append("%s/55.rda" % genome)
+            inputs.append("%s/55.rds" % genome)
     return inputs
 localrules: all, blast_index, anno1_clean, prepR
 rule all:
@@ -73,8 +73,9 @@ rule prepR:
         chrom_size = "{genome}/15_intervals/01.chrom.sizes",
         gap_bed = "{genome}/15_intervals/11.gap.bed",
         gene_tsv = "{genome}/%s/15.tsv" % config['adir'],
+        gene_des = "{genome}/%s/15.desc.tsv" % config['adir'],
     output:
-        "{genome}/55.rda"
+        "{genome}/55.rds"
     params:
         wdir = lambda w: "%s" % w.genome,
     shell:

@@ -54,7 +54,7 @@ def merge_trimstats_inputs(w):
 rule merge_trimstats:
     input: merge_trimstats_inputs
     output:
-        "%s/%s" % (config['dird'], config['merge_trimstats']['out'])
+        protected("%s/%s" % (config['dird'], config['merge_trimstats']['out']))
     shell:
         "jsonutil.py fastp {input} > {output}"
 
@@ -62,7 +62,7 @@ rule merge_featurecounts:
     input:
         expand(["%s/{sid}.txt" % config['merge_featurecounts']['idir']], sid = config['SampleID'])
     output:
-        "%s/%s" % (config['dird'], config['merge_featurecounts']['out'])
+        protected("%s/%s" % (config['dird'], config['merge_featurecounts']['out']))
     params:
         N = lambda w: "%s" % (config['merge_featurecounts']['id']),
         e = lambda w: "%s/%s.e" % (config['dirp'], config['merge_featurecounts']['id']),
@@ -77,6 +77,28 @@ rule merge_featurecounts:
     threads: config['merge_featurecounts']['ppn']
     shell:
         "merge.featurecounts.R -o {output} {input}"
+
+rule rc2cpm:
+    input:
+        exp = "%s/%s" % (config['dird'], config['rc2cpm']['in']),
+        samplelist = config['samplelist'],
+        cfg = config[config['reference']]["rds"],
+    output:
+        protected("%s/%s" % (config['dird'], config['rc2cpm']['out']))
+    params:
+        N = lambda w: "%s" % (config['rc2cpm']['id']),
+        e = lambda w: "%s/%s.e" % (config['dirp'], config['rc2cpm']['id']),
+        o = lambda w: "%s/%s.o" % (config['dirp'], config['rc2cpm']['id']),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['mem']
+    threads: config['rc2cpm']['ppn']
+    shell:
+        "rc2cpm.R {input.exp} {output} --sample {input.samplelist} --config {input.cfg}"
 
 def bamstat_dir():
     dirb = ''
@@ -133,7 +155,7 @@ rule merge_bamstats:
     input:
         expand("%s/{sid}.tsv" % bamstat_dir(), sid = config['SampleID'])
     output:
-        "%s/%s" % (config['dird'], config['merge_bamstats']['out'])
+        protected("%s/%s" % (config['dird'], config['merge_bamstats']['out']))
     shell:
         "merge.bamstats.R -o {output} {input}"
 

@@ -9,7 +9,7 @@ rule genie3:
     input:
         "%s/{nid}.pkl" % config['grn']['genie3']['idir']
     output:
-        "%s/{nid}.pkl" % config['grn']['genie3']['odir']
+        temp("%s/{nid}.pkl" % config['grn']['genie3']['odir'])
     params:
         extra = genie3_extra,
         N = lambda w: "%s.%s" % (config['grn']['genie3']['id'], w.nid),
@@ -51,14 +51,11 @@ rule eval:
     input:
         "%s/{nid}.rda" % config['grn']['eval']['idir']
     output:
-        tf = "%s/{nid}_tf.rds" % config['grn']['eval']['odir'],
-        go = "%s/{nid}_go.rds" % config['grn']['eval']['odir'],
-        br = "%s/{nid}_br.rds" % config['grn']['eval']['odir'],
-        bm = "%s/{nid}_bm.rds" % config['grn']['eval']['odir'],
+        "%s/{nid}_{evtype}.rds" % config['grn']['eval']['odir'],
     params:
-        N = lambda w: "%s.%s" % (config['grn']['eval']['id'], w.nid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['grn']['eval']['id'], w.nid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['grn']['eval']['id'], w.nid),
+        N = lambda w: "%s.%s.%s" % (config['grn']['eval']['id'], w.nid, w.evtype),
+        e = lambda w: "%s/%s/%s/%s.e" % (config['dirp'], config['grn']['eval']['id'], w.evtype, w.nid),
+        o = lambda w: "%s/%s/%s/%s.o" % (config['dirp'], config['grn']['eval']['id'], w.evtype, w.nid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
@@ -68,12 +65,25 @@ rule eval:
         mem = lambda w, attempt: get_resource(config,attempt,'grn','eval')['mem']
     threads: config['grn']['eval']['ppn']
     shell:
-        """
-        grn.eval.R {input} {output.tf} --opt tf
-        grn.eval.R {input} {output.go} --opt go
-        grn.eval.R {input} {output.br} --opt briggs
-        grn.eval.R {input} {output.bm} --opt biomap
-        """
+        "grn.eval.R {input} {output} --opt {wildcards.evtype}"
 
-
+rule eval_merge:
+    input:
+        expand("%s/{nid}_{{evtype}}.rds" % config['grn']['eval_merge']['idir'], nid = config['nid'])
+    output:
+        "%s/01.{evtype}.rds" % config['grn']['eval_merge']['odir'],
+    params:
+        N = lambda w: "%s.%s" % (config['grn']['eval_merge']['id'], w.evtype),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['grn']['eval_merge']['id'], w.evtype),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['grn']['eval_merge']['id'], w.evtype),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt: get_resource(config,attempt,'grn','eval_merge')['ppn'],
+        runtime = lambda w, attempt: get_resource(config,attempt,'grn','eval_merge')['runtime'],
+        mem = lambda w, attempt: get_resource(config,attempt,'grn','eval_merge')['mem']
+    threads: config['grn']['eval_merge']['ppn']
+    shell:
+        "grn.eval.merge.R {output} --opt {wildcards.evtype}"
 

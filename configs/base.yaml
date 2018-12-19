@@ -68,7 +68,7 @@ fasterq_dump:
   runtime: 10
   mem: 11
   aruntime: 10
-  amem: 5
+  amem: 0
   load: 20
 deinterleave:
   id: fqDiv
@@ -79,7 +79,7 @@ deinterleave:
   runtime: 10
   mem: 20
   aruntime: 10
-  amem: 5
+  amem: 2
 fastqc:
   id: fqc
   idir: 14_trim
@@ -88,7 +88,7 @@ fastqc:
   runtime: 5
   mem: 10
   aruntime: 10
-  amem: 5
+  amem: 0
 fastp:
   id: fp
   idir: 10_fastq
@@ -97,7 +97,7 @@ fastp:
   runtime: 12
   mem: 20
   aruntime: 10
-  amem: 20
+  amem: 0
 trimmomatic:
   id: trimm
   idir: 10_fastq
@@ -172,11 +172,11 @@ bwa:
   odir2: 22_bam
   extra: ''
   ppn: 12
-  runtime: 20
+  runtime: 25
   mem: 30
-  aruntime: 5
-  amem: 50
-  aq: 1
+  aruntime: 15
+  amem: 2
+  aq: 0
 star:
   id: star
   xdir: star
@@ -199,8 +199,8 @@ star:
   ppn: 8
   runtime: 15
   mem: 30
-  aruntime: 15
-  amem: 10
+  aruntime: 5
+  amem: 5
 hisat2:
   id: hisat
   xdir: hisat2
@@ -214,7 +214,7 @@ hisat2:
   runtime: 15
   mem: 20
   aruntime: 15
-  amem: 10
+  amem: 5
 bismark:
   id: bsm
   xdir: bismark
@@ -233,8 +233,8 @@ sambamba:
   ppn: 8
   runtime: 8
   mem: 12
-  aruntime: 10
-  amem: 12
+  aruntime: 8
+  amem: 0
   sort:
     id: sbbS
     extra: -m 11GB
@@ -275,7 +275,6 @@ callvnt:
   idir: 24_base_recal
   odir1: 25_gvcf
   odir2: 26_vcf_by_region
-  odir_gvcf: 05_gvcf
   out: 10.vcf.gz
 bcftools:
   call:
@@ -313,31 +312,32 @@ gatk:
     picard: True
     ppn: 1
     runtime: 15
-    mem: 25
+    mem: 20
+    load: 2
     aruntime: 5
-    amem: 15
-    aq: 0
+    amem: 1
   base_recalibrator:
     id: baseR
     ppn: 1
     runtime: 20
     mem: 20
     aruntime: 5
-    amem: 20
+    amem: 0
   apply_bqsr:
     id: applB
     ppn: 1
     runtime: 20
     mem: 20
     aruntime: 5
-    amem: 20
+    amem: 0
   haplotype_caller:
     id: haplC
     ppn: 1
-    runtime: 25
+    runtime: 40
     mem: 15
     aruntime: 15
-    amem: 5
+    amem: 2
+    load: 1
   gather_vcfs:
     id: gathV
     picard: True
@@ -345,20 +345,20 @@ gatk:
     runtime: 5
     mem: 10
     aruntime: 5
-    amem: 5
+    amem: 0
   combine_gvcfs:
     id: combG
     ppn: 1
-    runtime: 15
+    runtime: 20
     mem: 30
-    aruntime: 30
-    amem: 5
+    aruntime: 10
+    amem: 2
   genotype_gvcfs:
     id: genoG
     ppn: 1
     runtime: 15
     mem: 30
-    aruntime: 15
+    aruntime: 5
     amem: 5
   variant_filtration:
     id: variF
@@ -378,7 +378,7 @@ snpeff:
   runtime: 20
   mem: 30
   aruntime: 10
-  amem: 20
+  amem: 5
 ase:
   id: ase
   idir: 22_bam
@@ -389,15 +389,24 @@ ase:
   ppn: 1
   runtime: 20
   mem: 20
-  aruntime: 20
+  aruntime: 10
+  amem: 0
+# statistics & reports
+multiqc:
+  id: multiqc
+  out: multiqc.html
+  ppn: 1
+  runtime: 10
+  mem: 15
+  aruntime: 10
   amem: 10
 bam_stat:
   id: bamst
   ppn: 1
   runtime: 8
-  mem: 4
-  aruntime: 8
-  amem: 4
+  mem: 15
+  aruntime: 2
+  amem: 10
 merge_trimstats:
   id: merge_trim
   out: trimming.tsv
@@ -416,12 +425,13 @@ merge_ase:
   id: merge_ase
   idir: 33_ase
   out: ase.tsv
-multiqc:
-  id: multiqc
-  out: multiqc.html
+rc2cpm:
+  id: rc2cpm
+  in: featurecounts.tsv
+  out: cpm.rds
   ppn: 1
-  runtime: 10
-  mem: 15
-  aruntime: 10
+  runtime: 2
+  mem: 30
+  aruntime: 0
   amem: 10
 

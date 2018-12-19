@@ -21,11 +21,12 @@ rule gatk_haplotype_caller:
         o = lambda w: "%s/%s/%s/%s.o" % (config['dirp'], config['gatk']['haplotype_caller']['id'], w.gt, w.rid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        mem = lambda w, resources: resources.mem - 2
     resources:
         ppn = lambda w, attempt: get_resource(config, attempt, 'gatk', 'haplotype_caller')['ppn'],
         runtime = lambda w, attempt: get_resource(config, attempt, 'gatk', 'haplotype_caller')['runtime'],
-        mem = lambda w, attempt: get_resource(config, attempt, 'gatk', 'haplotype_caller')['mem']
+        mem = lambda w, attempt: get_resource(config, attempt, 'gatk', 'haplotype_caller')['mem'],
+        load = lambda w, attempt:  get_resource(config, attempt, 'gatk','haplotype_caller')['load']
     threads: config['gatk']['haplotype_caller']['ppn']
     shell:
         #-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation \
@@ -54,8 +55,8 @@ rule gatk_gather_vcfs:
     input:
         unpack(gather_vcf_inputs)
     output:
-        vcf = "%s/{gt}.g.vcf.gz" % config['callvnt']['odir1'],
-        tbi = "%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['odir1']
+        vcf = protected("%s/%s/{gt}.g.vcf.gz" % (config['dird'], config['callvnt']['odir1'])),
+        tbi = protected("%s/%s/{gt}.g.vcf.gz.tbi" % (config['dird'], config['callvnt']['odir1']))
     log:
         "%s/%s/{gt}.log" % (config['dirl'], config['gatk']['gather_vcfs']['id'])
     params:
@@ -83,10 +84,12 @@ rule gatk_gather_vcfs:
 
 rule gatk_combine_gvcfs:
     input:
-        vcfs = expand("%s/{gt}.g.vcf.gz" % config['callvnt']['odir1'],
-                gt = config['Genotypes']),
-        tbis = expand("%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['odir1'],
-                gt = config['Genotypes'])
+        vcfs = expand("%s/%s/{gt}.g.vcf.gz" %
+            (config['dird'], config['callvnt']['odir1']),
+            gt = config['Genotypes']),
+        tbis = expand("%s/%s/{gt}.g.vcf.gz.tbi" %
+            (config['dird'], config['callvnt']['odir1']),
+            gt = config['Genotypes'])
     output:
         vcf = "%s/{rid}.g.vcf.gz" % config['callvnt']['odir2'],
         tbi = "%s/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir2'],
@@ -117,8 +120,8 @@ rule gatk_combine_gvcfs:
 
 rule gatk_genotype_gvcfs:
     input:
-        vcf = protected("%s/{rid}.g.vcf.gz" % config['callvnt']['odir2']),
-        tbi = protected("%s/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir2']),
+        vcf = "%s/{rid}.g.vcf.gz" % config['callvnt']['odir2'],
+        tbi = "%s/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir2'],
     output:
         vcf = "%s/{rid}.vcf.gz" % config['callvnt']['odir2'],
         tbi = "%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2'],
@@ -153,8 +156,8 @@ rule gatk_gather_vcfs2:
         tbis = expand("%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2'], 
                 rid = list(config[config['reference']]['regions'].keys()))
     output:
-        vcf = "%s/%s" % (config['dird'], config['callvnt']['out']),
-        tbi = "%s/%s.tbi" % (config['dird'], config['callvnt']['out'])
+        vcf = protected("%s/%s" % (config['dird'], config['callvnt']['out'])),
+        tbi = protected("%s/%s.tbi" % (config['dird'], config['callvnt']['out']))
     params:
         cmd = config['gatk']['cmd'],
         input_str = lambda w, input: ["-I %s" % x for x in input.vcfs],

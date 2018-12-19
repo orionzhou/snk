@@ -1,5 +1,5 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
-dir_project: /home/springer/zhoux379/projects/maize.reseq
-dir_cache: /scratch.global/zhoux379/maize.reseq
-studylist: /home/springer/zhoux379/projects/maize.reseq/data/01.cfg.xlsx
+dir_project: /home/springer/zhoux379/projects/reseq
+dir_cache: /scratch.global/zhoux379/reseq
+studylist: /home/springer/zhoux379/projects/reseq/data/01.cfg.xlsx
 study: hmp3

@@ -15,7 +15,7 @@ localrules: all, merge_bamstats, merge_trimstats
 
 rule all:
     input:
-        expand(["%s/{sid}.tsv" % config['bismark_extract']['odir']], sid=config['SampleID']),
+        expand(["%s/{sid}.rds" % config['bismark_extract']['odir']], sid=config['SampleID']),
         "%s/%s" % (config['dird'], config['merge_trimstats']['out']),
         "%s/%s" % (config['dird'], config['merge_bamstats']['out']),
 

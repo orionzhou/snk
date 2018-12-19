@@ -21,11 +21,12 @@ def check_config(c):
             makedirs(subdir)
     
     df = pd.read_excel(c['grn']['cfg'], sheet_name=0, header=0)
+    c['grn']['evtype'] = c['grn']['evtype'].split()
     c['nid'] = []
     c['t'] = dict()
     for i in range(len(df)):
         nid = df['nid'][i]
-        if not nid.startswith('n99a'):
+        if not nid.startswith('np_gibeerish'):
             c['nid'].append(nid)
             c['t'][nid] = {x: df[x][i] for x in list(df)}
     return c
@@ -36,14 +37,12 @@ config = check_config(config)
 
 wildcard_constraints:
     study = "[a-zA-Z0-9]+",
+    evtype = "[a-zA-Z0-9]+",
 
 rule all:
     input:
-        expand(["%s/{nid}.rda" % config['grn']['pkl2rda']['odir']], nid = config['nid']),
-        expand(["%s/{nid}_tf.rds" % config['grn']['eval']['odir']], nid = config['nid']),
-        expand(["%s/{nid}_go.rds" % config['grn']['eval']['odir']], nid = config['nid']),
-        expand(["%s/{nid}_br.rds" % config['grn']['eval']['odir']], nid = config['nid']),
-        expand(["%s/{nid}_bm.rds" % config['grn']['eval']['odir']], nid = config['nid']),
+        expand("%s/{nid}.rda" % config['grn']['pkl2rda']['odir'], nid=config['nid']),
+        expand("%s/01.{evtype}.rds" % config['grn']['eval_merge']['odir'], evtype=config['grn']['evtype'])
 
 include: "rules/grn.smk"
 
