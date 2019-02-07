@@ -14,14 +14,14 @@ fm:
     runtime: 10
     mem: 20
     aruntime: 10
-    amem: 10
+    amem: 1
   coord:
     id: coord
     ppn: 1
-    runtime: 10
+    runtime: 2
     mem: 20
-    aruntime: 10
-    amem: 10
+    aruntime: 1
+    amem: 1
 lastz:
   id: lz
   idir: 31_te_windows
@@ -29,5 +29,5 @@ lastz:
   ppn: 1
   runtime: 60
   mem: 20
-  aruntime: 20
-  amem: 10
+  aruntime: 10
+  amem: 1

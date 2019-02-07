@@ -8,6 +8,24 @@ dirl: logs
 dirp: pbs
 dird: data
 zip_re: (\.gz|\.zip|\.bz2)
+valid:
+  source:
+    - sra
+    - local
+    - local_interleaved
+  stranded:
+    - 'yes'
+    - 'no'
+    - 'reverse'
+  readtype:
+    - illumina
+    - solid
+    - 3rnaseq
+  mapper:
+    - star
+    - hisat2
+    - bwa
+    - bismark
 ## genomes
 dirg: /home/springer/zhoux379/data/genome
 genomes:
@@ -42,38 +60,37 @@ genomes:
   Osativa:
     annotation: True
 ## fastq utilities
-fq_compress:
-  id: fqGz
-  idir: 09_fastq_raw
+fastq:
   odir: 10_fastq
+fq_compress:
+  id: fqc
+  odir: 09_fq_compress
   ppn: 6
   runtime: 5
   mem: 30
   aruntime: 10
   amem: 5
-fastq_dump:
-  id: fqDump
-  odir: 10_fastq_slow
-  jdir: fq_dump
+fq_dump_slow:
+  id: fqdl
+  odir: 09_fq_dump_slow
   ppn: 1
   runtime: 20
   mem: 20
   aruntime: 10
   amem: 5
   load: 20
-fasterq_dump:
-  id: fqDump
-  odir: 10_fastq
+fq_dump:
+  id: fqd
+  odir: 09_fq_dump
   ppn: 4
   runtime: 10
   mem: 11
   aruntime: 10
   amem: 0
-  load: 20
-deinterleave:
-  id: fqDiv
-  idir: 09_fq_interleaved
-  odir: 10_fastq
+  load: 10
+fq_deinterleave:
+  id: fqv
+  odir: 09_fq_deinterleave
   extra: ''
   ppn: 10
   runtime: 10
@@ -89,10 +106,13 @@ fastqc:
   mem: 10
   aruntime: 10
   amem: 0
+## trimming
+trimming:
+  idir: 10_fastq
+  odir: 15_trim
 fastp:
   id: fp
-  idir: 10_fastq
-  odir: 14_trim
+  odir: 14_fastp
   ppn: 8
   runtime: 12
   mem: 20
@@ -100,10 +120,9 @@ fastp:
   amem: 0
 trimmomatic:
   id: trimm
-  idir: 10_fastq
-  odir: 14_trim
-  adapter_pe: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-PE.fa 
-  adapter_se: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-SE.fa 
+  odir: 14_trimmomatic
+  adapter_pe: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-PE.fa
+  adapter_se: /home/springer/zhoux379/software/miniconda3/share/trimmomatic/adapters/TruSeq3-SE.fa
   ppn: 8
   runtime: 12
   mem: 20
@@ -111,8 +130,7 @@ trimmomatic:
   amem: 20
 bbduk:
   id: bbduk
-  idir: 10_fastq
-  odir: 14_trim
+  odir: 14_bbduk
   cmd: bbduk.sh
   refs:
       - /home/springer/zhoux379/source/bbmap/resources/polyA.fa.gz
@@ -123,7 +141,13 @@ bbduk:
   mem: 10
   aruntime: 10
   amem: 5
+merge_trimstats:
+  id: merge_trim
+  out: trimming.tsv
 ## mapping, align, bam
+mapping:
+  idir: 15_trim
+  odir: 22_bam
 blat:
   id: blat
   xdir: blat
@@ -167,9 +191,7 @@ bwa:
   xdir: bwa
   xpre: db
   xout: db.bwt
-  idir: 14_trim
-  odir1: 21_bwa
-  odir2: 22_bam
+  odir: 21_bwa
   extra: ''
   ppn: 12
   runtime: 25
@@ -182,9 +204,7 @@ star:
   xdir: star
   xpre: ''
   xout: SA
-  idir: 14_trim
-  odir1: 21_star
-  odir2: 22_bam
+  odir: 21_star
   extra: "--outSAMmapqUnique 60
       --outFilterType BySJout 
       --outFilterMultimapNmax 20 
@@ -206,9 +226,7 @@ hisat2:
   xdir: hisat2
   xpre: db
   xout: db.1.ht2
-  idir: 14_trim
-  odir1: 21_hisat2
-  odir2: 22_bam
+  odir: 21_hisat2
   extra: --new-summary
   ppn: 8
   runtime: 15
@@ -220,9 +238,7 @@ bismark:
   xdir: bismark
   xpre: ''
   xout: Bisulfite_Genome/CT_conversion/BS_CT.rev.2.bt2
-  idir: 14_trim
-  odir1: 21_bismark
-  odir2: 22_bam
+  odir: 21_bismark
   extra: -n 1
   ppn: 8
   runtime: 30
@@ -245,11 +261,18 @@ sambamba:
     id: sbbF
     extra: ''
     runtime: 4
-cleanbam:
-  id: cleanBam
-  idir: 22_bam
-  odir1: 23_mark_dup
-  odir2: 24_base_recal
+bam_stat:
+  id: bamst
+  ppn: 1
+  runtime: 8
+  mem: 15
+  aruntime: 2
+  amem: 10
+merge_bamstats:
+  id: merge_bamst
+  out: bamstats.tsv
+  outv: bamstats_v.tsv
+## rnaseq profiling
 featurecounts:
   id: featuecnts
   idir: 22_bam
@@ -260,6 +283,38 @@ featurecounts:
   mem: 15
   aruntime: 10
   amem: 10
+merge_featurecounts:
+  id: mergF
+  out: featurecounts.tsv
+  ppn: 1
+  runtime: 3
+  mem: 10
+rc2cpm:
+  id: rc2cpm
+  out_raw: cpm_raw.rds
+  out: cpm.rds
+  ppn: 1
+  runtime: 2
+  mem: 30
+  aruntime: 0
+  amem: 10
+ase:
+  id: ase
+  idir: 22_bam
+  odir: 33_ase
+  gene_bed: /home/springer/zhoux379/data/genome/B73/50_annotation/10.ase.bed
+  vdir: /home/springer/zhoux379/projects/biomap/data/variants/ase29
+  vdir2: /home/springer/zhoux379/projects/biomap/data/variants/ase35
+  ppn: 1
+  runtime: 20
+  mem: 20
+  aruntime: 10
+  amem: 0
+merge_ase:
+  id: merge_ase
+  idir: 33_ase
+  out: ase.tsv
+## methylation profiling
 bismark_extract:
   id: bsm_me
   idir: 23_mark_dup
@@ -270,12 +325,22 @@ bismark_extract:
   aruntime: 10
   amem: 10
 # variant calling
+cleanbam:
+  id: cleanBam
+  idir: 22_bam
+  odir1: 23_mark_dup
+  odir2: 24_base_recal
 callvnt:
   id: callvnt
   idir: 24_base_recal
   odir1: 25_gvcf
-  odir2: 26_vcf_by_region
-  out: 10.vcf.gz
+callvnt_joint:
+  id: callvntj
+  idir: 25_gvcf
+  odir1: 26_gvcf_rename
+  odir2: 27_gvcf_by_region
+  odir3: 28_vcf_by_region
+  out: 30.vcf.gz
 bcftools:
   call:
     id: bcfCa
@@ -337,28 +402,35 @@ gatk:
     mem: 15
     aruntime: 15
     amem: 2
-    load: 1
-  gather_vcfs:
-    id: gathV
+  merge_vcfs:
+    id: mergV
     picard: True
     ppn: 1
     runtime: 5
-    mem: 10
-    aruntime: 5
+    mem: 30
+    aruntime: 10
     amem: 0
+  rename_sample_id:
+    id: renaS
+    ppn: 1
+    runtime: 20
+    mem: 15
+    aruntime: 10
+    amem: 2
   combine_gvcfs:
     id: combG
     ppn: 1
-    runtime: 20
-    mem: 30
+    runtime: 15
+    mem: 60
     aruntime: 10
-    amem: 2
+    amem: 100
+    aq: 1
   genotype_gvcfs:
     id: genoG
     ppn: 1
-    runtime: 15
+    runtime: 30
     mem: 30
-    aruntime: 5
+    aruntime: 10
     amem: 5
   variant_filtration:
     id: variF
@@ -379,18 +451,6 @@ snpeff:
   mem: 30
   aruntime: 10
   amem: 5
-ase:
-  id: ase
-  idir: 22_bam
-  odir: 33_ase
-  gene_bed: /home/springer/zhoux379/data/genome/B73/50_annotation/10.ase.bed
-  vdir: /home/springer/zhoux379/projects/biomap/data/variants/ase29
-  vdir2: /home/springer/zhoux379/projects/biomap/data/variants/ase35
-  ppn: 1
-  runtime: 20
-  mem: 20
-  aruntime: 10
-  amem: 0
 # statistics & reports
 multiqc:
   id: multiqc
@@ -399,39 +459,5 @@ multiqc:
   runtime: 10
   mem: 15
   aruntime: 10
-  amem: 10
-bam_stat:
-  id: bamst
-  ppn: 1
-  runtime: 8
-  mem: 15
-  aruntime: 2
-  amem: 10
-merge_trimstats:
-  id: merge_trim
-  out: trimming.tsv
-merge_featurecounts:
-  id: merge_feat
-  idir: 31_featurecounts
-  out: featurecounts.tsv
-  ppn: 1
-  runtime: 3
-  mem: 10
-merge_bamstats:
-  id: merge_bamst
-  #idir: 22_bam
-  out: bamstats.tsv
-merge_ase:
-  id: merge_ase
-  idir: 33_ase
-  out: ase.tsv
-rc2cpm:
-  id: rc2cpm
-  in: featurecounts.tsv
-  out: cpm.rds
-  ppn: 1
-  runtime: 2
-  mem: 30
-  aruntime: 0
   amem: 10
 

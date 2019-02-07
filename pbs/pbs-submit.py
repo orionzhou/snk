@@ -88,10 +88,10 @@ if 'q' in cc: q = " -q " + str(qmap[cc['q']])
 if 'm' in cc: mail = " -m " + cc['m']
 if 'M' in cc: mailuser = " -M " + cc['M']
 if 'N' in cc: jname = " -N " + cc['N']
-if 'o' in cc: 
+if 'o' in cc:
     so = " -o " + cc['o']
     jobo = cc['o']
-if 'e' in cc: 
+if 'e' in cc:
     se = " -e " + cc['e']
     jobe = cc['e']
 #if 'r' in cc: r = " -r " + cc['r']

@@ -26,7 +26,7 @@ rule fasta:
         """
         rm -rf {output.fna}* {output.fai}*
         rm -rf {output.chrom_bed} {output.chrom_size} {output.gap}
-        
+
         mkdir -p {params.wdir}/{params.odir}
         cd {params.wdir}/{params.odir}
         rm -rf raw.fna.* renamed* map* raw.sizes
@@ -41,11 +41,11 @@ rule fasta:
         chain.py fromBed mapf.bed raw.sizes renamed.sizes > mapf.chain
 
         chainSwap mapf.chain mapb.chain
-        
+
         cd ..
         ln -sf {params.odir}/renamed.fna 10_genome.fna
         cd ..
-        
+
         samtools faidx {output.fna}
         fasta.py size --bed {output.fna} > {output.chrom_bed}
         cut -f1,3 {output.chrom_bed} > {output.chrom_size}

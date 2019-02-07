@@ -40,7 +40,7 @@ rule gatk_haplotype_caller:
         >>{log} 2>&1
         """
 
-def gather_vcf_inputs(w):
+def merge_vcf_inputs(w):
     gt = w.gt
     vcfs = expand("%s/%s/{rid}.g.vcf.gz" % (config['callvnt']['odir1'], gt),
                   rid = list(config[config['reference']]['regions'].keys()))
@@ -51,48 +51,86 @@ def gather_vcf_inputs(w):
         'tbis': tbis
     }
 
-rule gatk_gather_vcfs:
+rule gatk_merge_vcfs:
     input:
-        unpack(gather_vcf_inputs)
+        unpack(merge_vcf_inputs)
     output:
         vcf = protected("%s/%s/{gt}.g.vcf.gz" % (config['dird'], config['callvnt']['odir1'])),
         tbi = protected("%s/%s/{gt}.g.vcf.gz.tbi" % (config['dird'], config['callvnt']['odir1']))
     log:
-        "%s/%s/{gt}.log" % (config['dirl'], config['gatk']['gather_vcfs']['id'])
+        "%s/%s/{gt}.log" % (config['dirl'], config['gatk']['merge_vcfs']['id'])
     params:
         cmd = config['gatk']['cmd'],
         input_str = lambda w, input: ["-I %s" % x for x in input.vcfs],
         extra = gatk_extra(picard = True),
-        N = lambda w: "%s.%s" % (config['gatk']['gather_vcfs']['id'], w.gt),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['gather_vcfs']['id'], w.gt),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['gather_vcfs']['id'], w.gt),
+        N = lambda w: "%s.%s" % (config['gatk']['merge_vcfs']['id'], w.gt),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['merge_vcfs']['id'], w.gt),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['merge_vcfs']['id'], w.gt),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['mem']
-    threads: config['gatk']['gather_vcfs']['ppn']
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['mem']
+    threads: config['gatk']['merge_vcfs']['ppn']
     shell:
+        #tabix -p vcf {output.vcf}
+        #bcftools index -t {output.vcf}
         """
-        {params.cmd} --java-options "-Xmx{params.mem}G" GatherVcfs \
+        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
         {params.extra} \
         {params.input_str} -O {output.vcf} >{log} 2>&1
-        tabix -p vcf {output.vcf}
         """
 
-rule gatk_combine_gvcfs:
+rule gatk_rename_sample_id:
     input:
-        vcfs = expand("%s/%s/{gt}.g.vcf.gz" %
-            (config['dird'], config['callvnt']['odir1']),
-            gt = config['Genotypes']),
-        tbis = expand("%s/%s/{gt}.g.vcf.gz.tbi" %
-            (config['dird'], config['callvnt']['odir1']),
-            gt = config['Genotypes'])
+        vcf = "%s/../{study}/data/%s/{gt}.g.vcf.gz" % (config['dirw'], config['callvnt_joint']['idir']),
+        tbi = "%s/../{study}/data/%s/{gt}.g.vcf.gz.tbi" % (config['dirw'], config['callvnt_joint']['idir']),
     output:
-        vcf = "%s/{rid}.g.vcf.gz" % config['callvnt']['odir2'],
-        tbi = "%s/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir2'],
+        vcf = "%s/{study}_{gt}.g.vcf.gz" % (config['callvnt_joint']['odir1']),
+        tbi = "%s/{study}_{gt}.g.vcf.gz.tbi" % (config['callvnt_joint']['odir1']),
+    params:
+        cmd = config['gatk']['cmd'],
+        extra = gatk_extra(picard = True, jdk = False),
+        ngt = lambda w: "%s_%s" % (w.study, w.gt),
+        N = lambda w: "%s.%s.%s" % (config['gatk']['rename_sample_id']['id'], w.study,w.gt),
+        e = lambda w: "%s/%s/%s/%s.e" % (config['dirp'], config['gatk']['rename_sample_id']['id'], w.study,w.gt),
+        o = lambda w: "%s/%s/%s/%s.o" % (config['dirp'], config['gatk']['rename_sample_id']['id'], w.study,w.gt),
+        ppn = lambda w, resources: resources.ppn,
+        runtime = lambda w, resources: resources.runtime,
+        mem = lambda w, resources: resources.mem
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'rename_sample_id')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'rename_sample_id')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'rename_sample_id')['mem']
+    threads: config['gatk']['rename_sample_id']['ppn']
+    shell:
+        """
+        {params.cmd} --java-options "-Xmx{params.mem}G" RenameSampleInVcf \
+        {params.extra} \
+        --NEW_SAMPLE_NAME {params.ngt} --OLD_SAMPLE_NAME {wildcards.gt} \
+        -I {input.vcf} -O {output.vcf} --CREATE_INDEX
+        """
+
+def combine_gvcf_inputs(w):
+    vcfs, tbis = [], []
+    for study, gts in config['gdic'].items():
+        for gt in gts:
+            fv = '%s/%s_%s.g.vcf.gz' % (config['callvnt_joint']['odir1'], study, gt)
+            fx = '%s/%s_%s.g.vcf.gz.tbi' % (config['callvnt_joint']['odir1'], study, gt)
+            vcfs.append(fv)
+            tbis.append(fx)
+    return {
+        'vcfs': vcfs,
+        'tbis': tbis
+    }
+
+rule gatk_combine_gvcfs:
+    input: unpack(combine_gvcf_inputs)
+    output:
+        vcf = "%s/{rid}.g.vcf.gz" % config['callvnt_joint']['odir2'],
+        tbi = "%s/{rid}.g.vcf.gz.tbi" % config['callvnt_joint']['odir2'],
     params:
         cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
@@ -102,10 +140,12 @@ rule gatk_combine_gvcfs:
         N = lambda w: "%s.%s" % (config['gatk']['combine_gvcfs']['id'], w.rid),
         e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['combine_gvcfs']['id'], w.rid),
         o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['combine_gvcfs']['id'], w.rid),
+        q = lambda w, resources: resources.q,
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
+        q = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['q'],
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['mem']
@@ -120,11 +160,11 @@ rule gatk_combine_gvcfs:
 
 rule gatk_genotype_gvcfs:
     input:
-        vcf = "%s/{rid}.g.vcf.gz" % config['callvnt']['odir2'],
-        tbi = "%s/{rid}.g.vcf.gz.tbi" % config['callvnt']['odir2'],
+        vcf = "%s/{rid}.g.vcf.gz" % config['callvnt_joint']['odir2'],
+        tbi = "%s/{rid}.g.vcf.gz.tbi" % config['callvnt_joint']['odir2'],
     output:
-        vcf = "%s/{rid}.vcf.gz" % config['callvnt']['odir2'],
-        tbi = "%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2'],
+        vcf = "%s/{rid}.vcf.gz" % config['callvnt_joint']['odir3'],
+        tbi = "%s/{rid}.vcf.gz.tbi" % config['callvnt_joint']['odir3'],
     params:
         cmd = config['gatk']['cmd'],
         ref = config[config['reference']]['gatk']['xref'],
@@ -149,34 +189,34 @@ rule gatk_genotype_gvcfs:
         -V {input.vcf} -O {output.vcf}
         """
 
-rule gatk_gather_vcfs2:
+rule gatk_merge_vcfs2:
     input:
-        vcfs = expand("%s/{rid}.vcf.gz" % config['callvnt']['odir2'], 
+        vcfs = expand("%s/{rid}.vcf.gz" % config['callvnt_joint']['odir3'],
                 rid = list(config[config['reference']]['regions'].keys())),
-        tbis = expand("%s/{rid}.vcf.gz.tbi" % config['callvnt']['odir2'], 
+        tbis = expand("%s/{rid}.vcf.gz.tbi" % config['callvnt_joint']['odir3'],
                 rid = list(config[config['reference']]['regions'].keys()))
     output:
-        vcf = protected("%s/%s" % (config['dird'], config['callvnt']['out'])),
-        tbi = protected("%s/%s.tbi" % (config['dird'], config['callvnt']['out']))
+        vcf = protected("%s/%s" % (config['dird'], config['callvnt_joint']['out'])),
+        tbi = protected("%s/%s.tbi" % (config['dird'], config['callvnt_joint']['out']))
     params:
         cmd = config['gatk']['cmd'],
         input_str = lambda w, input: ["-I %s" % x for x in input.vcfs],
-        extra = gatk_extra(picard = True),
-        N = lambda w: "%s" % (config['gatk']['gather_vcfs']['id']),
-        e = lambda w: "%s/%s.e" % (config['dirp'], config['gatk']['gather_vcfs']['id']),
-        o = lambda w: "%s/%s.o" % (config['dirp'], config['gatk']['gather_vcfs']['id']),
+        extra = gatk_extra(picard = True, jdk = False),
+        N = lambda w: "%s" % (config['gatk']['merge_vcfs']['id']),
+        e = lambda w: "%s/%s.e" % (config['dirp'], config['gatk']['merge_vcfs']['id']),
+        o = lambda w: "%s/%s.o" % (config['dirp'], config['gatk']['merge_vcfs']['id']),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'gather_vcfs')['mem']
-    threads: config["gatk"]['gather_vcfs']["ppn"]
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['mem']
+    threads: config["gatk"]['merge_vcfs']["ppn"]
     shell:
+        #bcftools index -t {output.vcf}
         """
-        {params.cmd} --java-options "-Xmx{params.mem}G" GatherVcfs \
+        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
         {params.extra} \
         {params.input_str} -O {output.vcf}
-        bcftools index -t {output.vcf}
         """

@@ -44,62 +44,6 @@ rule multiqc:
         "{input} "
         ">{log} 2>&1"
 
-def merge_trimstats_inputs(w):
-    inputs = []
-    for sid in config['SampleID']:
-        pair_suf = 'pe' if config['t'][sid]['paired'] else 'se'
-        inputs.append("%s/%s.%s.json" % (config['fastp']['odir'], sid, pair_suf))
-    return inputs
-
-rule merge_trimstats:
-    input: merge_trimstats_inputs
-    output:
-        protected("%s/%s" % (config['dird'], config['merge_trimstats']['out']))
-    shell:
-        "jsonutil.py fastp {input} > {output}"
-
-rule merge_featurecounts:
-    input:
-        expand(["%s/{sid}.txt" % config['merge_featurecounts']['idir']], sid = config['SampleID'])
-    output:
-        protected("%s/%s" % (config['dird'], config['merge_featurecounts']['out']))
-    params:
-        N = lambda w: "%s" % (config['merge_featurecounts']['id']),
-        e = lambda w: "%s/%s.e" % (config['dirp'], config['merge_featurecounts']['id']),
-        o = lambda w: "%s/%s.o" % (config['dirp'], config['merge_featurecounts']['id']),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'merge_featurecounts')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'merge_featurecounts')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'merge_featurecounts')['mem']
-    threads: config['merge_featurecounts']['ppn']
-    shell:
-        "merge.featurecounts.R -o {output} {input}"
-
-rule rc2cpm:
-    input:
-        exp = "%s/%s" % (config['dird'], config['rc2cpm']['in']),
-        samplelist = config['samplelist'],
-        cfg = config[config['reference']]["rds"],
-    output:
-        protected("%s/%s" % (config['dird'], config['rc2cpm']['out']))
-    params:
-        N = lambda w: "%s" % (config['rc2cpm']['id']),
-        e = lambda w: "%s/%s.e" % (config['dirp'], config['rc2cpm']['id']),
-        o = lambda w: "%s/%s.o" % (config['dirp'], config['rc2cpm']['id']),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['mem']
-    threads: config['rc2cpm']['ppn']
-    shell:
-        "rc2cpm.R {input.exp} {output} --sample {input.samplelist} --config {input.cfg}"
-
 def bamstat_dir():
     dirb = ''
     if config['mapper'] in ['star','hisat2']:

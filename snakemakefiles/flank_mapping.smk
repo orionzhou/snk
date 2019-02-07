@@ -10,11 +10,11 @@ def check_config(c):
     config_default = yaml.load(fy)
     update_config(config_default, c)
     c = config_default
-    
+
     for subdir in [c['dirw'], c['tmpdir']]:
         if not op.isdir(subdir):
             makedirs(subdir)
-    
+
     for rsubdir in [c['dirl'], c['dirp']]:
         subdir = op.join(c['dirw'], rsubdir)
         if not op.isdir(subdir):
@@ -56,15 +56,7 @@ localrules: all, fm1_get_bed, fm2_get_seq, fm2_get_seq_se, fm2_get_seq_merged
 rule all:
     input:
         expand("%s/{sid}.filtered.tsv" % config['fm']['odir4'], sid = config['t'].keys()),
-        #expand("%s/{p[0]}_{p[1]}.tsv" % config['lastz']['odir'], p = config['pairs'])
-        "%s/PH207_B73.tsv" % config['lastz']['odir'],
-        "%s/PH207_W22.tsv" % config['lastz']['odir'],
-        "%s/PH207_PHB47.tsv" % config['lastz']['odir'],
-        "%s/PH207_Mo17.tsv" % config['lastz']['odir'],
-        "%s/W22_B73.tsv" % config['lastz']['odir'],
-        "%s/W22_PH207.tsv" % config['lastz']['odir'],
-        "%s/W22_Mo17.tsv" % config['lastz']['odir'],
-        "%s/W22_PHB47.tsv" % config['lastz']['odir'],
+        expand("%s/{p[0]}_{p[1]}.tsv" % config['lastz']['odir'], p = config['pairs'])
 
 include: "rules/polyte_fm.smk"
 include: "rules/polyte_lastz.smk"

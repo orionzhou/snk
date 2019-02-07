@@ -3,3 +3,8 @@ dir_project: /home/springer/zhoux379/projects/reseq
 dir_cache: /scratch.global/zhoux379/reseq
 studylist: /home/springer/zhoux379/projects/reseq/data/01.cfg.xlsx
 study: hmp3
+joint_cfg:
+  joint1:
+    - biomap
+    - hmp2
+jid: joint1

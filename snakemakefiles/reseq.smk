@@ -17,8 +17,8 @@ localrules: all, merge_bamstats, merge_trimstats
 rule all:
     input:
         expand("%s/%s/{gt}.g.vcf.gz" % (config['dird'], config['callvnt']['odir1']), gt = config['Genotypes']),
-        "%s/%s" % (config['dird'], config['merge_trimstats']['out']),
-        "%s/%s" % (config['dird'], config['merge_bamstats']['out']),
+#        "%s/%s" % (config['dird'], config['merge_trimstats']['out']),
+#        "%s/%s" % (config['dird'], config['merge_bamstats']['out']),
 #        "%s/%s" % (config['dird'], config['callvnt']['out']),
 
 if config['source'] == 'sra':

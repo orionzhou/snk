@@ -83,6 +83,8 @@ rule fm3_bwa:
         opt = lambda w: config['t'][w.sid]['opt'],
         mode = lambda w: config['t'][w.sid]['mode'],
         N = lambda w: "%s.%s" % (config['fm']['bwa']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['fm']['bwa']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['fm']['bwa']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
@@ -92,7 +94,7 @@ rule fm3_bwa:
         mem = lambda w, attempt: get_resource(config, attempt, 'fm', 'bwa')['mem']
     threads: config["fm"]['bwa']["ppn"]
     run:
-        makedirs(config['fm']['odir3']) 
+        makedirs(config['fm']['odir3'])
         if params.mode == 'pe':
             shell("""
             bwa mem -t {threads} -a -T 30 -Y {params.tgt_db} \
@@ -116,7 +118,6 @@ rule fm3_bwa:
                 {params.pre}.tsv >{params.pre}.filtered.tsv
         """)
 
-
 rule fm4_coord:
     input:
         "%s/{sid}.sam" % config['fm']['odir3'],
@@ -130,6 +131,8 @@ rule fm4_coord:
         tgt = lambda w: config['t'][w.sid]['tgt'],
         tgt_chain = lambda w: "$genome/%s/08_seq_map/mapb.chain" % config['t'][w.sid]['tgt'],
         N = lambda w: "%s.%s" % (config['fm']['coord']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['fm']['coord']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['fm']['coord']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
@@ -138,13 +141,15 @@ rule fm4_coord:
         runtime = lambda w, attempt: get_resource(config, attempt, 'fm', 'coord')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'fm', 'coord')['mem']
     shell:
+#        CrossMap.py bam {params.tgt_chain} {input} - |\
+#                samtools view -h -O SAM -o {params.pre}.sam
+#        source activate py27
+#        source deactivate
         """
-        source activate py27
         mkdir -p {params.odir}
-        CrossMap.py bam {params.tgt_chain} {input} - |\
-                samtools view -h -O SAM -o {params.pre}.sam
-        sam.py 2tsv {params.pre}.sam >{params.pre}.tsv
+
+        sam.py 2tsv --paired {params.pre}.sam >{params.pre}.tsv
         atv.py filter --ident 0.9 --cov 0.9 --best \
                 {params.pre}.tsv >{params.pre}.filtered.tsv
         """
- 
+
