@@ -10,16 +10,16 @@ def check_config(c):
     config_default = yaml.load(fy)
     update_config(config_default, c)
     c = config_default
-    
+
     for subdir in [c['dirw'], c['tmpdir']]:
         if not op.isdir(subdir):
             makedirs(subdir)
-    
+
     for rsubdir in [c['dirp']]:
         subdir = op.join(c['dirw'], rsubdir)
         if not op.isdir(subdir):
             makedirs(subdir)
-    
+
     df = pd.read_excel(c['grn']['cfg'], sheet_name=0, header=0)
     c['grn']['evtype'] = c['grn']['evtype'].split()
     c['nid'] = []
@@ -41,8 +41,8 @@ wildcard_constraints:
 
 rule all:
     input:
-        expand("%s/{nid}.rda" % config['grn']['pkl2rda']['odir'], nid=config['nid']),
-        expand("%s/01.{evtype}.rds" % config['grn']['eval_merge']['odir'], evtype=config['grn']['evtype'])
+        expand("%s/{nid}.rda" % config['grn']['genie3']['odir'], nid=config['nid']),
+#        expand("%s/01.{evtype}.rds" % config['grn']['eval_merge']['odir'], evtype=config['grn']['evtype'])
 
 include: "rules/grn.smk"
 

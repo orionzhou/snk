@@ -51,12 +51,9 @@ rule star:
         outprefix = lambda w: "%s/%s/%s/" % (w.yid, config['star']['odir'], w.sid),
         readcmd = "--readFilesCommand zcat",
         extra = star_extra,
-        N = lambda w: "%s.%s.%s" % (w.yid, config['star']['id'], w.sid),
-        e = lambda w: "%s/%s/%s/%s.e" % (w.yid, config['dirp'], config['star']['id'], w.sid),
-        o = lambda w: "%s/%s/%s/%s.o" % (w.yid, config['dirp'], config['star']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['star']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['star']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['star']['id']),
     resources:
         q = lambda w, attempt:  get_resource(config, attempt, 'star')['q'],
         ppn = lambda w, attempt:  get_resource(config, attempt, 'star')['ppn'],
@@ -89,12 +86,9 @@ rule hisat2:
         index = lambda w: config[config['y'][w.yid]['reference']]["hisat2"],
         input_str = lambda w, input: mapping_input_str(w, input, 'hisat2'),
         extra = hisat2_extra,
-        N = lambda w: "%s.%s.%s" % (w.yid, config['hisat2']['id'], w.sid),
-        e = lambda w: "%s.%s/%s/%s.e" % (w.yid, config['dirp'], config['hisat2']['id'], w.sid),
-        o = lambda w: "%s.%s/%s/%s.o" % (w.yid, config['dirp'], config['hisat2']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['hisat2']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['hisat2']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['hisat2']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['runtime'],
@@ -121,8 +115,7 @@ def bwa_extra(w):
     return " ".join(extras)
 
 rule bwa:
-    input:
-        unpack(mapping_inputs)
+    input: unpack(mapping_inputs)
     output:
         temp("{yid}/%s/{sid}.sam" % config['bwa']['odir'])
     log:
@@ -131,13 +124,9 @@ rule bwa:
         index = lambda w: config[config['y'][w.yid]['reference']]["bwa"],
         input_str = lambda w, input: mapping_input_str(w, input, 'bwa'),
         extra = bwa_extra,
-        N = lambda w: "%s.%s.%s" % (w.yid, config['bwa']['id'], w.sid),
-        e = lambda w: "%s/%s/%s/%s.e" % (w.yid, config['dirp'], config['bwa']['id'], w.sid),
-        o = lambda w: "%s/%s/%s/%s.o" % (w.yid, config['dirp'], config['bwa']['id'], w.sid),
-        q = lambda w, resources: resources.q,
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['bwa']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['bwa']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['bwa']['id']),
     resources:
         q = lambda w, attempt:  get_resource(config, attempt, 'bwa')['q'],
         ppn = lambda w, attempt: get_resource(config, attempt, 'bwa')['ppn'],
@@ -172,12 +161,9 @@ rule bismark:
         odir = config['bismark']['odir'],
         parallel = lambda w, resources: int(resources.ppn / 2),
         extra = bismark_extra,
-        N = lambda w: "%s.%s.%s" % (w.yid, config['bismark']['id'], w.sid),
-        e = lambda w: "%s/%s/%s/%s.e" % (w.yid, config['dirp'], config['bismark']['id'], w.sid),
-        o = lambda w: "%s/%s/%s/%s.o" % (w.yid, config['dirp'], config['bismark']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['bismark']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['bismark']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['bismark']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'bismark')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bismark')['runtime'],
@@ -216,12 +202,9 @@ rule sambamba_sort:
         mapper = lambda w: config['y'][w.yid]['mapper'],
         tmp_bam = lambda w, output: "%s.tmp.bam" % output[0],
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
-        N = lambda w: "%s.%s.%s" % (w.yid, config['sambamba']['sort']['id'], w.sid),
-        e = lambda w: "%s/%s/%s/%s.e" % (w.yid, config['dirp'], config['sambamba']['sort']['id'], w.sid),
-        o = lambda w: "%s/%s/%s/%s.o" % (w.yid, config['dirp'], config['sambamba']['sort']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['sambamba']['sort']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['sambamba']['sort']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['sambamba']['sort']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['runtime'],
@@ -246,9 +229,6 @@ rule bam_stat:
         N = "{yid}.%s.{sid}" % config['bam_stat']['id'],
         e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['bam_stat']['id']),
         o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['bam_stat']['id']),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
@@ -265,7 +245,8 @@ def merge_bamstats_inputs(w):
     return inputs
 
 rule merge_bamstats:
-    input: merge_bamstats_inputs
+    input:
+        lambda w: expand("%s/%s/{sid}.tsv" % (w.yid, config['mapping']['odir']), sid = config['y'][w.yid]['SampleID'])
     output:
         protected("{yid}/%s/%s" % (config['dird'], config['merge_bamstats']['out']))
     shell:

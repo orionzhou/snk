@@ -15,20 +15,16 @@ rule fq_compress:
         r1 = "{yid}/%s/{sid}_1.fq.gz" % config['fq_compress']['odir'],
         r2 = "{yid}/%s/{sid}_2.fq.gz" % config['fq_compress']['odir']
     params:
-        paired = lambda w: config['y'][w.yid]['t'][w.sid]['paired'],
-        N = lambda w: "%s.%s.%s" % (w.yid, config['fq_compress']['id'], w.sid),
-        e = lambda w: "%s/%s/%s/%s.e" % (w.yid, config['dirp'], config['fq_compress']['id'], w.sid),
-        o = lambda w: "%s/%s/%s/%s.o" % (w.yid, config['dirp'], config['fq_compress']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['fq_compress']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['fq_compress']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['fq_compress']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['mem']
     threads: config['fq_compress']['ppn']
     run:
-        if params.paired:
+        if config['y'][wildcards.yid]['t'][wildcards.sid]['paired']:
             if input.r1.endswith(".gz"):
                 shell("""
                 ln -sf {input.r1} {output.r1}
@@ -61,12 +57,9 @@ rule fq_deinterleave:
         r2 = "{yid}/%s/{sid}_2.fq.gz" % config['fq_deinterleave']['odir']
     params:
         extra = config["fq_deinterleave"]["extra"],
-        N = lambda w: "{yid}.%s.{sid}" % config['fq_deinterleave']['id'],
-        e = lambda w: "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['fq_deinterleave']['id']),
-        o = lambda w: "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['fq_deinterleave']['id']),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['fq_deinterleave']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['fq_deinterleave']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['fq_deinterleave']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fq_deinterleave')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fq_deinterleave')['runtime'],
@@ -88,7 +81,6 @@ rule fq_dump:
     log:
         "{yid}/%s/%s/{sid}.log" % (config['dirl'], config['fq_dump']['id'])
     params:
-        paired = lambda w: config['y'][w.yid]['t'][w.sid]['paired'],
         odir = "{yid}/%s" % config['fq_dump']['odir'],
         o0 = "{yid}/%s/{sid}.fastq" % config['fq_dump']['odir'],
         o1 = "{yid}/%s/{sid}_1.fastq" % config['fq_dump']['odir'],
@@ -97,8 +89,6 @@ rule fq_dump:
         N = "{yid}.%s.{sid}" % config['fq_dump']['id'],
         e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['fq_dump']['id']),
         o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['fq_dump']['id']),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fq_dump')['ppn'],
@@ -107,7 +97,7 @@ rule fq_dump:
         load = lambda w, attempt:  get_resource(config, attempt, 'fq_dump')['load']
     threads: config['fq_dump']['ppn']
     run:
-        if params.paired:
+        if config['y'][wildcards.yid]['t'][wildcards.sid]['paired']:
             shell("""
             fasterq-dump --split-files -e {threads} -m {params.mem} \
                     -O {params.odir} -t {params.tmp} {wildcards.sid} \

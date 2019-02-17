@@ -274,7 +274,7 @@ merge_bamstats:
   outv: bamstats_v.tsv
 ## rnaseq profiling
 featurecounts:
-  id: featuecnts
+  id: fCnt
   idir: 22_bam
   odir: 31_featurecounts
   extra: --primary -Q 20 -t exon -g gene_id --byReadGroup
@@ -326,17 +326,12 @@ bismark_extract:
   amem: 10
 # variant calling
 cleanbam:
-  id: cleanBam
-  idir: 22_bam
+  id: cBam
   odir1: 23_mark_dup
   odir2: 24_base_recal
 callvnt:
-  id: callvnt
-  idir: 24_base_recal
-  odir1: 25_gvcf
-callvnt_joint:
-  id: callvntj
-  idir: 25_gvcf
+  id: callv
+  odir: 25_gvcf
   odir1: 26_gvcf_rename
   odir2: 27_gvcf_by_region
   odir3: 28_vcf_by_region

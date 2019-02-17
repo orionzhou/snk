@@ -2,28 +2,25 @@ rule fastp:
     input:
         r0 = "{yid}/%s/{sid}.fq.gz" % config['trimming']['idir'],
         r1 = "{yid}/%s/{sid}_1.fq.gz" % config['trimming']['idir'],
-        r2 = "{yid}/%s/{sid}_2.fq.gz" % config['trimming']['idir'],
+        r2 = "{yid}/%s/{sid}_2.fq.gz" % config['trimming']['idir']
     output:
         r0 = "{yid}/%s/{sid}.fq.gz" % config['fastp']['odir'],
         r1 = "{yid}/%s/{sid}_1.fq.gz" % config['fastp']['odir'],
         r2 = "{yid}/%s/{sid}_2.fq.gz" % config['fastp']['odir'],
         json = "{yid}/%s/{sid}.json" % config['fastp']['odir'],
-        html = "{yid}/%s/{sid}.html" % config['fastp']['odir'],
+        html = "{yid}/%s/{sid}.html" % config['fastp']['odir']
     params:
-        paired = lambda w: config['y'][w.yid]['t'][w.sid]['paired'],
-        N = lambda w: "%s.%s.%s" % (w.yid, config['fastp']['id'], w.sid),
-        e = lambda w: "%s/%s/%s/%s.e" % (w.yid, config['dirp'], config['fastp']['id'], w.sid),
-        o = lambda w: "%s/%s/%s/%s.o" % (w.yid, config['dirp'], config['fastp']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        paired = lambda w: int(config['y'][w.yid]['t'][w.sid]['paired']),
+        N = "{yid}.%s.{sid}" % config['fastp']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['fastp']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['fastp']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fastp')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fastp')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'fastp')['mem']
     threads: config['fastp']['ppn']
     run:
-        if params.paired:
+        if config['y'][wildcards.yid]['t'][wildcards.sid]['paired']:
             shell("""
             fastp --thread {threads} \
             -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} \
@@ -52,61 +49,55 @@ rule trimmomatic:
     log:
         "{yid}/%s/%s/{sid}.log" % (config['dirl'], config['trimmomatic']['id'])
     params:
-        paired = lambda w: config['y'][w.yid]['t'][w.sid]['paired'],
         trimmer = [
             "ILLUMINACLIP:%s:2:30:10:8:no" % config['trimmomatic']['adapter_pe'],
             "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:15", "MINLEN:35"],
-        N = lambda w: "%s.%s.%s" % (w.yid, config['trimmomatic']['id'], w.sid),
-        e = lambda w: "%s/%s/%s/%s.e" % (w.yid, config['dirp'], config['trimmomatic']['id'], w.sid),
-        o = lambda w: "%s/%s/%s/%s.o" % (w.yid, config['dirp'], config['trimmomatic']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['trimmomatic']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['trimmomatic']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['trimmomatic']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'trimmomatic')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'trimmomatic')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'trimmomatic')['mem']
     threads: config['trimmomatic']['ppn']
     run:
-        if params.paired:
-            shell("""
-            trimmomatic SE -threads {threads} \
-            {input} {output} \
-            {params.trimmer} >{log} 2>&1
-            touch {output.r1} {output.r2} {output.r1u} {output.r2u}
-            """)
-        else:
+        if config['y'][wildcards.yid]['t'][wildcards.sid]['paired']:
             shell("""
             trimmomatic PE -threads {threads} \
             {input.r1} {input.r2} {output.r1} {output.r1u} {output.r2} {output.r2u} \
             {params.trimmer} >{log} 2>&1
             touch {output.r0}
             """)
+        else:
+            shell("""
+            trimmomatic SE -threads {threads} \
+            {input} {output} \
+            {params.trimmer} >{log} 2>&1
+            touch {output.r1} {output.r2} {output.r1u} {output.r2u}
+            """)
 
 rule bbduk:
     input:
         "{yid}/%s/{sid}.fq.gz" % config['trimming']['idir']
     output:
-        "{yid}/%s/{sid}.fq.gz" % config['bbduk']['odir'],
-        "{yid}/%s/{sid}.se.log" % config['bbduk']['odir'],
+        r0 = "{yid}/%s/{sid}.fq.gz" % config['bbduk']['odir'],
+        r1 = "{yid}/%s/{sid}_1.fq.gz" % config['bbduk']['odir'],
+        r2 = "{yid}/%s/{sid}_2.fq.gz" % config['bbduk']['odir'],
+        json = "{yid}/%s/{sid}.json" % config['bbduk']['odir'],
     params:
         cmd = config['bbduk']['cmd'],
-        paired = lambda w: config['y'][w.yid]['t'][w.sid]['paired'],
         extra = "ref=%s %s" %
             (','.join(config['bbduk']['refs']), config['bbduk']['extra']),
-        N = lambda w: "%s.%s.%s" % (w.yid, config['bbduk']['id'], w.sid),
-        e = lambda w: "%s/%s/%s/%s.e" % (w.yid, config['dirp'], config['bbduk']['id'], w.sid),
-        o = lambda w: "%s/%s/%s/%s.o" % (w.yid, config['dirp'], config['bbduk']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['bbduk']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['bbduk']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['bbduk']['id'])
     resources:
         ppn = lambda w, attempt: get_resource(config, attempt, 'bbduk')['ppn'],
         runtime = lambda w, attempt: get_resource(config, attempt, 'bbduk')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'bbduk')['mem']
     threads: config['bbduk']['ppn']
     shell:
-        "{params.cmd} in={input} out={output[0]} {params.extra} stats={output[1]}"
+        "{params.cmd} in={input} out={output.r0} {params.extra} stats={output.json}"
 
 def trimming_inputs(w):
     yid, sid = w.yid, w.sid
@@ -115,7 +106,8 @@ def trimming_inputs(w):
     idir = ''
     if readtype == '3rnaseq':
         idir = config['bbduk']['odir']
-    elif readtype in ['illumina','solexa']:
+        idir = config['fastp']['odir']
+    elif readtype in ['illumina','solid']:
         idir = config['fastp']['odir']
     pre = op.abspath("%s/%s/%s" % (yid, idir, sid))
     pre = "%s/%s/%s" % (yid, idir, sid)

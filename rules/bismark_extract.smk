@@ -1,20 +1,17 @@
-def bismark_extract_extra(wildcards):
+def bismark_extract_extra(w):
     extra = config["bismark_extract"]["extra"]
     return extra
 
 rule sambamba_sort_name:
     input:
-        "%s/{sid}.bam" % config['bismark_extract']['idir']
+        "{yid}/%s/{sid}.bam" % config['bismark_extract']['idir']
     output:
-        "%s/{sid}.rn.bam" % config['bismark_extract']['idir']
+        "{yid}/%s/{sid}.rn.bam" % config['bismark_extract']['idir']
     params:
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
-        N = lambda w: "%s.%s" % (config['sambamba']['sort']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['sambamba']['sort']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['sambamba']['sort']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % (config['sambamba']['sort']['id'], w.sid),
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['sambamba']['sort']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['sambamba']['sort']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['runtime'],
@@ -25,20 +22,17 @@ rule sambamba_sort_name:
 
 rule bismark_extract:
     input:
-        "%s/{sid}.rn.bam" % config['bismark_extract']['idir']
+        "{yid}/%s/{sid}.rn.bam" % config['bismark_extract']['idir']
     output:
-        "%s/{sid}.rds" % config['bismark_extract']['odir']
+        "{yid}/%s/{sid}.rds" % config['bismark_extract']['odir']
     params:
         index = config[config['reference']]["bismark"],
         odir = config['bismark_extract']['odir'],
         cx_report = lambda w: "%s/%s.rn.CX_report.txt" % (config['bismark_extract']['odir'], w.sid),
         parallel = lambda w, resources: int(resources.ppn / 2),
-        N = lambda w: "%s.%s" % (config['bismark_extract']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bismark_extract']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bismark_extract']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        N = "{yid}.%s.{sid}" % config['bismark_extract']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['bismark_extract']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['bismark_extract']['id'])
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'bismark_extract')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bismark_extract')['runtime'],

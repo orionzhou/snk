@@ -1,14 +1,12 @@
 def gatk_extra(picard = False, jdk = False, hc = False):
     extra = ''
     if picard:
-        extra += ' --TMP_DIR %s' % config['tmpdir']
-#extra += ' TMP_DIR=%s' % config['tmpdir']
+        extra += ' --TMP_DIR %s' % config['tmpdir'] #' TMP_DIR=%s' % config['tmpdir']
     else:
         extra += ' --tmp-dir %s' % config['tmpdir']
     if jdk:
         if picard:
-            extra += ' --USE_JDK_DEFLATER --USE_JDK_INFLATER'
-#extra += ' USE_JDK_DEFLATER=true USE_JDK_INFLATER=true'
+            extra += ' --USE_JDK_DEFLATER --USE_JDK_INFLATER' #' USE_JDK_DEFLATER=true USE_JDK_INFLATER=true'
         else:
             extra += ' --use-jdk-deflater --use-jdk-inflater'
     if hc:
@@ -17,28 +15,25 @@ def gatk_extra(picard = False, jdk = False, hc = False):
 
 rule gatk_mark_duplicates:
     input:
-        "%s/{sid}.bam" % config['cleanbam']['idir']
+        "{yid}/%s/{sid}.bam" % config['mapping']['odir']
     output:
-        protected("%s/{sid}.bam" % config['cleanbam']['odir1']),
-        protected("%s/{sid}.dedup.txt" % config['cleanbam']['odir1']),
+        protected("{yid}/%s/{sid}.bam" % config['cleanbam']['odir1']),
+        protected("{yid}/%s/{sid}.dedup.txt" % config['cleanbam']['odir1']),
     log:
-        "%s/%s/{sid}.log" % (config['dirl'], config['gatk']['mark_duplicates']['id'])
+        "{yid}/%s/%s/{sid}.log" % (config['dirl'], config['gatk']['mark_duplicates']['id'])
     params:
         cmd = config['gatk']['cmd'],
         tmp = config['tmpdir'],
         extra = gatk_extra(picard = True, jdk = True),
-        N = lambda w: "%s.%s" % (config['gatk']['mark_duplicates']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['mark_duplicates']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['mark_duplicates']['id'], w.sid),
-        q = lambda w, resources: resources.q,
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem - 2
+        N = "{yid}.%s.{sid}" % config['gatk']['mark_duplicates']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['gatk']['mark_duplicates']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['gatk']['mark_duplicates']['id']),
+        mem = lambda w, resources: resources.mem
     resources:
         q = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['q'],
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['mem'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['mem'] - 2,
         load = lambda w, attempt:  get_resource(config, attempt, 'gatk','mark_duplicates')['load']
     threads: config['gatk']['mark_duplicates']['ppn']
     shell:
@@ -54,21 +49,19 @@ rule gatk_mark_duplicates:
 
 rule gatk_base_recalibrator:
     input:
-        "%s/{sid}.bam" % config['cleanbam']['odir1']
+        "{yid}/%s/{sid}.bam" % config['cleanbam']['odir1']
     output:
-        protected("%s/{sid}.table" % config['cleanbam']['odir2']),
+        protected("{yid}/%s/{sid}.table" % config['cleanbam']['odir2']),
     log:
-        "%s/%s/{sid}.log" % (config['dirl'], config['gatk']['base_recalibrator']['id'])
+        "{yid}/%s/%s/{sid}.log" % (config['dirl'], config['gatk']['base_recalibrator']['id'])
     params:
         cmd = config['gatk']['cmd'],
-        ref = config[config['reference']]['gatk']['xref'],
-        vcf = config[config['reference']]['gatk']['known_sites'],
+        ref = lambda w: config[config['y'][w.yid]['reference']]['gatk']['xref'],
+        vcf = lambda w: config[config['y'][w.yid]['reference']]['gatk']['known_sites'],
         extra = gatk_extra(picard = False, jdk = True),
-        N = lambda w: "%s.%s" % (config['gatk']['base_recalibrator']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['base_recalibrator']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['base_recalibrator']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
+        N = "{yid}.%s.{sid}" % config['gatk']['base_recalibrator']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['gatk']['base_recalibrator']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['gatk']['base_recalibrator']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'base_recalibrator')['ppn'],
@@ -78,31 +71,26 @@ rule gatk_base_recalibrator:
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" BaseRecalibrator \
-        {params.extra} \
-        -R {params.ref} \
-        -I {input} \
-        --known-sites {params.vcf} \
-        -O {output[0]} \
+        {params.extra} --known-sites {params.vcf} \
+        -R {params.ref} -I {input} -O {output[0]} \
         >>{log} 2>&1
         """
 
 rule gatk_apply_bqsr:
     input:
-        "%s/{sid}.bam" % config['cleanbam']['odir1'],
-        "%s/{sid}.table" % config['cleanbam']['odir2'],
+        "{yid}/%s/{sid}.bam" % config['cleanbam']['odir1'],
+        "{yid}/%s/{sid}.table" % config['cleanbam']['odir2'],
     output:
-        protected("%s/{sid}.bam" % config['cleanbam']['odir2']),
+        protected("{yid}/%s/{sid}.bam" % config['cleanbam']['odir2']),
     log:
-        "%s/%s/{sid}.log" % (config['dirl'], config['gatk']['apply_bqsr']['id'])
+        "{yid}/%s/%s/{sid}.log" % (config['dirl'], config['gatk']['apply_bqsr']['id'])
     params:
         cmd = config['gatk']['cmd'],
-        ref = config[config['reference']]['gatk']['xref'],
+        ref = lambda w: config[config['y'][w.yid]['reference']]['gatk']['xref'],
         extra = gatk_extra(picard = False, jdk = True),
-        N = lambda w: "%s.%s" % (config['gatk']['apply_bqsr']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['gatk']['apply_bqsr']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['gatk']['apply_bqsr']['id'], w.sid),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
+        N = "{yid}.%s.{sid}" % config['gatk']['apply_bqsr']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['gatk']['apply_bqsr']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['gatk']['apply_bqsr']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'apply_bqsr')['ppn'],
@@ -112,12 +100,35 @@ rule gatk_apply_bqsr:
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" ApplyBQSR \
-        {params.extra} \
-        -R {params.ref} \
-        -I {input[0]} \
-        --bqsr-recal-file {input[1]} \
-        -O {output[0]} \
+        {params.extra} --bqsr-recal-file {input[1]} \
+        -R {params.ref} -I {input[0]} -O {output[0]} \
         >>{log} 2>&1
         """
+
+rule bam_stat2:
+    input:
+        "{yid}/%s/{sid}.bam" % config['cleanbam']['odir2']
+    output:
+        "{yid}/%s/{sid}.tsv" % config['cleanbam']['odir2']
+    params:
+        N = "{yid}.%s.{sid}" % config['bam_stat']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['bam_stat']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['bam_stat']['id']),
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
+    threads: config['bam_stat']['ppn']
+    shell:
+        "bam.py stat {input} > {output}"
+
+rule merge_bamstats2:
+    input:
+        lambda w: expand("%s/%s/{sid}.tsv" % (w.yid, config['cleanbam']['odir2']), sid = config['y'][w.yid]['t'].keys())
+    output:
+        protected("{yid}/%s/%s" % (config['dird'], config['merge_bamstats']['outv']))
+    shell:
+        "merge.bamstats.R -o {output} {input}"
+
 
 

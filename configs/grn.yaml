@@ -8,32 +8,36 @@ grn:
   aruntime: 2
   amem: 10
   evtype: tf go br bm
-  genie3:
-    id: genie3
-    idir: 11_input
-    odir: 12_output
-    ppn: 12
-    runtime: 30
-    mem: 25
-    aruntime: 10
-    amem: 5
-  pkl2rda:
-    id: pkl2rda
-    idir: 12_output
-    odir: 12_output
+  get_exp_mat:
+    id: em
+    odir: 11_exp_mat
     ppn: 1
     runtime: 1
     mem: 30
     aruntime: 1
     amem: 10
+  genie3:
+    id: genie3
+    tf: '09.tf.txt'
+    odir: 12_genie3
+    ppn: 12
+    runtime: 30
+    mem: 50
+    aruntime: 20
+    amem: 5
+  pkl2rda:
+    id: pkl2rda
+    ppn: 1
+    runtime: 1
+    mem: 50
+    aruntime: 1
+    amem: 10
   eval:
     id: eval
-    idir: 12_output
     odir: 13_eval
     ppn: 1
   eval_merge:
     id: evm
-    idir: 13_eval
     odir: 14_eval_sum
     ppn: 1
     runtime: 5

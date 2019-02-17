@@ -20,12 +20,9 @@ rule featurecounts:
     params:
         gtf = lambda w: config[config['y'][w.yid]['reference']]['gtf'],
         extra = featurecounts_extra,
-        N = "{yid}.%s.{sid}" % (config['featurecounts']['id']),
+        N = "{yid}.%s.{sid}" % config['featurecounts']['id'],
         e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['featurecounts']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['featurecounts']['id']),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['featurecounts']['id'])
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'featurecounts')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'featurecounts')['runtime'],
@@ -51,9 +48,6 @@ rule merge_featurecounts:
         N = "{yid}.%s" % (config['merge_featurecounts']['id']),
         e = "{yid}/%s/%s.e" % (config['dirp'], config['merge_featurecounts']['id']),
         o = "{yid}/%s/%s.o" % (config['dirp'], config['merge_featurecounts']['id']),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'merge_featurecounts')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'merge_featurecounts')['runtime'],
@@ -64,8 +58,8 @@ rule merge_featurecounts:
 
 rule rc2cpm_raw:
     input:
+        sam = lambda w: config['y'][w.yid]['samplelist'],
         exp = "{yid}/%s/%s" % (config['dird'], config['merge_featurecounts']['out']),
-        samplelist = lambda w: config['y'][w.yid]['samplelist'],
         cfg = lambda w: config[config['y'][w.yid]['reference']]["rds"],
     output:
         protected("{yid}/%s/%s" % (config['dird'], config['rc2cpm']['out_raw']))
@@ -73,21 +67,18 @@ rule rc2cpm_raw:
         N = "{yid}.%s" % (config['rc2cpm']['id']),
         e = "{yid}/%s/%s.e" % (config['dirp'], config['rc2cpm']['id']),
         o = "{yid}/%s/%s.o" % (config['dirp'], config['rc2cpm']['id']),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['mem']
     threads: config['rc2cpm']['ppn']
     shell:
-        "rc2cpm.R {input.exp} {output} --sample {input.samplelist} --config {input.cfg}"
+        "rc2cpm.R {input.sam} {input.exp} {output} --yid {wildcards.yid} --config {input.cfg}"
 
 rule rc2cpm:
     input:
+        sam = lambda w: config['y'][w.yid]['samplelistc'],
         exp = "{yid}/%s/%s" % (config['dird'], config['merge_featurecounts']['out']),
-        samplelist = lambda w: config['y'][w.yid]['samplelistc'],
         cfg = lambda w: config[config['y'][w.yid]['reference']]["rds"],
     output:
         protected("{yid}/%s/%s" % (config['dird'], config['rc2cpm']['out']))
@@ -95,15 +86,12 @@ rule rc2cpm:
         N = "{yid}.%s" % (config['rc2cpm']['id']),
         e = "{yid}/%s/%s.e" % (config['dirp'], config['rc2cpm']['id']),
         o = "{yid}/%s/%s.o" % (config['dirp'], config['rc2cpm']['id']),
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
-        mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['mem']
     threads: config['rc2cpm']['ppn']
     shell:
-        "rc2cpm.R {input.exp} {output} --sample {input.samplelist} --config {input.cfg}"
+        "rc2cpm.R {input.sam} {input.exp} {output} --yid {wildcards.yid} --config {input.cfg}"
 
 

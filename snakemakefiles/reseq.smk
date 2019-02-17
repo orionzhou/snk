@@ -1,38 +1,40 @@
 import os
 import os.path as op
 from snk.utils import get_resource
-from snk.utils import check_config_ngs
+from snk.utils import check_config_rnaseq
 
 configfile: 'config.yaml'
-config = check_config_ngs(config)
+config = check_config_rnaseq(config)
 workdir: config['dirw']
 
 wildcard_constraints:
+    yid = "[a-zA-Z0-9]+",
     sid = "[a-zA-Z0-9]+",
     gt = "[a-zA-Z0-9\-_]+",
     rid = "[a-zA-Z0-9]+",
 
-localrules: all, merge_bamstats, merge_trimstats
+localrules: all, fastq, trimming, merge_trimstats, merge_bamstats
 
+def all_outputs(w):
+    outputs = []
+    for yid in config['y'].keys():
+        pre = "%s/%s" % (yid, config['dird'])
+        if config['y'][yid]['meta'] != True:
+            outputs.append("%s/%s" % (pre, config['merge_trimstats']['out']))
+            outputs.append("%s/%s" % (pre, config['merge_bamstats']['outv']))
+            for gt, sids in config['y'][yid]['gt'].items():
+                outputs.append("%s/%s/%s.g.vcf.gz" % (pre, config['callvnt']['odir'], gt))
+        else:
+            outputs.append("%s/%s" % (pre, config['callvnt']['out']))
+    return outputs
 rule all:
-    input:
-        expand("%s/%s/{gt}.g.vcf.gz" % (config['dird'], config['callvnt']['odir1']), gt = config['Genotypes']),
-#        "%s/%s" % (config['dird'], config['merge_trimstats']['out']),
-#        "%s/%s" % (config['dird'], config['merge_bamstats']['out']),
-#        "%s/%s" % (config['dird'], config['callvnt']['out']),
+    input: all_outputs
 
-if config['source'] == 'sra':
-    include: "rules/fasterq_dump.smk"
-elif config['source'] == 'local_interleaved':
-    include: "rules/fq_deinterleave.smk"
-elif config['source'] == 'local':
-    include: "rules/fq_compress.smk"
-
-include: "rules/fastp.smk"
-include: "rules/bwa.smk"
+include: "rules/fastq.smk"
+include: "rules/trimming.smk"
+include: "rules/mapping.smk"
 include: "rules/cleanbam.smk"
-include: "rules/callvnt_gatk.smk"
-include: "rules/report.smk"
+include: "rules/callvnt.smk"
 
 onsuccess:
     shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))
