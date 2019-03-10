@@ -1,36 +1,29 @@
-name: gatk
+name: samtools
 channels:
   - conda-forge
   - bioconda
   - r
   - defaults
 dependencies:
+  - bcftools=1.9=h47928c2_1
   - bzip2=1.0.6=h14c3975_1002
   - ca-certificates=2018.11.29=ha4d7672_0
-  - certifi=2018.11.29=py37_1000
   - curl=7.64.0=h646f8bb_0
-  - gatk4=4.1.0.0=0
+  - htslib=1.9=h47928c2_5
   - krb5=1.16.3=hc83ff2d_1000
   - libcurl=7.64.0=h01ee5af_0
   - libdeflate=1.0=h14c3975_1
   - libedit=3.1.20170329=hf8c457e_1001
-  - libffi=3.2.1=hf484d3e_1005
   - libgcc-ng=7.3.0=hdf63c60_0
   - libssh2=1.8.0=h1ad7b7a_1003
   - libstdcxx-ng=7.3.0=hdf63c60_0
   - ncurses=6.1=hf484d3e_1002
-  - openjdk=8.0.192=h14c3975_1003
-  - openssl=1.0.2q=h14c3975_0
-  - picard=2.18.26=0
-  - pip=19.0.2=py37_0
-  - python=3.7.1=hd21baee_1000
-  - readline=7.0=hf8c457e_1001
+  - openssl=1.0.2p=h14c3975_1002
+  - parallel=20190122=0
+  - perl=5.26.2=h14c3975_1001
   - samtools=1.9=h57cc563_6
-  - setuptools=40.8.0=py37_0
-  - sqlite=3.26.0=h67949de_1000
   - tk=8.6.9=h84994c4_1000
-  - wheel=0.33.0=py37_0
   - xz=5.2.4=h14c3975_1001
   - zlib=1.2.11=h14c3975_1004
-prefix: /home/springer/zhoux379/software/miniconda3/envs/gatk
+prefix: /home/springer/zhoux379/software/miniconda3/envs/samtools
 

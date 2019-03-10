@@ -19,21 +19,8 @@ rule fastp:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fastp')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'fastp')['mem']
     threads: config['fastp']['ppn']
-    run:
-        if config['y'][wildcards.yid]['t'][wildcards.sid]['paired']:
-            shell("""
-            fastp --thread {threads} \
-            -i {input.r1} -I {input.r2} -o {output.r1} -O {output.r2} \
-            -j {output.json} -h {output.html}
-            touch {output.r0}
-            """)
-        else:
-            shell("""
-            fastp --thread {threads} \
-            -i {input.r0} -o {output.r0} \
-            -j {output.json} -h {output.html}
-            touch {output.r1} {output.r2}
-            """)
+    conda: "../envs/job.yml"
+    script: "../scripts/fastp.py"
 
 rule trimmomatic:
     input:
@@ -60,21 +47,8 @@ rule trimmomatic:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'trimmomatic')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'trimmomatic')['mem']
     threads: config['trimmomatic']['ppn']
-    run:
-        if config['y'][wildcards.yid]['t'][wildcards.sid]['paired']:
-            shell("""
-            trimmomatic PE -threads {threads} \
-            {input.r1} {input.r2} {output.r1} {output.r1u} {output.r2} {output.r2u} \
-            {params.trimmer} >{log} 2>&1
-            touch {output.r0}
-            """)
-        else:
-            shell("""
-            trimmomatic SE -threads {threads} \
-            {input} {output} \
-            {params.trimmer} >{log} 2>&1
-            touch {output.r1} {output.r2} {output.r1u} {output.r2u}
-            """)
+    conda: "../envs/job.yml"
+    script: "../scripts/trimmomatic.py"
 
 rule bbduk:
     input:
@@ -96,6 +70,7 @@ rule bbduk:
         runtime = lambda w, attempt: get_resource(config, attempt, 'bbduk')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'bbduk')['mem']
     threads: config['bbduk']['ppn']
+    conda: "../envs/job.yml"
     shell:
         "{params.cmd} in={input} out={output.r0} {params.extra} stats={output.json}"
 
@@ -144,6 +119,7 @@ rule merge_trimstats:
     input: merge_trimstats_inputs
     output:
         protected("{yid}/%s/%s" % (config['dird'], config['merge_trimstats']['out']))
+    conda: "../envs/python.yml"
     shell:
         "jsonutil.py fastp {input} > {output}"
 

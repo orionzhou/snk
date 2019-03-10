@@ -22,6 +22,7 @@ rule fasta:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fasta')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'fasta')['mem']
     threads: config['fasta']['ppn']
+    conda: "../envs/python.yml"
     shell:
         """
         rm -rf {output.fna}* {output.fai}*
@@ -71,6 +72,7 @@ rule blat_index:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'blat_index')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'blat_index')['mem']
     threads: config['blat_index']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         rm -rf {params.odir}
@@ -89,6 +91,7 @@ rule blast_index:
     params:
         odir1 = lambda w: "%s/21_dbs/%s" % (w.genome, config['blastn']['xdir']),
         odir2 = lambda w: "%s/21_dbs/%s" % (w.genome, config['blastp']['xdir']),
+    conda: "../envs/blast.yml"
     shell:
         """
         makeblastdb -dbtype nucl -in {input.fna} -title db -out {params.odir1}/db
@@ -113,6 +116,7 @@ rule bwa_index:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bwa_index')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'bwa_index')['mem']
     threads: config['bwa_index']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         rm -rf {params.odir}
@@ -139,6 +143,7 @@ rule bismark_index:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bismark_index')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'bismark_index')['mem']
     threads: config['bismark_index']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         rm -rf {params.odir}
@@ -167,6 +172,7 @@ rule star_index:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'star_index')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'star_index')['mem']
     threads: config['star_index']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         rm -rf {params.odir}
@@ -195,6 +201,7 @@ rule gatk_index:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk_index')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk_index')['mem']
     threads: config['gatk_index']['ppn']
+    conda: "../envs/gatk.yml"
     shell:
         """
         rm -rf {params.odir}
@@ -224,6 +231,7 @@ rule hisat2_index:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'hisat2_index')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'hisat2_index')['mem']
     threads: config['hisat2_index']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         rm -rf {params.odir}
@@ -257,6 +265,7 @@ rule snpeff_index:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'snpeff_index')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'snpeff_index')['mem']
     threads: config['snpeff_index']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         rm -rf {params.odir}

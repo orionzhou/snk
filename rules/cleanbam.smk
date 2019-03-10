@@ -36,6 +36,7 @@ rule gatk_mark_duplicates:
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'mark_duplicates')['mem'] - 2,
         load = lambda w, attempt:  get_resource(config, attempt, 'gatk','mark_duplicates')['load']
     threads: config['gatk']['mark_duplicates']['ppn']
+    conda: "../envs/gatk.yml"
     shell:
         """
         picard -Xmx{params.mem}G MarkDuplicates \
@@ -68,6 +69,7 @@ rule gatk_base_recalibrator:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'base_recalibrator')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'base_recalibrator')['mem']
     threads: config['gatk']['base_recalibrator']['ppn']
+    conda: "../envs/gatk.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" BaseRecalibrator \
@@ -97,6 +99,7 @@ rule gatk_apply_bqsr:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'apply_bqsr')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'apply_bqsr')['mem']
     threads: config['gatk']['apply_bqsr']['ppn']
+    conda: "../envs/gatk.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" ApplyBQSR \
@@ -119,6 +122,7 @@ rule bam_stat2:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
     threads: config['bam_stat']['ppn']
+    conda: "../envs/python.yml"
     shell:
         "bam.py stat {input} > {output}"
 
@@ -127,6 +131,7 @@ rule merge_bamstats2:
         lambda w: expand("%s/%s/{sid}.tsv" % (w.yid, config['cleanbam']['odir2']), sid = config['y'][w.yid]['t'].keys())
     output:
         protected("{yid}/%s/%s" % (config['dird'], config['merge_bamstats']['outv']))
+    conda: "../envs/r.yml"
     shell:
         "merge.bamstats.R -o {output} {input}"
 

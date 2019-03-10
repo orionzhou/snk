@@ -31,7 +31,7 @@ def check_config(c):
             c['t'][nid] = {x: df[x][i] for x in list(df)}
     return c
 
-configfile: 'config.yaml'
+configfile: 'config.yml'
 workdir: config['dirw']
 config = check_config(config)
 
@@ -42,7 +42,7 @@ wildcard_constraints:
 rule all:
     input:
         expand("%s/{nid}.rda" % config['grn']['genie3']['odir'], nid=config['nid']),
-#        expand("%s/01.{evtype}.rds" % config['grn']['eval_merge']['odir'], evtype=config['grn']['evtype'])
+        expand("%s/01.{evtype}.rds" % config['grn']['eval_merge']['odir'], evtype=config['grn']['evtype'])
 
 include: "rules/grn.smk"
 

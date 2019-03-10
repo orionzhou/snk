@@ -18,6 +18,7 @@ rule wgc1_prepare:
         runtime = lambda w, attempt: get_resource(config, attempt, 'wgc', 'prepare')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'wgc', 'prepare')['mem']
     threads: config['wgc']['prepare']['ppn']
+    conda: "../envs/python.yml"
     shell:
         """
         mkdir -p {params.odir}
@@ -32,13 +33,14 @@ rule wgc1_break_tgt:
     params:
         odir = lambda w: "%s/%s" % (config['wgc']['dir1'], w.genome),
         cdir = lambda w: "%s/%s/11_chroms" % (config['wgc']['dir1'], w.genome),
+    conda: "../envs/python.yml"
     shell:
         """
         mkdir -p {params.cdir}
         faSplit byname {input.fna} {params.cdir}/
         """
 
-rule wgc1_break_qry:
+rule wgc1_break_qry: #need to split into R env
     input:
         fna = lambda w: config[w.genome]['ref'],
         chrom_size = lambda w: config[w.genome]['chrom_size'],
@@ -53,6 +55,7 @@ rule wgc1_break_qry:
         odir = lambda w: "%s/%s" % (config['wgc']['dir1'], w.genome),
         cdir = lambda w: "%s/%s/11_chroms" % (config['wgc']['dir1'], w.genome),
         npieces = config['wgc']['npieces'],
+    conda: "../envs/python.yml"
     shell:
         """
         bed.py filter -min 5000 {input.gap} > {params.odir}/81.qry.gap.bed
@@ -86,6 +89,7 @@ rule wgc2_align:
         runtime = lambda w, attempt: get_resource(config, attempt, 'wgc', 'align')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'wgc', 'align')['mem']
     threads: config['wgc']['align']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         minimap2 -x asm20 -a -t {threads} \
@@ -127,6 +131,7 @@ rule wgc3_merge:
         runtime = lambda w, attempt: get_resource(config, attempt, 'wgc', 'merge')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'wgc', 'merge')['mem']
     threads: config['wgc']['merge']['ppn']
+    conda: "../envs/job.yml"
 #        pslCat -nohead {input} > {params.odir}/01.psl
 #        psl.py coordQ {params.odir}/01.psl {params.qsize} \
 #                >{params.odir}/02.coord.psl
@@ -167,6 +172,7 @@ rule wgc4_chain:
         runtime = lambda w, attempt: get_resource(config, attempt, 'wgc', 'chain')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'wgc', 'chain')['mem']
     threads: config['wgc']['chain']['ppn']
+    conda: "../envs/python.yml"
     shell:
         """
         axtChain -linearGap=medium -psl {input} \
@@ -174,7 +180,7 @@ rule wgc4_chain:
         chainPreNet {params.odir}/10.chain {params.tsize} {params.qsize} \
                 {params.odir}/11.chain
         chainSwap {params.odir}/11.chain {params.odir}/11.q.chain
-        
+
         chainNet {params.odir}/11.chain {params.tsize} {params.qsize} \
                 {params.odir}/13.t.net {params.odir}/13.q.net
         netChainSubset {params.odir}/13.t.net {params.odir}/11.chain stdout | \
@@ -215,20 +221,21 @@ rule wgc5_post:
         runtime = lambda w, attempt: get_resource(config, attempt, 'wgc', 'post')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'wgc', 'post')['mem']
     threads: config['wgc']['post']['ppn']
+    conda: "../envs/python.yml"
     shell:
         """
         chainStitchId {input} {params.odir}/01.stitched.chain
         chainFilter -minGapless=1000 {params.odir}/01.stitched.chain \
             > {params.odir}/02.filtered.chain
         chain.py 2bed {params.odir}/02.filtered.chain > {params.odir}/02.bed
-        
+
         chainBedVnt.R {params.odir}/02.bed {params.odir}/05.itv.bed
         wgc.py callvnt {params.odir}/05.itv.bed {params.tfas} {params.qfas} \
             --vnt {params.odir}/05.vnt.bed > {params.odir}/05.bed
-        
+
         chainBedFilter.R {params.odir}/05.bed {params.odir}/10.bed \
             {params.odir}/05.vnt.bed {params.odir}/10.vnt.bed
-        
+
         chain.py fromBed {params.odir}/10.bed {params.tsize} {params.qsize} \
             > {params.odir}/10.{wildcards.tgt}_{wildcards.qry}.chain
         chainSwap {params.odir}/10.{wildcards.tgt}_{wildcards.qry}.chain \
@@ -253,7 +260,7 @@ rule wgc5_post:
         rm {params.qpre}.[12].*
         """
 
-rule wgc6_eff_t:
+rule wgc6_eff_t: #need to split into python env
     input:
         "%s/{qry}_{tgt}/10.{tgt}.vcf.gz" % config['dird'],
     output:
@@ -278,6 +285,7 @@ rule wgc6_eff_t:
         runtime = lambda w, attempt: get_resource(config, attempt, 'snpeff')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'snpeff')['mem']
     threads: config['snpeff']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         snpEff -Xmx{params.mem}G -c {params.txcfg} {wildcards.tgt} -ud 0 \
@@ -310,6 +318,7 @@ rule wgc6_eff_q:
         runtime = lambda w, attempt: get_resource(config, attempt, 'snpeff')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'snpeff')['mem']
     threads: config['snpeff']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         snpEff -Xmx{params.mem}G -c {params.qxcfg} {wildcards.qry} -ud 0 \
@@ -339,13 +348,12 @@ rule wgc_orthofinder:
         runtime = lambda w, attempt: get_resource(config, attempt, 'orthofinder')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'orthofinder')['mem']
     threads: config['orthofinder']['ppn']
+    conda: "../envs/blast.yml"
     shell:
         """
         mkdir -p {params.odir}
         cp -f {input.tgt_faa} {params.tfaa}
         cp -f {input.qry_faa} {params.qfaa}
-        
-        source activate py27
         orthofinder -f {params.odir} -t {threads} -p {params.odir} -og
         """
 

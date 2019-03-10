@@ -17,6 +17,7 @@ rule sambamba_sort_name:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['mem']
     threads: config['sambamba']['ppn']
+    conda: "../envs/job.yml"
     shell:
         "sambamba sort {params.extra} -n -t {threads} -o {output} {input}"
 
@@ -38,6 +39,7 @@ rule bismark_extract:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bismark_extract')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'bismark_extract')['mem']
     threads: config['bismark_extract']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         bismark_methylation_extractor --parallel {params.parallel} \

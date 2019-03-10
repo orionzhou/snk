@@ -1,4 +1,4 @@
-config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
+config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 dir_project: /home/springer/zhoux379/projects/rnaseq
 dir_cache: /scratch.global/zhoux379/rnaseq
 studylist: /home/springer/zhoux379/projects/rnaseq/data/01.cfg.xlsx

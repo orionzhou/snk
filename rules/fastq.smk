@@ -23,31 +23,8 @@ rule fq_compress:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['mem']
     threads: config['fq_compress']['ppn']
-    run:
-        if config['y'][wildcards.yid]['t'][wildcards.sid]['paired']:
-            if input.r1.endswith(".gz"):
-                shell("""
-                ln -sf {input.r1} {output.r1}
-                ln -sf {input.r2} {output.r2}
-                touch {output.r0}
-                """)
-            else:
-                shell("""
-                pigz -p {threads} -c {input.r1} > {output.r1}
-                pigz -p {threads} -c {input.r2} > {output.r2}
-                touch {output.r0}
-                """)
-        else:
-            if input.r0.endswith(".gz"):
-                shell("""
-                ln -sf {input.r0} {output.r0}
-                touch {output.r1} {output.r2}
-                """)
-            else:
-                shell("""
-                pigz -p {threads} -c {input.r0} > {output.r0}
-                touch {output.r1} {output.r2}
-                """)
+    conda: "../envs/job.yml"
+    script: "../scripts/fq_compress.py"
 
 rule fq_deinterleave:
     input: lambda w: config['y'][w.yid]['t'][w.sid]['r0']
@@ -65,6 +42,7 @@ rule fq_deinterleave:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fq_deinterleave')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'fq_deinterleave')['mem']
     threads: config['fq_deinterleave']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         zcat {input} | \
@@ -96,28 +74,8 @@ rule fq_dump:
         mem = lambda w, attempt:  get_resource(config, attempt, 'fq_dump')['mem'],
         load = lambda w, attempt:  get_resource(config, attempt, 'fq_dump')['load']
     threads: config['fq_dump']['ppn']
-    run:
-        if config['y'][wildcards.yid]['t'][wildcards.sid]['paired']:
-            shell("""
-            fasterq-dump --split-files -e {threads} -m {params.mem} \
-                    -O {params.odir} -t {params.tmp} {wildcards.sid} \
-                    >{log} 2>&1
-
-            pigz -p {threads} --fast -c {params.o1} >{output.r1}
-            pigz -p {threads} --fast -c {params.o2} >{output.r2}
-            rm {params.o1} {params.o2}
-            touch {output.r0}
-            """)
-        else:
-            shell("""
-            fasterq-dump --split-files -e {threads} -m {params.mem} \
-                    -O {params.odir} -t {params.tmp} {wildcards.sid} \
-                    >{log} 2>&1
-
-            pigz -p {threads} --fast -c {params.o0} >{output.r0}
-            rm {params.o0}
-            touch {output.r1} {output.r2}
-            """)
+    conda: "../envs/job.yml"
+    script: "../scripts/fq_dump.py"
 
 def fastq_inputs(w):
     yid, sid = w.yid, w.sid

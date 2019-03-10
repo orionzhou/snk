@@ -59,6 +59,7 @@ rule star:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'star')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'star')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'star')['mem']
+    conda: "../envs/job.yml"
     threads: config['star']['ppn']
     shell:
         """
@@ -94,6 +95,7 @@ rule hisat2:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['mem']
     threads: config['hisat2']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         hisat2 {params.extra} --threads {threads} \
@@ -133,6 +135,7 @@ rule bwa:
         runtime = lambda w, attempt: get_resource(config, attempt, 'bwa')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'bwa')['mem']
     threads: config['bwa']['ppn']
+    conda: "../envs/job.yml"
     shell:
         """
         bwa mem -t {threads} {params.index} {params.extra} {params.input_str} \
@@ -169,6 +172,7 @@ rule bismark:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bismark')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'bismark')['mem']
     threads: config['bismark']['ppn']
+    conda: "../envs/job.yml"
     shell:
 #        --basename {wildcards.sid}
         """
@@ -210,15 +214,8 @@ rule sambamba_sort:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['mem']
     threads: config['sambamba']['ppn']
-    run:
-        if params.mapper == 'bwa':
-            shell("""
-            sambamba view -S -f bam -t {threads} {input} -o {output[0]}
-            sambamba sort {params.extra} -t {threads} -o {output[0]} {params.tmp_bam}
-            rm {params.tmp_bam}
-            """)
-        else:
-            shell("sambamba sort {params.extra} -t {threads} -o {output[0]} {input}")
+    conda: "../envs/job.yml"
+    script: "../scripts/sambamba_sort.py"
 
 rule bam_stat:
     input:
@@ -234,6 +231,7 @@ rule bam_stat:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
     threads: config['bam_stat']['ppn']
+    conda: "../envs/python.yml"
     shell:
         "bam.py stat {input} > {output}"
 
@@ -249,6 +247,7 @@ rule merge_bamstats:
         lambda w: expand("%s/%s/{sid}.tsv" % (w.yid, config['mapping']['odir']), sid = config['y'][w.yid]['SampleID'])
     output:
         protected("{yid}/%s/%s" % (config['dird'], config['merge_bamstats']['out']))
+    conda: "../envs/r.yml"
     shell:
         "merge.bamstats.R -o {output} {input}"
 

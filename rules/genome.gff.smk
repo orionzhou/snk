@@ -11,10 +11,11 @@ rule anno1_clean:
     output:
         "{genome}/%s/10.gff" % config['adir']
     params:
-        gdir = lambda w: "%s" % w.genome,
-        wdir = lambda w: "%s/%s" % (w.genome, config['adir']),
+        gdir = "{genome}",
+        wdir = "{genome}/%s" % config['adir'],
         prefix = lambda w: config[w.genome]['prefix'],
         fixopt = lambda w: fix_option(w.genome),
+    conda: "../envs/python.yml"
     shell:
         """
         gff.py fix --opt {params.fixopt} {input.gff} > {params.wdir}/01.fixed.gff
@@ -43,16 +44,13 @@ rule anno2_index:
         pfna = "{genome}/%s/15.fna" % config['adir'],
         pfaa = "{genome}/%s/15.faa" % config['adir'],
     params:
-        gdir = lambda w: "%s" % w.genome,
-        wdir = lambda w: "%s/%s" % (w.genome, config['adir']),
-        db = lambda w: "%s/%s/10.gff.db" % (w.genome, config['adir']),
-        ref = lambda w: "%s/10_genome.fna" % w.genome,
-        N = lambda w: "%s.%s" % (config['anno2_index']['id'], w.genome),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['anno2_index']['id'], w.genome),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['anno2_index']['id'], w.genome),
-        q = lambda w, resources: resources.q,
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
+        gdir = "{genome}",
+        wdir = "{genome}/%s" % config['adir'],
+        db = "{genome}/%s/10.gff.db" % config['odir'],
+        ref = "{genome}/10_genome.fna",
+        N = "%s.{genome}" % config['anno2_index']['id'],
+        e = "%s/%s/{genome}.e" % (config['dirp'], config['anno2_index']['id']),
+        o = "%s/%s/{genome}.o" % (config['dirp'], config['anno2_index']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         q = lambda w, attempt:  get_resource(config, attempt, 'anno2_index')['q'],
@@ -60,6 +58,7 @@ rule anno2_index:
         runtime = lambda w, attempt: get_resource(config, attempt, 'anno2_index')['runtime'],
         mem = lambda w, attempt: get_resource(config, attempt, 'anno2_index')['mem']
     threads: config['anno2_index']['ppn']
+    conda: "../envs/python.yml"
     shell:
         """
         gff.py index {input.gff} {output.db}
@@ -80,7 +79,7 @@ rule anno2_index:
         fasta.py translate {output.pfna} > {output.pfaa}
         """
 
-rule anno3_tandup:
+rule anno3_blast:
     input:
         fna = "{genome}/%s/15.fna" % config['adir'],
         faa = "{genome}/%s/15.faa" % config['adir'],
@@ -88,36 +87,60 @@ rule anno3_tandup:
         blastn_db = "{genome}/21_dbs/%s/%s" % (config['blastn']['xdir'], config['blastn']['xout']),
         blastp_db = "{genome}/21_dbs/%s/%s" % (config['blastp']['xdir'], config['blastp']['xout']),
     output:
-        cds = "{genome}/%s/22.tandup.cds.tsv" % config['adir'],
-        pro = "{genome}/%s/22.tandup.pro.tsv" % config['adir'],
+        cds = "{genome}/%s/21.blast.cds.tsv" % config['adir'],
+        pro = "{genome}/%s/21.blast.pro.tsv" % config['adir'],
     params:
-        gdir = lambda w: "%s" % w.genome,
-        wdir = lambda w: "%s/%s" % (w.genome, config['adir']),
-        ref = lambda w: "%s/10_genome.fna" % w.genome,
-        blastn_db = lambda w: "%s/21_dbs/%s/%s" % (w.genome, config['blastn']['xdir'], config['blastn']['xpre']),
-        blastp_db = lambda w: "%s/21_dbs/%s/%s" % (w.genome, config['blastp']['xdir'], config['blastp']['xpre']),
-        N = lambda w: "%s.%s" % (config['anno3_tandup']['id'], w.genome),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['anno3_tandup']['id'], w.genome),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['anno3_tandup']['id'], w.genome),
-        q = lambda w, resources: resources.q,
-        ppn = lambda w, resources: resources.ppn,
-        runtime = lambda w, resources: resources.runtime,
+        gdir = "{genome}",
+        wdir = "{genome}/%s" % config['adir'],
+        ref = "{genome}/10_genome.fna",
+        blastn_db = "{genome}/21_dbs/%s/%s" % (config['blastn']['xdir'], config['blastn']['xpre']),
+        blastp_db = "{genome}/21_dbs/%s/%s" % (config['blastp']['xdir'], config['blastp']['xpre']),
+        N = "%s.{genome}" % config['anno3_blast']['id'], w.genome),
+        e = "%s/%s/{genome}.e" % (config['dirp'], config['anno3_blast']['id']),
+        o = "%s/%s/{genome}.o" % (config['dirp'], config['anno3_blast']['id']),
         mem = lambda w, resources: resources.mem
     resources:
-        q = lambda w, attempt:  get_resource(config, attempt, 'anno3_tandup')['q'],
-        ppn = lambda w, attempt: get_resource(config, attempt, 'anno3_tandup')['ppn'],
-        runtime = lambda w, attempt: get_resource(config, attempt, 'anno3_tandup')['runtime'],
-        mem = lambda w, attempt: get_resource(config, attempt, 'anno3_tandup')['mem']
-    threads: config['anno3_tandup']['ppn']
+        q = lambda w, attempt:  get_resource(config, attempt, 'anno3_blast')['q'],
+        ppn = lambda w, attempt: get_resource(config, attempt, 'anno3_blast')['ppn'],
+        runtime = lambda w, attempt: get_resource(config, attempt, 'anno3_blast')['runtime'],
+        mem = lambda w, attempt: get_resource(config, attempt, 'anno3_blast')['mem']
+    threads: config['anno3_blast']['ppn']
+    conda: "../envs/blast.yml"
     shell:
         """
         blastn -db {params.blastn_db} -query {input.fna} -num_threads {threads} \
             -outfmt 6 -out {params.wdir}/21.blast.cds.tsv
         blastp -db {params.blastp_db} -query {input.faa} -num_threads {threads} \
             -outfmt 6 -out {params.wdir}/21.blast.pro.tsv
-        catalog.py tandem --strip_gene_name None {params.wdir}/21.blast.cds.tsv \
+        """
+
+rule anno4_tandup:
+    input:
+        cds = "{genome}/%s/21.blast.cds.tsv" % config['adir'],
+        pro = "{genome}/%s/21.blast.pro.tsv" % config['adir'],
+    output:
+        cds = "{genome}/%s/22.tandup.cds.tsv" % config['adir'],
+        pro = "{genome}/%s/22.tandup.pro.tsv" % config['adir'],
+    params:
+        gdir = "{genome}",
+        wdir = "{genome}/%s" % config['adir'],
+        ref = "{genome}/10_genome.fna",
+        N = "%s.{genome}" % config['anno4_tandup']['id'], w.genome),
+        e = "%s/%s/{genome}.e" % (config['dirp'], config['anno4_tandup']['id']),
+        o = "%s/%s/{genome}.o" % (config['dirp'], config['anno4_tandup']['id']),
+        mem = lambda w, resources: resources.mem
+    resources:
+        q = lambda w, attempt:  get_resource(config, attempt, 'anno4_tandup')['q'],
+        ppn = lambda w, attempt: get_resource(config, attempt, 'anno4_tandup')['ppn'],
+        runtime = lambda w, attempt: get_resource(config, attempt, 'anno4_tandup')['runtime'],
+        mem = lambda w, attempt: get_resource(config, attempt, 'anno4_tandup')['mem']
+    threads: config['anno4_tandup']['ppn']
+    conda: "../envs/python.yml"
+    shell:
+        """
+        catalog.py tandem --strip_gene_name None {input.cds} \
             {input.fna} {input.gbed} > {output.cds}
-        catalog.py tandem --strip_gene_name None {params.wdir}/21.blast.pro.tsv \
+        catalog.py tandem --strip_gene_name None {input.pro} \
             {input.faa} {input.gbed} > {output.pro}
         """
 

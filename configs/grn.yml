@@ -1,4 +1,4 @@
-config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
+config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 dirw: /home/springer/zhoux379/projects/grn/data
 grn:
   cfg: 10.dataset.xlsx
@@ -21,10 +21,10 @@ grn:
     tf: '09.tf.txt'
     odir: 12_genie3
     ppn: 12
-    runtime: 30
+    runtime: 30 # n18a needs >= 70h run time
     mem: 50
     aruntime: 20
-    amem: 5
+    amem: 1
   pkl2rda:
     id: pkl2rda
     ppn: 1
@@ -36,6 +36,8 @@ grn:
     id: eval
     odir: 13_eval
     ppn: 1
+    runtime: 4
+    mem: 30
   eval_merge:
     id: evm
     odir: 14_eval_sum

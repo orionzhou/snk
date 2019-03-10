@@ -37,6 +37,7 @@ rule multiqc:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'multiqc')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'multiqc')['mem']
     threads: config['multiqc']['ppn']
+    conda: "../envs/job.yml"
     shell:
         "multiqc {params.extra} --force "
         "-o {params.outdir} "
@@ -55,6 +56,7 @@ rule merge_trimstats:
     input: merge_trimstats_inputs
     output:
         "%s/%s" % (config['dird'], config['merge_trimstats']['out'])
+    conda: "../envs/python.yml"
     shell:
         "jsonutil.py fastp {input} > {output}"
 
@@ -75,6 +77,7 @@ rule merge_featurecounts:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'merge_featurecounts')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'merge_featurecounts')['mem']
     threads: config['merge_featurecounts']['ppn']
+    conda: "../envs/r.yml"
     shell:
         "merge.featurecounts.R -o {output} {input}"
 
@@ -105,6 +108,7 @@ rule bam_stat:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
     threads: config['bam_stat']['ppn']
+    conda: "../envs/python.yml"
     shell:
         "bam.py stat {input} > {output}"
 
@@ -126,6 +130,7 @@ rule sambamba_flagstat:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'flagstat')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'flagstat')['mem']
     threads: config['sambamba']['ppn']
+    conda: "../envs/job.yml"
     shell:
         "sambamba flagstat {params.extra} -t {threads} {input} > {output}"
 
@@ -134,6 +139,7 @@ rule merge_bamstats:
         expand("%s/{sid}.tsv" % bamstat_dir(), sid = config['SampleID'])
     output:
         "%s/%s" % (config['dird'], config['merge_bamstats']['out'])
+    conda: "../envs/r.yml"
     shell:
         "merge.bamstats.R -o {output} {input}"
 

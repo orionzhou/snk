@@ -1,0 +1,74 @@
+config_default: /home/springer/zhoux379/git/snk/configs/base.yml
+dir_project: /scratch.global/zhoux379/reseq/data/20_hmp
+dirw: /home/springer/zhoux379/projects/reseq/data/20_hmp
+dir_cache: /scratch.global/zhoux379/reseq
+hmp:
+  refo: /home/springer/zhoux379/data/genome/B73/download/raw.fna
+  refn: /home/springer/zhoux379/data/genome/B73/21_dbs/gatk/db.fasta
+  chain3: /home/springer/zhoux379/data/genome/B73/chain/AGPv3_to_AGPv4.chain.gz
+  chain4: /home/springer/zhoux379/data/genome/B73/08_seq_map/mapf.chain
+  ppn: 1
+  runtime: 5
+  mem: 20
+  aruntime: 5
+  amem: 10
+  od01: 01_raw
+  od02: 02_crossmap
+  od03: 03_vcfnorm
+  od04: 04_liftover
+  of10: 10.vcf.gz
+  of21: 21.snp.vcf.gz
+  of22: 22.idl.vcf.gz
+  of31: 31.vcf.gz
+  of35: 35.treefile
+  crossmap:
+    id: crsm
+    ppn: 1
+    runtime: 2
+    mem: 30
+    aruntime: 2
+    amem: 10
+  vcfnorm:
+    id: vnorm
+    ppn: 1
+    runtime: 10
+    mem: 30
+    aruntime: 5
+    amem: 10
+  liftover:
+    id: lif
+    ppn: 1
+    runtime: 5
+    mem: 30
+    aruntime: 5
+    amem: 10
+  merge:
+    id: mg
+    ppn: 1
+    runtime: 10
+    mem: 30
+    aruntime: 10
+    amem: 10
+  filter:
+    id: flt
+    ppn: 1
+    runtime: 15
+    mem: 20
+    aruntime: 5
+    amem: 10
+  sample:
+    id: samp
+    ppn: 1
+    runtime: 10
+    mem: 30
+    aruntime: 10
+    amem: 2
+  phylo:
+    id: phy
+    q: 0
+    ppn: 12
+    runtime: 30
+    mem: 20
+    aruntime: 10
+    amem: 2
+

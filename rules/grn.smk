@@ -19,14 +19,12 @@ rule get_exp_mat:
         runtime = lambda w, attempt: get_resource(config,attempt,'grn','get_exp_mat')['runtime'],
         mem = lambda w, attempt: get_resource(config,attempt,'grn','get_exp_mat')['mem']
     threads: config['grn']['get_exp_mat']['ppn']
+    conda: "../envs/r.yml"
     shell:
-        """
-        conda activate r
-        cpm.filter.R {input} {output} --subid={params.subid}
-        """
+        "cpm.filter.R {input} {output} --subid={params.subid}"
 
-def genie3_extra(wildcards):
-    nid = wildcards.nid
+def genie3_extra(w):
+    nid = w.nid
     extra = ''
     #if config['t'][nid]['study'] == 'kremling2018':
     #    extra = '--cpm'
@@ -48,12 +46,9 @@ rule genie3:
         runtime = lambda w, attempt: get_resource(config,attempt,'grn','genie3')['runtime'],
         mem = lambda w, attempt: get_resource(config,attempt,'grn','genie3')['mem']
     threads: config['grn']['genie3']['ppn']
+    conda: "../envs/python.yml"
     shell:
-        """
-        set +u
-        source activate python
-        grn.py genie3 -p {threads} {params.extra} {input.em} {input.tf} {output}
-        """
+        "grn.py genie3 -p {threads} {params.extra} {input.em} {input.tf} {output}"
 
 rule pkl2rda:
     input:
@@ -70,11 +65,9 @@ rule pkl2rda:
         runtime = lambda w, attempt: get_resource(config,attempt,'grn','pkl2rda')['runtime'],
         mem = lambda w, attempt: get_resource(config,attempt,'grn','pkl2rda')['mem']
     threads: config['grn']['pkl2rda']['ppn']
+    conda: "../envs/r.yml"
     shell:
-        """
-        conda activate r
-        genie3_pkl2rda.R {input.em} {input.net} {output}
-        """
+        "genie3_pkl2rda.R {input.em} {input.net} {output}"
 
 rule eval:
     input:
@@ -90,11 +83,9 @@ rule eval:
         runtime = lambda w, attempt: get_resource(config,attempt,'grn','eval')['runtime'],
         mem = lambda w, attempt: get_resource(config,attempt,'grn','eval')['mem']
     threads: config['grn']['eval']['ppn']
+    conda: "../envs/r.yml"
     shell:
-        """
-        source activate r
-        grn.eval.R {input} {output} --opt {wildcards.evtype}
-        """
+        "grn.eval.R {input} {output} --opt {wildcards.evtype} --permut 500"
 
 rule eval_merge:
     input:
@@ -110,9 +101,7 @@ rule eval_merge:
         runtime = lambda w, attempt: get_resource(config,attempt,'grn','eval_merge')['runtime'],
         mem = lambda w, attempt: get_resource(config,attempt,'grn','eval_merge')['mem']
     threads: config['grn']['eval_merge']['ppn']
+    conda: "../envs/r.yml"
     shell:
-        """
-        conda activate r
-        grn.eval.merge.R {output} --opt {wildcards.evtype}
-        """
+        "grn.eval.merge.R {output} --opt {wildcards.evtype}"
 

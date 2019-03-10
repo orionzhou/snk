@@ -331,11 +331,16 @@ cleanbam:
   odir2: 24_base_recal
 callvnt:
   id: callv
-  odir: 25_gvcf
-  odir1: 26_gvcf_rename
-  odir2: 27_gvcf_by_region
-  odir3: 28_vcf_by_region
-  out: 30.vcf.gz
+  truth_sites_snp: /home/springer/zhoux379/projects/reseq/data/20_hmp/21.snp.sites.vcf.gz
+  truth_sites_idl: /home/springer/zhoux379/projects/reseq/data/21_biomap/05.idl.sites.vcf.gz
+  od25: 25_gvcf
+  odir: gvcf
+  od26: 26_gvcf_rename
+  od27: 27_gvcf_by_region
+  od28: 28_vcf_by_region
+  of30: 30.vcf.gz
+  of32: 32.snp.vcf.gz
+  of34: 34.snp.indel.vcf.gz
 bcftools:
   call:
     id: bcfCa
@@ -427,8 +432,22 @@ gatk:
     mem: 30
     aruntime: 10
     amem: 5
+  variant_recalibrator:
+    id: vntRecal
+    ppn: 1
+    runtime: 50
+    mem: 40
+    aruntime: 10
+    amem: 0
+  apply_vqsr:
+    id: aplV
+    ppn: 1
+    runtime: 30
+    mem: 40
+    aruntime: 10
+    amem: 0
   variant_filtration:
-    id: variF
+    id: varF
     ppn: 1
     runtime: 5
     mem: 20

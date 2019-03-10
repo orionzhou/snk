@@ -18,6 +18,7 @@ rule fastqc:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fastqc')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fastqc')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'fastqc')['mem']
+    conda: "../envs/job.yml"
     wrapper:
         "0.27.0/bio/fastqc"
 

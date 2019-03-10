@@ -28,6 +28,7 @@ rule featurecounts:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'featurecounts')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'featurecounts')['mem']
     threads: config['featurecounts']['ppn']
+    conda: "../envs/job.yml"
     shell:
         "featureCounts -T {threads} {params.extra} "
         "-a {params.gtf} -o {output[0]} {input} "
@@ -53,6 +54,7 @@ rule merge_featurecounts:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'merge_featurecounts')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'merge_featurecounts')['mem']
     threads: config['merge_featurecounts']['ppn']
+    conda: "../envs/r.yml"
     shell:
         "merge.featurecounts.R -o {output} {input}"
 
@@ -72,6 +74,7 @@ rule rc2cpm_raw:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['mem']
     threads: config['rc2cpm']['ppn']
+    conda: "../envs/r.yml"
     shell:
         "rc2cpm.R {input.sam} {input.exp} {output} --yid {wildcards.yid} --config {input.cfg}"
 
@@ -91,6 +94,7 @@ rule rc2cpm:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'rc2cpm')['mem']
     threads: config['rc2cpm']['ppn']
+    conda: "../envs/r.yml"
     shell:
         "rc2cpm.R {input.sam} {input.exp} {output} --yid {wildcards.yid} --config {input.cfg}"
 

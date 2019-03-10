@@ -1,4 +1,4 @@
-config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
+config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 dir_project: /home/springer/zhoux379/projects/wgc
 dir_cache: /scratch.global/zhoux379/wgc
 comps:

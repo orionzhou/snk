@@ -1,4 +1,4 @@
-config_default: /home/springer/zhoux379/git/snk/configs/base.yaml
+config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 dirw: /home/springer/zhoux379/data/genome
 genomes:
   - B73
@@ -139,13 +139,20 @@ anno2_index:
   mem: 15
   aruntime: 1
   amem: 5
-anno3_tandup:
-  id: 3dup
+anno3_blast:
+  id: 3bla
   ppn: 8
   runtime: 10
   mem: 25
   aruntime: 10
   amem: 5
+anno4_tandup:
+  id: 4dup
+  ppn: 1
+  runtime: 2
+  mem: 25
+  aruntime: 1
+  amem: 1
 prepR:
   id: prepR
   ppn: 1

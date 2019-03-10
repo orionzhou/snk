@@ -8,12 +8,11 @@ config = check_config_rnaseq(config)
 workdir: config['dirw']
 
 wildcard_constraints:
-    yid = "[a-zA-Z0-9]+",
-    sid = "[a-zA-Z0-9\-_]+",
-    gt = "[a-zA-Z0-9\-_]+",
-    rid = "[a-zA-Z0-9]+",
+    yid = "[a-zA-Z0-9_]+",
+    sid = "[a-zA-Z0-9]+",
+    region = ".+(:[0-9]+-[0-9]+)?"
 
-localrules: all, fastq, trimming, merge_trimstats, merge_bamstats
+localrules: all, fastq, trimming
 
 def all_outputs(w):
     outputs = []
@@ -22,11 +21,9 @@ def all_outputs(w):
         pre = "%s/%s" % (yid, config['dird'])
         if config['y'][yid]['meta'] != True:
             outputs.append("%s/%s" % (pre, config['merge_trimstats']['out']))
-            outputs.append("%s/%s" % (pre, config['merge_bamstats']['outv']))
-            for gt, sids in config['y'][yid]['gt'].items():
-                outputs.append("%s/%s/%s.g.vcf.gz" % (pre, config['callvnt']['odir'], gt))
-        else:
-            outputs.append("%s/%s" % (yid, config['callvnt']['of34']))
+            outputs.append("%s/%s" % (pre, config['merge_bamstats']['out']))
+        outputs.append("%s/%s" % (pre, config['rc2cpm']['out_raw']))
+        outputs.append("%s/%s" % (pre, config['rc2cpm']['out']))
     return outputs
 rule all:
     input: all_outputs
@@ -34,8 +31,7 @@ rule all:
 include: "rules/fastq.smk"
 include: "rules/trimming.smk"
 include: "rules/mapping.smk"
-include: "rules/cleanbam.smk"
-include: "rules/callvnt.smk"
+include: "rules/rnaseq.smk"
 
 onsuccess:
     shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))

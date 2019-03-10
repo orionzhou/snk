@@ -203,8 +203,10 @@ def check_config_rnaseq(c):
     df = pd.read_excel(c['studylist'], sheet_name=0, header=0, converters={"meta":bool, "stress":bool, "run": bool})
     y = dict()
     gdic = dict()
+    num_run = 0
     for i in range(len(df)):
-        if not df['run'][i]: continue
+        #if not df['run'][i]: continue
+        if df['run'][i]: num_run += 1
         yid = df['yid'][i]
 
         for rsubdir in [c['dirl'], c['dirp']]:
@@ -235,7 +237,8 @@ def check_config_rnaseq(c):
             gdic[ref] = set()
         gdic[ref].add(mapper)
     c['y'] = y
-    print('working on %s datasets' % len(y.keys()))
+    #print('working on %s datasets' % len(y.keys()))
+    print('working on %s datasets' % num_run)
 
     for genome in gdic.keys():
        check_genome(genome, gdic[genome], c)
