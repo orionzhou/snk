@@ -8,8 +8,8 @@ rule lastz:
         odir = lambda w: "%s/%s_%s" % (config['lastz']['odir'], w.genotype, w.tgt),
         fcmd = lambda w: "%s/%s_%s.sh" % (config['lastz']['odir'], w.genotype, w.tgt),
         N = lambda w: "%s.%s.%s" % (config['lastz']['id'], w.genotype, w.tgt),
-        e = lambda w: "%s/%s/%s_%s.e" % (config['dirp'], config['lastz']['id'], w.genotype, w.tgt),
-        o = lambda w: "%s/%s/%s_%s.o" % (config['dirp'], config['lastz']['id'], w.genotype, w.tgt),
+        e = lambda w: "%s/%s/%s_%s.e" % (config['dirj'], config['lastz']['id'], w.genotype, w.tgt),
+        o = lambda w: "%s/%s/%s_%s.o" % (config['dirj'], config['lastz']['id'], w.genotype, w.tgt),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem

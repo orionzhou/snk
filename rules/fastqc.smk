@@ -9,8 +9,8 @@ rule fastqc:
     params:
         extra = '',
         N = lambda w: "%s.%s" % (config['ase']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['fastqc']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['fastqc']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirj'], config['fastqc']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirj'], config['fastqc']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem

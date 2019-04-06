@@ -1,7 +1,6 @@
 import os
 import os.path as op
 from snakemake.utils import update_config, makedirs
-from astropy.table import Table, Column
 import yaml
 from snk.utils import get_resource
 

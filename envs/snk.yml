@@ -1,4 +1,4 @@
-name: job
+name: snk
 channels:
   - conda-forge
   - bioconda
@@ -11,17 +11,10 @@ dependencies:
   - asn1crypto=0.24.0=py36_1003
   - async-timeout=3.0.1=py_1000
   - attrs=19.1.0=py_0
-  - bcftools=1.9=ha228f0b_3
   - bcrypt=3.1.4=py36h470a237_0
-  - bedtools=2.27.1=he860b03_3
-  - bismark=0.20.0=0
-  - blas=2.4=openblas
-  - blat=36=0
+  - blas=1.0=openblas
   - boto3=1.9.117=py_0
   - botocore=1.12.117=py_0
-  - bowtie2=2.3.4.3=py36he860b03_1
-  - bwa=0.7.17=h84994c4_5
-  - bzip2=1.0.6=h14c3975_1002
   - ca-certificates=2019.3.9=hecc5488_0
   - cachetools=2.1.0=py_0
   - cairo=1.16.0=ha4e643d_1000
@@ -30,24 +23,22 @@ dependencies:
   - chardet=3.0.4=py36_1003
   - configargparse=0.13.0=py_1
   - cryptography=2.6.1=py36h9d9f1b6_0
-  - curl=7.64.0=h646f8bb_2
   - datrie=0.7.1=py36h14c3975_0
   - decorator=4.4.0=py_0
   - docutils=0.14=py36_1001
   - dropbox=9.2.0=py_0
   - expat=2.2.5=hf484d3e_1002
-  - fastp=0.19.7=hdbcaa40_0
   - filechunkio=1.8=py_2
   - fontconfig=2.13.1=he4413a7_1000
   - freetype=2.10.0=he983fc9_0
   - ftputil=3.4=py_0
-  - gerp=2.1=hfc679d8_0
   - gettext=0.19.8.1=h9745a5d_1001
   - gitdb2=2.0.5=py_0
   - gitpython=2.1.11=py_0
   - glib=2.58.3=hf63aee3_1001
   - google-api-core=1.8.1=py36_0
   - google-auth=1.6.3=py_0
+  - google-auth-httplib2=0.0.3=py_2
   - google-cloud-core=0.29.1=py_0
   - google-cloud-storage=1.14.0=py_0
   - google-resumable-media=0.3.2=py_0
@@ -56,31 +47,25 @@ dependencies:
   - graphviz=2.38.0=hf68f40c_1011
   - greenlet=0.4.13=py36_0
   - harfbuzz=2.3.1=h6824563_0
-  - htslib=1.9=ha228f0b_6
+  - httplib2=0.12.1=py36_0
   - icu=58.2=hf484d3e_1000
   - idna=2.8=py36_1000
   - idna_ssl=1.1.0=py36_1000
-  - iqtree=1.6.9=he860b03_1
+  - intel-openmp=2019.1=144
   - jinja2=2.10=py_1
   - jmespath=0.9.4=py_0
   - jpeg=9c=h14c3975_1001
   - jsonschema=3.0.1=py36_0
-  - krb5=1.16.3=h05b26f9_1001
-  - ldc=1.13.0=h02c9852_1
   - libblas=3.8.0=4_openblas
   - libcblas=3.8.0=4_openblas
-  - libcurl=7.64.0=h541490c_2
-  - libdeflate=1.0=h14c3975_1
-  - libedit=3.1.20170329=hf8c457e_1001
   - libffi=3.2.1=he1b5a44_1006
   - libgcc-ng=7.3.0=hdf63c60_0
   - libgfortran-ng=7.2.0=hdf63c60_3
   - libiconv=1.15=h516909a_1005
   - liblapack=3.8.0=4_openblas
-  - liblapacke=3.8.0=4_openblas
+  - libopenblas=0.3.2=h5a2b251_1
   - libpng=1.6.36=h84994c4_1000
   - libprotobuf=3.7.0=h8b12597_2
-  - libssh2=1.8.1=h22169c7_0
   - libstdcxx-ng=7.3.0=hdf63c60_0
   - libtiff=4.0.10=h9022e91_1002
   - libtool=2.4.6=h14c3975_1002
@@ -88,22 +73,22 @@ dependencies:
   - libxcb=1.13=h14c3975_1002
   - libxml2=2.9.8=h143f9aa_1005
   - markupsafe=1.1.1=py36h14c3975_0
-  - minimap2=2.16=h84994c4_1
+  - mkl=2019.1=144
+  - mkl_fft=1.0.10=py36_0
+  - mkl_random=1.0.2=py36_0
   - msgpack-python=0.6.1=py36h6bb024c_0
   - multidict=4.5.2=py36h14c3975_1000
   - ncurses=6.1=hf484d3e_1002
   - neovim=0.3.1=py36_0
   - networkx=2.2=py_1
   - numpy=1.16.2=py36h8b7e671_1
+  - numpy-base=1.15.0=py36hc937464_0
   - openblas=0.3.5=h9ac9557_1001
-  - openjdk=11.0.1=h14c3975_1014
   - openssl=1.1.1b=h14c3975_1
   - pandas=0.24.2=py36hf484d3e_0
   - pango=1.40.14=h4ea9474_1004
   - paramiko=2.4.2=py36_1000
   - pcre=8.41=hf484d3e_1003
-  - perl=5.26.2=h14c3975_1002
-  - pigz=2.3.4=0
   - pip=19.0.3=py36_0
   - pixman=0.34.0=h14c3975_1003
   - prettytable=0.7.2=py_2
@@ -130,25 +115,18 @@ dependencies:
   - requests=2.21.0=py36_1000
   - rsa=3.4.2=py_1
   - s3transfer=0.2.0=py36_0
-  - sambamba=0.6.8=h89e63da_2
-  - samtools=1.9=h8571acd_11
   - setuptools=40.8.0=py36_0
   - six=1.12.0=py36_1000
   - smmap2=2.0.5=py_0
   - snakemake=5.4.3=0
   - snakemake-minimal=5.4.3=py_1
-  - snpeff=4.3.1t=2
   - sqlite=3.26.0=h67949de_1001
-  - sra-tools=2.9.1_1=h470a237_0
-  - star=2.7.0e=0
-  - subread=1.6.4=h84994c4_1
-  - tbb=2019.4=h6bb024c_0
   - tk=8.6.9=h84994c4_1000
-  - trimmomatic=0.38=1
   - typing_extensions=3.7.2=py36_1000
   - urllib3=1.24.1=py36_1000
   - wheel=0.33.1=py36_0
   - wrapt=1.11.1=py36h14c3975_0
+  - xlrd=1.2.0=py_0
   - xmlrunner=1.7.7=py_0
   - xorg-kbproto=1.0.7=h14c3975_1002
   - xorg-libice=1.0.9=h516909a_1004
@@ -168,5 +146,5 @@ dependencies:
   - yarl=1.3.0=py36h14c3975_1000
   - zlib=1.2.11=h14c3975_1004
   - zstd=1.3.3=1
-prefix: /home/springer/zhoux379/software/miniconda3/envs/job
+prefix: /home/springer/zhoux379/software/miniconda3/envs/snk
 

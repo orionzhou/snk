@@ -8,8 +8,8 @@ rule crossmap:
         chain4 = config['hmp']['chain4'],
         o1 = "%s/{cid}.1.vcf" % config['hmp']['od01'],
         N = "%s.{cid}" % config['hmp']['crossmap']['id'],
-        e = "%s/%s/{cid}.e" % (config['dirp'], config['hmp']['crossmap']['id']),
-        o = "%s/%s/{cid}.o" % (config['dirp'], config['hmp']['crossmap']['id']),
+        e = "%s/%s/{cid}.e" % (config['dirj'], config['hmp']['crossmap']['id']),
+        o = "%s/%s/{cid}.o" % (config['dirj'], config['hmp']['crossmap']['id']),
     resources:
         ppn = lambda w, attempt: get_resource(config,attempt,'hmp','crossmap')['ppn'],
         runtime = lambda w, attempt: get_resource(config,attempt,'hmp','crossmap')['runtime'],
@@ -33,8 +33,8 @@ rule vcfnorm:
         o2 = "%s/{cid}.2.vcf.gz" % config['hmp']['od03'],
         o3 = "%s/{cid}.3.vcf.gz" % config['hmp']['od03'],
         N = "%s.{cid}" % config['hmp']['vcfnorm']['id'],
-        e = "%s/%s/{cid}.e" % (config['dirp'], config['hmp']['vcfnorm']['id']),
-        o = "%s/%s/{cid}.o" % (config['dirp'], config['hmp']['vcfnorm']['id']),
+        e = "%s/%s/{cid}.e" % (config['dirj'], config['hmp']['vcfnorm']['id']),
+        o = "%s/%s/{cid}.o" % (config['dirj'], config['hmp']['vcfnorm']['id']),
         mem = lambda w, resources: resources.mem - 20
     resources:
         ppn = lambda w, attempt: get_resource(config,attempt,'hmp','vcfnorm')['ppn'],
@@ -65,8 +65,8 @@ rule liftover:
         chain4 = config['hmp']['chain4'],
         rej = "%s/{cid}.rej.vcf" % config['hmp']['od04'],
         N = "%s.{cid}" % config['hmp']['liftover']['id'],
-        e = "%s/%s/{cid}.e" % (config['dirp'], config['hmp']['liftover']['id']),
-        o = "%s/%s/{cid}.o" % (config['dirp'], config['hmp']['liftover']['id']),
+        e = "%s/%s/{cid}.e" % (config['dirj'], config['hmp']['liftover']['id']),
+        o = "%s/%s/{cid}.o" % (config['dirj'], config['hmp']['liftover']['id']),
         mem = lambda w, resources: resources.mem - 5
     resources:
         ppn = lambda w, attempt: get_resource(config,attempt,'hmp','liftover')['ppn'],
@@ -91,8 +91,8 @@ rule merge:
         tmp = config['tmpdir'],
         o1 = "10.unsorted.vcf.gz",
         N = config['hmp']['merge']['id'],
-        e = "%s/%s.e" % (config['dirp'], config['hmp']['merge']['id']),
-        o = "%s/%s.o" % (config['dirp'], config['hmp']['merge']['id']),
+        e = "%s/%s.e" % (config['dirj'], config['hmp']['merge']['id']),
+        o = "%s/%s.o" % (config['dirj'], config['hmp']['merge']['id']),
         mem = lambda w, resources: resources.mem - 15
     resources:
         ppn = lambda w, attempt: get_resource(config,attempt,'hmp','merge')['ppn'],
@@ -121,8 +121,8 @@ rule filter:
         snp_bed = lambda w, output: output.snp.replace(".vcf.gz", ".bed"),
         idl_bed = lambda w, output: output.idl.replace(".vcf.gz", ".bed"),
         N = config['hmp']['filter']['id'],
-        e = "%s/%s.e" % (config['dirp'], config['hmp']['filter']['id']),
-        o = "%s/%s.o" % (config['dirp'], config['hmp']['filter']['id']),
+        e = "%s/%s.e" % (config['dirj'], config['hmp']['filter']['id']),
+        o = "%s/%s.o" % (config['dirj'], config['hmp']['filter']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt: get_resource(config,attempt,'hmp','filter')['ppn'],
@@ -155,8 +155,8 @@ rule sample:
         refn = config['hmp']['refn'],
         tmp = config['tmpdir'],
         N = config['hmp']['sample']['id'],
-        e = "%s/%s.e" % (config['dirp'], config['hmp']['sample']['id']),
-        o = "%s/%s.o" % (config['dirp'], config['hmp']['sample']['id']),
+        e = "%s/%s.e" % (config['dirj'], config['hmp']['sample']['id']),
+        o = "%s/%s.o" % (config['dirj'], config['hmp']['sample']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt: get_resource(config,attempt,'hmp','sample')['ppn'],
@@ -181,8 +181,8 @@ rule phylo:
         vphy = lambda w, output: output.replace(".iqtree", ".varsites.phy"),
         tmp = config['tmpdir'],
         N = config['hmp']['phylo']['id'],
-        e = "%s/%s.e" % (config['dirp'], config['hmp']['phylo']['id']),
-        o = "%s/%s.o" % (config['dirp'], config['hmp']['phylo']['id']),
+        e = "%s/%s.e" % (config['dirj'], config['hmp']['phylo']['id']),
+        o = "%s/%s.o" % (config['dirj'], config['hmp']['phylo']['id']),
         ppn = lambda w, resources: resources.ppn,
         mem = lambda w, resources: resources.mem
     resources:

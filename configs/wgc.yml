@@ -1,7 +1,10 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
-dir_project: /home/springer/zhoux379/projects/wgc
-dir_cache: /scratch.global/zhoux379/wgc
+pid: wgc
 comps:
+  - Sbicolor-B73
+comps1:
+  - Sbicolor-B73
+  - W22-B73
   - Mo17-B73
   - W22-B73
   - PH207-B73
@@ -19,12 +22,19 @@ wgc:
   dir4: 41_orthofinder
   out: 15.B73.tsv
   npieces: 30
-  prepare:
-    id: prep
+  prepT:
+    id: prepT
     ppn: 1
-    runtime: 10
+    runtime: 2
     mem: 10
-    aruntime: 10
+    aruntime: 2
+    amem: 5
+  prepQ:
+    id: prepQ
+    ppn: 1
+    runtime: 2
+    mem: 10
+    aruntime: 2
     amem: 5
   align:
     id: aln

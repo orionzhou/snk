@@ -3,24 +3,14 @@ import os.path as op
 import pandas as pd
 import yaml
 from snakemake.utils import update_config, makedirs
-from snk.utils import get_resource
+from snk.utils import get_resource, check_config_default
 
 def check_config(c):
-    fy = open(c['config_default'], 'r')
-    config_default = yaml.load(fy)
-    update_config(config_default, c)
-    c = config_default
+    c = check_config_default(c)
+    c['dirw'] = c['dirc']
 
-    for subdir in [c['dirw'], c['tmpdir']]:
-        if not op.isdir(subdir):
-            makedirs(subdir)
-
-    for rsubdir in [c['dirp']]:
-        subdir = op.join(c['dirw'], rsubdir)
-        if not op.isdir(subdir):
-            makedirs(subdir)
-
-    df = pd.read_excel(c['grn']['cfg'], sheet_name=0, header=0)
+    f_cfg = op.join(c['dird'], c['grn']['cfg'])
+    df = pd.read_excel(f_cfg, sheet_name=0, header=0)
     c['grn']['evtype'] = c['grn']['evtype'].split()
     c['nid'] = []
     c['t'] = dict()
@@ -32,17 +22,22 @@ def check_config(c):
     return c
 
 configfile: 'config.yml'
-workdir: config['dirw']
 config = check_config(config)
+workdir: config['dirw']
 
 wildcard_constraints:
-    study = "[a-zA-Z0-9]+",
+    nid = "[a-zA-Z0-9_]+",
+    a_nid = "[a-zA-Z0-9_]+",
+    b_nid = "[a-zA-Z0-9_]+",
     evtype = "[a-zA-Z0-9]+",
 
 rule all:
     input:
-        expand("%s/{nid}.rda" % config['grn']['genie3']['odir'], nid=config['nid']),
-        expand("%s/01.{evtype}.rds" % config['grn']['eval_merge']['odir'], evtype=config['grn']['evtype'])
+        expand("%s/{nid}.tsv" % config['grn']['od11'], nid=config['nid']),
+        expand("%s/{nid}.pkl" % config['grn']['od14'], nid=config['nid']),
+        expand("%s/{nid}.rds" % config['grn']['od14'], nid=config['nid']),
+        expand("%s/01.meval.rds" % config['dirr'], nid=config['nid']),
+#        expand("%s/01.{evtype}.rds" % config['dirr'], evtype=config['grn']['evtype'])
 
 include: "rules/grn.smk"
 

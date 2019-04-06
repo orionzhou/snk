@@ -12,8 +12,8 @@ rule fastp:
     params:
         paired = lambda w: int(config['y'][w.yid]['t'][w.sid]['paired']),
         N = "{yid}.%s.{sid}" % config['fastp']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['fastp']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['fastp']['id']),
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['fastp']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['fastp']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fastp')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fastp')['runtime'],
@@ -40,8 +40,8 @@ rule trimmomatic:
             "ILLUMINACLIP:%s:2:30:10:8:no" % config['trimmomatic']['adapter_pe'],
             "LEADING:3", "TRAILING:3", "SLIDINGWINDOW:4:15", "MINLEN:35"],
         N = "{yid}.%s.{sid}" % config['trimmomatic']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['trimmomatic']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['trimmomatic']['id']),
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['trimmomatic']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['trimmomatic']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'trimmomatic')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'trimmomatic')['runtime'],
@@ -63,8 +63,8 @@ rule bbduk:
         extra = "ref=%s %s" %
             (','.join(config['bbduk']['refs']), config['bbduk']['extra']),
         N = "{yid}.%s.{sid}" % config['bbduk']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['bbduk']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['bbduk']['id'])
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['bbduk']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['bbduk']['id'])
     resources:
         ppn = lambda w, attempt: get_resource(config, attempt, 'bbduk')['ppn'],
         runtime = lambda w, attempt: get_resource(config, attempt, 'bbduk')['runtime'],
@@ -118,7 +118,7 @@ def merge_trimstats_inputs(w):
 rule merge_trimstats:
     input: merge_trimstats_inputs
     output:
-        protected("{yid}/%s/%s" % (config['dird'], config['merge_trimstats']['out']))
+        protected("{yid}/data/%s" % config['merge_trimstats']['out'])
     conda: "../envs/python.yml"
     shell:
         "jsonutil.py fastp {input} > {output}"

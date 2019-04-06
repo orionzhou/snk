@@ -1,5 +1,4 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
-dir_project: /home/springer/zhoux379/projects/reseq
-dir_cache: /scratch.global/zhoux379/reseq
+pid: reseq
 studylist: /home/springer/zhoux379/projects/reseq/data/01.cfg.xlsx
 

@@ -12,6 +12,6 @@ __default__:
   m: a
   r: n
   N: s.{rule}.{wildcards}
-  o: pbs/{rule}/{wildcards}.out
-  e: pbs/{rule}/{wildcards}.err
+  o: jobs/{rule}/{wildcards}.out
+  e: jobs/{rule}/{wildcards}.err
 

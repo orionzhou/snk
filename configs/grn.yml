@@ -1,46 +1,57 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
-dirw: /home/springer/zhoux379/projects/grn/data
+pid: grn
 grn:
   cfg: 10.dataset.xlsx
-  ppn: 1
-  runtime: 2
-  mem: 20
-  aruntime: 2
-  amem: 10
+  tf: 09.tf.txt
   evtype: tf go br bm
+  od11: 11_em_raw
+  od12: 12_em_filt
+  od14: 14_grn
+  od15: 15_grn_eval
+  od17: 17_eval
+  od18: 18_eval_sum
   get_exp_mat:
     id: em
-    odir: 11_exp_mat
     ppn: 1
     runtime: 1
     mem: 30
     aruntime: 1
     amem: 10
-  genie3:
-    id: genie3
-    tf: '09.tf.txt'
-    odir: 12_genie3
+  make_grn:
+    id: grn
     ppn: 12
     runtime: 30 # n18a needs >= 70h run time
-    mem: 50
-    aruntime: 20
+    mem: 30
+    aruntime: 30
     amem: 1
-  pkl2rda:
-    id: pkl2rda
+  pkl2rds:
+    id: pkl2rds
     ppn: 1
-    runtime: 1
-    mem: 50
-    aruntime: 1
+    runtime: 4
+    mem: 20
+    aruntime: 4
     amem: 10
+  eval_model:
+    id: evg
+    ppn: 8
+    runtime: 30
+    mem: 30
+    aruntime: 10
+    amem: 5
+  merge_eval_model:
+    id: evmg
+    ppn: 1
+    runtime: 5
+    mem: 30
+    aruntime: 5
+    amem: 1
   eval:
     id: eval
-    odir: 13_eval
     ppn: 1
     runtime: 4
     mem: 30
   eval_merge:
     id: evm
-    odir: 14_eval_sum
     ppn: 1
     runtime: 5
     mem: 30

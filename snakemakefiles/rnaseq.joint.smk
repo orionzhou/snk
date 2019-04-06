@@ -1,10 +1,10 @@
 import os
 import os.path as op
 from snk.utils import get_resource
-from snk.utils import check_config_rnaseq
+from snk.utils import check_config_ngs
 
 configfile: 'config.yml'
-config = check_config_rnaseq(config)
+config = check_config_ngs(config)
 workdir: config['dirw']
 
 wildcard_constraints:
@@ -18,12 +18,11 @@ def all_outputs(w):
     outputs = []
     for yid in config['y'].keys():
         if not config['y'][yid]['run']: continue
-        pre = "%s/%s" % (yid, config['dird'])
         if config['y'][yid]['meta'] != True:
-            outputs.append("%s/%s" % (pre, config['merge_trimstats']['out']))
-            outputs.append("%s/%s" % (pre, config['merge_bamstats']['out']))
-        outputs.append("%s/%s" % (pre, config['rc2cpm']['out_raw']))
-        outputs.append("%s/%s" % (pre, config['rc2cpm']['out']))
+            outputs.append("%s/data/%s" % (yid, config['merge_trimstats']['out']))
+            outputs.append("%s/data/%s" % (yid, config['merge_bamstats']['out']))
+        outputs.append("%s/data/%s" % (yid, config['rc2cpm']['out_raw']))
+        outputs.append("%s/data/%s" % (yid, config['rc2cpm']['out']))
     return outputs
 rule all:
     input: all_outputs

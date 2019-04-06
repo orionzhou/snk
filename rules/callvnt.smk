@@ -1,24 +1,22 @@
 def gatk_hc_inputs(w):
     yid, gt = w.yid, w.gt
     sids = config['y'][yid]['gt'][gt]
-    return expand("%s/%s/{sid}.bam" % (yid, config['cleanbam']['odir2']), sid = sids)
+    return expand("%s/%s/{sid}.bam" % (yid, config['cleanbam']['od24']), sid = sids)
 
 rule gatk_haplotype_caller:
     input: gatk_hc_inputs
     output:
         temp("{yid}/%s/{gt}/{rid}.g.vcf.gz" % config['callvnt']['od25']),
         temp("{yid}/%s/{gt}/{rid}.g.vcf.gz.tbi" % config['callvnt']['od25'])
-    log:
-        "{yid}/%s/%s/{gt}/{rid}.log" % (config['dirl'], config['gatk']['haplotype_caller']['id'])
     params:
         cmd = config['gatk']['cmd'],
-        ref = lambda w: config[config['y'][w.yid]['reference']]['gatk']['xref'],
+        ref = lambda w: config['g'][config['y'][w.yid]['reference']]['gatk']['xref'],
         input_str = lambda w, input: ["-I %s" % x for x in input],
-        region = lambda w: config[config['y'][w.yid]['reference']]['regions'][w.rid],
+        region = lambda w: config['g'][config['y'][w.yid]['reference']]['regions'][w.rid],
         extra = gatk_extra(picard = False, jdk = True, hc = True),
         N = "{yid}.%s.{gt}.{rid}" % config['gatk']['haplotype_caller']['id'],
-        e = "{yid}/%s/%s/{gt}/{rid}.e" % (config['dirp'], config['gatk']['haplotype_caller']['id']),
-        o = "{yid}/%s/%s/{gt}/{rid}.o" % (config['dirp'], config['gatk']['haplotype_caller']['id']),
+        e = "{yid}/%s/%s/{gt}/{rid}.e" % (config['dirj'], config['gatk']['haplotype_caller']['id']),
+        o = "{yid}/%s/%s/{gt}/{rid}.o" % (config['dirj'], config['gatk']['haplotype_caller']['id']),
         mem = lambda w, resources: resources.mem - 3
     resources:
         ppn = lambda w, attempt: get_resource(config, attempt, 'gatk', 'haplotype_caller')['ppn'],
@@ -26,7 +24,7 @@ rule gatk_haplotype_caller:
         mem = lambda w, attempt: get_resource(config, attempt, 'gatk', 'haplotype_caller')['mem'],
         load = lambda w, attempt:  get_resource(config, attempt, 'gatk','haplotype_caller')['load']
     threads: config['gatk']['haplotype_caller']['ppn']
-    conda: "../envs/gatk.yml"
+    conda: "../envs/work.yml"
     shell:
         #-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation \
         """
@@ -34,13 +32,12 @@ rule gatk_haplotype_caller:
         {params.extra} -ERC GVCF \
         -R {params.ref} \
         -L {params.region} \
-        {params.input_str} -O {output[0]} \
-        >>{log} 2>&1
+        {params.input_str} -O {output[0]}
         """
 
 def merge_vcf_inputs(w):
     yid, gt = w.yid, w.gt
-    rids= list(config[config['y'][yid]['reference']]['regions'].keys())
+    rids= list(config['g'][config['y'][yid]['reference']]['regions'].keys())
     vcfs = expand("%s/%s/%s/{rid}.g.vcf.gz" %
         (yid, config['callvnt']['od25'], gt), rid = rids)
     tbis = expand("%s/%s/%s/{rid}.g.vcf.gz.tbi" %
@@ -48,8 +45,7 @@ def merge_vcf_inputs(w):
     return {'vcfs':vcfs, 'tbis':tbis}
 
 rule gatk_merge_vcfs:
-    input:
-        unpack(merge_vcf_inputs)
+    input: unpack(merge_vcf_inputs)
     output:
         vcf = protected("%s/{yid}/{gt}.g.vcf.gz" % config['callvnt']['odir']),
         tbi = protected("%s/{yid}/{gt}.g.vcf.gz.tbi" % config['callvnt']['odir'])
@@ -60,15 +56,15 @@ rule gatk_merge_vcfs:
         input_str = lambda w, input: ["-I %s" % x for x in input.vcfs],
         extra = gatk_extra(picard = True),
         N = "{yid}.%s.{gt}" % config['gatk']['merge_vcfs']['id'],
-        e = "{yid}/%s/%s/{gt}.e" % (config['dirp'], config['gatk']['merge_vcfs']['id']),
-        o = "{yid}/%s/%s/{gt}.o" % (config['dirp'], config['gatk']['merge_vcfs']['id']),
+        e = "{yid}/%s/%s/{gt}.e" % (config['dirj'], config['gatk']['merge_vcfs']['id']),
+        o = "{yid}/%s/%s/{gt}.o" % (config['dirj'], config['gatk']['merge_vcfs']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['mem']
     threads: config['gatk']['merge_vcfs']['ppn']
-    conda: "../envs/gatk.yml"
+    conda: "../envs/work.yml"
     shell:
         #tabix -p vcf {output.vcf}
         #bcftools index -t {output.vcf}
@@ -97,15 +93,15 @@ rule gatk_rename_sample_id:
         extra = gatk_extra(picard = True, jdk = False),
         ogt = lambda w: config['y'][w.yid]['t'][w.sid]['Genotype'],
         N = "{yid}.%s.{sid}" % config['gatk']['rename_sample_id']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['gatk']['rename_sample_id']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['gatk']['rename_sample_id']['id']),
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['gatk']['rename_sample_id']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['gatk']['rename_sample_id']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'rename_sample_id')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'rename_sample_id')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'rename_sample_id')['mem']
     threads: config['gatk']['rename_sample_id']['ppn']
-    conda: "../envs/gatk.yml"
+    conda: "../envs/work.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" RenameSampleInVcf \
@@ -133,13 +129,13 @@ rule gatk_combine_gvcfs:
         tbi = "{yid}/%s/{rid}.g.vcf.gz.tbi" % config['callvnt']['od27'],
     params:
         cmd = config['gatk']['cmd'],
-        ref = lambda w: config[config['y'][w.yid]['reference']]['gatk']['xref'],
+        ref = lambda w: config['g'][config['y'][w.yid]['reference']]['gatk']['xref'],
         gvcfs = lambda w, input: ["-V %s" % x for x in input.vcfs],
-        region = lambda w: config[config['y'][w.yid]['reference']]['regions'][w.rid],
+        region = lambda w: config['g'][config['y'][w.yid]['reference']]['regions'][w.rid],
         extra = gatk_extra(picard = False, jdk = True),
         N = "{yid}.%s.{rid}" % config['gatk']['combine_gvcfs']['id'],
-        e = "{yid}/%s/%s/{rid}.e" % (config['dirp'], config['gatk']['combine_gvcfs']['id']),
-        o = "{yid}/%s/%s/{rid}.o" % (config['dirp'], config['gatk']['combine_gvcfs']['id']),
+        e = "{yid}/%s/%s/{rid}.e" % (config['dirj'], config['gatk']['combine_gvcfs']['id']),
+        o = "{yid}/%s/%s/{rid}.o" % (config['dirj'], config['gatk']['combine_gvcfs']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         q = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['q'],
@@ -147,7 +143,7 @@ rule gatk_combine_gvcfs:
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'combine_gvcfs')['mem']
     threads: config['gatk']['combine_gvcfs']['ppn']
-    conda: "../envs/gatk.yml"
+    conda: "../envs/work.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" CombineGVCFs \
@@ -165,19 +161,19 @@ rule gatk_genotype_gvcfs:
         tbi = "{yid}/%s/{rid}.vcf.gz.tbi" % config['callvnt']['od28'],
     params:
         cmd = config['gatk']['cmd'],
-        ref = lambda w: config[config['y'][w.yid]['reference']]['gatk']['xref'],
-        region = lambda w: config[config['y'][w.yid]['reference']]['regions'][w.rid],
+        ref = lambda w: config['g'][config['y'][w.yid]['reference']]['gatk']['xref'],
+        region = lambda w: config['g'][config['y'][w.yid]['reference']]['regions'][w.rid],
         extra = gatk_extra(picard = False, jdk = True),
         N = "{yid}.%s.{rid}" % config['gatk']['genotype_gvcfs']['id'],
-        e = "{yid}/%s/%s/{rid}.e" % (config['dirp'], config['gatk']['genotype_gvcfs']['id']),
-        o = "{yid}/%s/%s/{rid}.o" % (config['dirp'], config['gatk']['genotype_gvcfs']['id']),
+        e = "{yid}/%s/%s/{rid}.e" % (config['dirj'], config['gatk']['genotype_gvcfs']['id']),
+        o = "{yid}/%s/%s/{rid}.o" % (config['dirj'], config['gatk']['genotype_gvcfs']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'genotype_gvcfs')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'genotype_gvcfs')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'genotype_gvcfs')['mem']
     threads: config['gatk']['genotype_gvcfs']['ppn']
-    conda: "../envs/gatk.yml"
+    conda: "../envs/work.yml"
     shell:
 #        -L {input.bed} --include-non-variant-sites \
         """
@@ -190,9 +186,9 @@ rule gatk_genotype_gvcfs:
 rule gatk_merge_vcfs2:
     input:
         vcfs = lambda w: expand("%s/%s/{rid}.vcf.gz" % (w.yid, config['callvnt']['od28']),
-                rid = config[config['y'][w.yid]['reference']]['regions'].keys()),
+                rid = config['g'][config['y'][w.yid]['reference']]['regions'].keys()),
         tbis = lambda w: expand("%s/%s/{rid}.vcf.gz.tbi" % (w.yid, config['callvnt']['od28']),
-                rid = config[config['y'][w.yid]['reference']]['regions'].keys()),
+                rid = config['g'][config['y'][w.yid]['reference']]['regions'].keys()),
     output:
         vcf = "{yid}/%s" % config['callvnt']['of30'],
         tbi = "{yid}/%s.tbi" % config['callvnt']['of30']
@@ -201,15 +197,15 @@ rule gatk_merge_vcfs2:
         input_str = lambda w, input: ["-I %s" % x for x in input.vcfs],
         extra = gatk_extra(picard = True, jdk = False),
         N = "{yid}.%s" % config['gatk']['merge_vcfs']['id'],
-        e = "{yid}/%s/%s.e" % (config['dirp'], config['gatk']['merge_vcfs']['id']),
-        o = "{yid}/%s/%s.o" % (config['dirp'], config['gatk']['merge_vcfs']['id']),
+        e = "{yid}/%s/%s.e" % (config['dirj'], config['gatk']['merge_vcfs']['id']),
+        o = "{yid}/%s/%s.o" % (config['dirj'], config['gatk']['merge_vcfs']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'merge_vcfs')['mem']
     threads: config["gatk"]['merge_vcfs']["ppn"]
-    conda: "../envs/gatk.yml"
+    conda: "../envs/work.yml"
     shell:
         #bcftools index -t {output.vcf}
         """
@@ -219,145 +215,163 @@ rule gatk_merge_vcfs2:
         """
 
 #___ variant recal
+rule gatk_pick_training:
+    input:
+        vcf = "{yid}/%s" % config['callvnt']['of30'],
+        tbi = "{yid}/%s.tbi" % config['callvnt']['of30'],
+    output:
+        snp = "{yid}/%s" % config['callvnt']['of31a'],
+        snp_tbi = "{yid}/%s.tbi" % config['callvnt']['of31a'],
+        idl = "{yid}/%s" % config['callvnt']['of31b'],
+        idl_tbi = "{yid}/%s.tbi" % config['callvnt']['of31b'],
+    params:
+        cmd = config['gatk']['cmd'],
+        ref = lambda w: config['g'][config['y'][w.yid]['reference']]['gatk']['xref'],
+        minqual = 990,
+        N = "%s.{yid}" % config['gatk']['pick_training']['id'],
+        e = "{yid}/%s/%s.e" % (config['dirj'], config['gatk']['pick_training']['id']),
+        o = "{yid}/%s/%s.o" % (config['dirj'], config['gatk']['pick_training']['id']),
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'pick_training')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'pick_training')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'pick_training')['mem']
+    threads: config["gatk"]['pick_training']["ppn"]
+    conda: "../envs/work.yml"
+    shell:
+        """
+        bcftools view -G -i 'TYPE="snp" & QUAL>{params.minqual}' {input.vcf} -Oz -o {output.snp}
+        bcftools view -G -i 'TYPE="indel" & QUAL>{params.minqual}' {input.vcf} -Oz -o {output.idl}
+        bcftools index -t {output.snp}
+        bcftools index -t {output.idl}
+        bcftools stats {output.snp} > {output.snp}.txt
+        bcftools stats {output.idl} > {output.idl}.txt
+        """
+
 rule gatk_variant_recalibrator:
     input:
         vcf = "{yid}/%s" % config['callvnt']['of30'],
         tbi = "{yid}/%s.tbi" % config['callvnt']['of30'],
-	truth = config['callvnt']['truth_sites_snp'],
-	truth_tbi = config['callvnt']['truth_sites_snp'].replace('.gz','.gz.tbi'),
+#        truth = config['callvnt']['truth_sites_snp'],
+#        truth_tbi = config['callvnt']['truth_sites_snp'].replace('.gz','.gz.tbi'),
+        snp = "{yid}/%s" % config['callvnt']['of31a'],
+        snp_tbi = "{yid}/%s.tbi" % config['callvnt']['of31a'],
+        idl = "{yid}/%s" % config['callvnt']['of31b'],
+        idl_tbi = "{yid}/%s.tbi" % config['callvnt']['of31b'],
     output:
-        recal = "{yid}/%s" % config['callvnt']['of32'].replace(".vcf.gz", ".recal.vcf"),
-        tranch = "{yid}/%s" % config['callvnt']['of32'].replace(".vcf.gz", ".tranches"),
+        snp_vcf = "{yid}/%s" % config['callvnt']['of33'],
+        snp_tbi = "{yid}/%s.tbi" % config['callvnt']['of33'],
+        idl_vcf = "{yid}/%s" % config['callvnt']['of35'],
+        idl_tbi = "{yid}/%s.tbi" % config['callvnt']['of35']
     params:
+        snp_recal = "{yid}/32.recal.vcf",
+        snp_tranch = "{yid}/32.tranches",
+        snp_model = "{yid}/32.model",
+        idl_recal = "{yid}/34.recal.vcf",
+        idl_tranch = "{yid}/34.tranches",
+        idl_model = "{yid}/34.model",
         cmd = config['gatk']['cmd'],
-        ref = lambda w: config[config['y'][w.yid]['reference']]['gatk']['xref'],
+        ref = lambda w: config['g'][config['y'][w.yid]['reference']]['gatk']['xref'],
         extra = gatk_extra(jdk = True),
         N = "%s.{yid}" % config['gatk']['variant_recalibrator']['id'],
-        e = "{yid}/%s/%s.e" % (config['dirp'], config['gatk']['variant_recalibrator']['id']),
-        o = "{yid}/%s/%s.o" % (config['dirp'], config['gatk']['variant_recalibrator']['id']),
+        e = "{yid}/%s/%s.e" % (config['dirj'], config['gatk']['variant_recalibrator']['id']),
+        o = "{yid}/%s/%s.o" % (config['dirj'], config['gatk']['variant_recalibrator']['id']),
         mem = lambda w, resources: resources.mem - 5
     resources:
+        q = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_recalibrator')['q'],
         ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_recalibrator')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_recalibrator')['runtime'],
         mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_recalibrator')['mem']
     threads: config["gatk"]['variant_recalibrator']["ppn"]
-    conda: "../envs/gatk.yml"
+    conda: "../envs/work.yml"
     shell:
+# 	--output-model {output.report} \
+#       --maxGaussians 4 \
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" VariantRecalibrator \
-        {params.extra} \
-	-R {params.ref} \
-	--resource:hmp3,known=false,training=true,truth=true,prior=10.0 {input.truth} \
+        {params.extra} -R {params.ref} \
+	--resource:hmp3,known=false,training=true,truth=true,prior=10.0 {input.snp} \
 	-an QD -an MQ -an MQRankSum -an ReadPosRankSum -an FS -an SOR -an DP -an InbreedingCoeff \
  	-mode SNP \
-        -V {input.vcf} -O {output.recal} --tranches-file {output.tranch}
-        """
+        -V {input.vcf} -O {params.snp_recal} --tranches-file {params.snp_tranch}
 
-rule gatk_apply_vqsr:
-    input:
-        vcf = "{yid}/%s" % config['callvnt']['of30'],
-        tbi = "{yid}/%s.tbi" % config['callvnt']['of30'],
-        recal = "{yid}/%s" % config['callvnt']['of32'].replace(".vcf.gz", ".recal.vcf"),
-        tranch = "{yid}/%s" % config['callvnt']['of32'].replace(".vcf.gz", ".tranches"),
-    output:
-        vcf = "{yid}/%s" % config['callvnt']['of32'],
-        tbi = "{yid}/%s.tbi" % config['callvnt']['of32']
-    params:
-        cmd = config['gatk']['cmd'],
-        ref = lambda w: config[config['y'][w.yid]['reference']]['gatk']['xref'],
-        extra = gatk_extra(jdk = False),
-        N = "%s.{yid}" % config['gatk']['apply_vqsr']['id'],
-        e = "{yid}/%s/%s.e" % (config['dirp'], config['gatk']['apply_vqsr']['id']),
-        o = "{yid}/%s/%s.o" % (config['dirp'], config['gatk']['apply_vqsr']['id']),
-        mem = lambda w, resources: resources.mem - 5
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'apply_vqsr')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'apply_vqsr')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'apply_vqsr')['mem']
-    threads: config["gatk"]['apply_vqsr']["ppn"]
-    conda: "../envs/gatk.yml"
-    shell:
-        """
         {params.cmd} --java-options "-Xmx{params.mem}G" ApplyVQSR \
-        {params.extra} \
-	-R {params.ref} \
-        -V {input.vcf} -O {output.vcf} \
-	--tranches-file {input.tranch} --recal-file {input.recal} \
+        {params.extra} -R {params.ref} \
+        -V {input.vcf} -O {output.snp_vcf} \
+	--recal-file {params.snp_recal} --tranches-file {params.snp_tranch} \
 	--truth-sensitivity-filter-level 99.5 \
  	-mode SNP \
  	--create-output-variant-index true
-        """
 
-rule gatk_variant_recalibrator2:
-    input:
-        vcf = "{yid}/%s" % config['callvnt']['of32'],
-        tbi = "{yid}/%s.tbi" % config['callvnt']['of32'],
-	truth = config['callvnt']['truth_sites_idl'],
-	truth_tbi = config['callvnt']['truth_sites_idl'].replace('.gz','.gz.tbi'),
-    output:
-        recal = "{yid}/%s" % config['callvnt']['of34'].replace(".vcf.gz", ".recal.vcf"),
-        tranch = "{yid}/%s" % config['callvnt']['of34'].replace(".vcf.gz", ".tranches"),
-    params:
-        cmd = config['gatk']['cmd'],
-        ref = lambda w: config[config['y'][w.yid]['reference']]['gatk']['xref'],
-        extra = gatk_extra(jdk = False),
-        N = "%s.{yid}" % config['gatk']['variant_recalibrator']['id'],
-        e = "{yid}/%s/%s.e" % (config['dirp'], config['gatk']['variant_recalibrator']['id']),
-        o = "{yid}/%s/%s.o" % (config['dirp'], config['gatk']['variant_recalibrator']['id']),
-        mem = lambda w, resources: resources.mem - 5
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_recalibrator')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_recalibrator')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_recalibrator')['mem']
-    threads: config["gatk"]['variant_recalibrator']["ppn"]
-    conda: "../envs/gatk.yml"
-    shell:
-        """
         {params.cmd} --java-options "-Xmx{params.mem}G" VariantRecalibrator \
-        {params.extra} \
-	-R {params.ref} \
-	--maxGaussians 4 \
-	--resource:hmp3,known=false,training=true,truth=true,prior=10.0 {input.truth} \
+        {params.extra} -R {params.ref} \
+	--resource:hmp3,known=false,training=true,truth=true,prior=10.0 {input.idl} \
 	-an QD -an DP -an FS -an SOR -an ReadPosRankSum -an MQRankSum -an InbreedingCoeff \
         -mode INDEL \
-        -V {input.vcf} -O {output.recal} --tranches-file {output.tranch}
-        """
+        -V {output.snp_vcf} -O {params.idl_recal} --tranches-file {params.idl_tranch}
 
-rule gatk_apply_vqsr2:
-    input:
-        vcf = "{yid}/%s" % config['callvnt']['of32'],
-        tbi = "{yid}/%s.tbi" % config['callvnt']['of32'],
-        recal = "{yid}/%s" % config['callvnt']['of34'].replace(".vcf.gz", ".recal.vcf"),
-        tranch = "{yid}/%s" % config['callvnt']['of34'].replace(".vcf.gz", ".tranches"),
-    output:
-        vcf = "{yid}/%s" % config['callvnt']['of34'],
-        tbi = "{yid}/%s.tbi" % config['callvnt']['of34']
-    params:
-        cmd = config['gatk']['cmd'],
-        ref = lambda w: config[config['y'][w.yid]['reference']]['gatk']['xref'],
-        extra = gatk_extra(jdk = False),
-        N = "%s.{yid}" % config['gatk']['apply_vqsr']['id'],
-        e = "{yid}/%s/%s.e" % (config['dirp'], config['gatk']['apply_vqsr']['id']),
-        o = "{yid}/%s/%s.o" % (config['dirp'], config['gatk']['apply_vqsr']['id']),
-        mem = lambda w, resources: resources.mem - 5
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'apply_vqsr')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'apply_vqsr')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'apply_vqsr')['mem']
-    threads: config["gatk"]['apply_vqsr']["ppn"]
-    conda: "../envs/gatk.yml"
-    shell:
-        """
         {params.cmd} --java-options "-Xmx{params.mem}G" ApplyVQSR \
-        {params.extra} \
-	-R {params.ref} \
-        -V {input.vcf} -O {output.vcf} \
-	--tranches-file {input.tranch} --recal-file {input.recal} \
+        {params.extra} -R {params.ref} \
+        -V {output.snp_vcf} -O {output.idl_vcf} \
+	--recal-file {params.idl_recal} --tranches-file {params.idl_tranch} \
 	--truth-sensitivity-filter-level 99.0 \
- 	-mode INDEL \
+	-mode INDEL \
  	--create-output-variant-index true
         """
 
+# final filter
+rule gatk_variant_filtration:
+    input:
+        vcf = "{yid}/%s" % config['callvnt']['of35'],
+        tbi = "{yid}/%s.tbi" % config['callvnt']['of35'],
+    output:
+        vcf = "{yid}/%s" % config['callvnt']['of37'],
+        tbi = "{yid}/%s.tbi" % config['callvnt']['of37'],
+        stat = "{yid}/%s" % config['callvnt']['of37'].replace(".vcf.gz", ".txt")
+    params:
+        cmd = config['gatk']['cmd'],
+        ref = lambda w: config['g'][config['y'][w.yid]['reference']]['gatk']['xref'],
+        N = "%s.{yid}" % config['gatk']['variant_filtration']['id'],
+        e = "{yid}/%s/%s.e" % (config['dirj'], config['gatk']['variant_filtration']['id']),
+        o = "{yid}/%s/%s.o" % (config['dirj'], config['gatk']['variant_filtration']['id']),
+        mem = lambda w, resources: resources.mem - 1
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_filtration')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_filtration')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk', 'variant_filtration')['mem']
+    threads: config["gatk"]['variant_filtration']["ppn"]
+    conda: "../envs/work.yml"
+    shell:
+        """
+        bcftools filter -i 'FILTER=="PASS"' {input.vcf} -Oz -o {output.vcf}
+        bcftools index -t {output.vcf}
+        bcftools stats -s - {output.vcf} > {output.stat}
+        """
 
+rule gatk_snpeff:
+    input:
+        vcf = "{yid}/%s" % config['callvnt']['of37'],
+        tbi = "{yid}/%s.tbi" % config['callvnt']['of37'],
+    output:
+        vcf = "{yid}/%s" % config['callvnt']['of38'],
+        tbi = "{yid}/%s.tbi" % config['callvnt']['of38'],
+    params:
+        genome = lambda w: config['y'][w.yid]['reference'],
+        idx = lambda w: config['g'][config['y'][w.yid]['reference']]['snpeff']['xcfg'],
+        N = "%s.{yid}" % config['snpeff']['id'],
+        e = "{yid}/%s/%s.e" % (config['dirj'], config['snpeff']['id']),
+        o = "{yid}/%s/%s.o" % (config['dirj'], config['snpeff']['id']),
+        mem = lambda w, resources: resources.mem - 1
+    resources:
+        ppn = lambda w, attempt:  get_resource(config, attempt, 'snpeff')['ppn'],
+        runtime = lambda w, attempt:  get_resource(config, attempt, 'snpeff')['runtime'],
+        mem = lambda w, attempt:  get_resource(config, attempt, 'snpeff')['mem']
+    threads: config['snpeff']["ppn"]
+    conda: "../envs/work.yml"
+    shell:
+        """
+        snpEff -Xmx{params.mem}G -c {params.idx} {params.genome} -ud 0 \
+                {input.vcf} | bgzip > {output.vcf}
+        bcftools index -t {output.vcf}
+        """
 
 

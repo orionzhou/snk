@@ -27,8 +27,8 @@ rule multiqc:
         outfile = lambda w, output: op.basename(output[0]),
         extra = '',
         N = lambda w: "%s" % (config['multiqc']['id']),
-        e = lambda w: "%s/%s.e" % (config['dirp'], config['multiqc']['id']),
-        o = lambda w: "%s/%s.o" % (config['dirp'], config['multiqc']['id']),
+        e = lambda w: "%s/%s.e" % (config['dirj'], config['multiqc']['id']),
+        o = lambda w: "%s/%s.o" % (config['dirj'], config['multiqc']['id']),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
@@ -67,8 +67,8 @@ rule merge_featurecounts:
         "%s/%s" % (config['dird'], config['merge_featurecounts']['out'])
     params:
         N = lambda w: "%s" % (config['merge_featurecounts']['id']),
-        e = lambda w: "%s/%s.e" % (config['dirp'], config['merge_featurecounts']['id']),
-        o = lambda w: "%s/%s.o" % (config['dirp'], config['merge_featurecounts']['id']),
+        e = lambda w: "%s/%s.e" % (config['dirj'], config['merge_featurecounts']['id']),
+        o = lambda w: "%s/%s.o" % (config['dirj'], config['merge_featurecounts']['id']),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
@@ -98,8 +98,8 @@ rule bam_stat:
         "%s/{sid}.tsv" % bamstat_dir()
     params:
         N = lambda w: "%s.%s" % (config['bam_stat']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['bam_stat']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['bam_stat']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirj'], config['bam_stat']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirj'], config['bam_stat']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
@@ -120,8 +120,8 @@ rule sambamba_flagstat:
     params:
         extra = config['sambamba']['flagstat']['extra'],
         N = lambda w: "%s.%s" % (config['sambamba']['flagstat']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['sambamba']['flagstat']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['sambamba']['flagstat']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirj'], config['sambamba']['flagstat']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirj'], config['sambamba']['flagstat']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem

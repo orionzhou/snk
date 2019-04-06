@@ -1,4 +1,5 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
+pid: reseq
 dir_project: /scratch.global/zhoux379/reseq/data/20_hmp
 dirw: /home/springer/zhoux379/projects/reseq/data/20_hmp
 dir_cache: /scratch.global/zhoux379/reseq

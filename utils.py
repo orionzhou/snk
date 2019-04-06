@@ -77,97 +77,99 @@ def get_resource(config, attempt, k1, k2 = ''):
             'mem': mem + amem * (attempt - 1),
             'load': load}
 
-def check_genome(genome, dbs, c):
-    c[genome] = c['genomes'][genome]
-    c['genomes'].pop(genome, None)
-    dirw = op.join(c['dirg'], genome)
-    dira = op.join(dirw, '50_annotation')
-    sdic = {'ref': '10_genome.fna',
-            'chrom_size': '15_intervals/01.chrom.sizes',
-            'chrom_bed': '15_intervals/01.chrom.bed',
-            'gap': '15_intervals/11.gap.bed',
-            'rds': '55.rds'}
-    adic = {'gff':'10.gff', 'gtf':'10.gtf', 'faa':'10.faa',
-            'lgff':'15.gff', 'lgtf':'15.gtf', 'lfaa':'15.faa'}
-    for k, v in sdic.items():
-        fi = op.join(dirw, v)
-        assert op.isfile(fi), "%s not found" % fi
-        c[genome][k] = fi
-    if c[genome]['annotation']:
-        for k, v in adic.items():
-            fi = op.join(dira, v)
-            assert op.isfile(fi), "%s not found" % fi
-            c[genome][k] = fi
-    region_file = op.join(dirw, '15_intervals/20.gap.sep.60win.tsv')
-    if op.isfile(region_file):
-        fr = region_file
-        c[genome]['regions'] = dict()
-        tr = pd.read_csv(fr, sep='\t', header=0)
-        chroms = [str(x) for x in range(1,10)]
-        for i in range(len(tr)):
-            chrom = tr['chrom'][i]
-            start = tr['start'][i]
-            end = tr['end'][i]
-            rid = tr['rid'][i]
-            region_str = "%s:%d-%d" % (chrom, start, end)
-            c[genome]['regions'][rid] = region_str
+def read_region_file(fr):
+    rdic = dict()
+    tr = pd.read_csv(fr, sep='\t', header=0)
+    chroms = [str(x) for x in range(1,10)]
+    for i in range(len(tr)):
+        chrom = tr['chrom'][i]
+        start = tr['start'][i]
+        end = tr['end'][i]
+        rid = tr['rid'][i]
+        region_str = "%s:%d-%d" % (chrom, start, end)
+        rdic[rid] = region_str
 #        print("%d regions read for %s" % (len(c[genome]['regions']), genome))
+    return rdic
 
-    if isinstance(dbs, str): dbs = set(dbs)
-    if any([x in dbs for x in ['bwa','bismark']]) and 'gatk' not in dbs:
-        dbs.add('gatk')
+def check_genome(genome, c):
+    dirw = op.join(c['dirg'], genome)
+    dbs = list(c['db'].keys())
+    dbs = [db for db in dbs if db in c['x'][genome] and c['x'][genome][db]]
+    fos = []
+    gdic = dict()
     for db in dbs:
-        dirx = op.join(dirw, '21_dbs', c[db]['xdir'])
-        fos = []
-        if db in ['star','bwa','hisat2','bismark']:
-            xpre, xout = c[db]['xpre'], c[db]['xout']
-            fp, fo = op.join(dirx, xpre), op.join(dirx, xout)
-            if genome == 'B73' and db == 'hisat2': ### use snp-corrected ref
-                dirx1 = op.join(dirw, '21_dbs', 'hisat2_snp')
-                fp, fo = op.join(dirx1, xpre), op.join(dirx1, xout)
-            c[genome][db] = fp
-            fos = [fo]
+        dirx = op.join(dirw, c['db'][db]['xdir'])
+        gdic[db] = dict()
+        if genome == 'B73' and db == 'hisat2': ### use snp-corrected ref
+            dirx = op.join(dirw, '21_dbs/hisat2_snp')
+        gdic[db] = dict()
+        for k,v in c['db'][db].items():
+            if k == 'xdir': continue
+            fp = op.join(dirx, v)
+            if db == 'snpeff' and k == 'xout': fp = op.join(dirx, genome, v)
+            gdic[db][k] = fp
+
+        if db == 'fasta':
+            oks = ['ref','chrom_size','chrom_bed','gap']
+            if 'region_file' in gdic[db] and op.isfile(gdic[db]['region_file']):
+                oks.append('region_file')
+                gdic['regions'] = read_region_file(gdic[db]['region_file'])
+        elif db == 'annotation':
+            oks = ['lgff','lgff_db','rds']
+        elif db in ['bowtie2','bwa','bismark','star','hisat2','blastn','blastp','snpeff']:
+            oks = ['xout']
         elif db == 'blat':
-            ks = ['x.2bit', 'x.ooc']
-            c[genome][db] = {x: op.join(dirx, c[db][x]) for x in ks}
-            fos = list(c[genome][db].values())
+            oks = ['x.2bit','x.ooc']
         elif db == 'gatk':
-            ks = ['xref', 'xref.fai', 'xref.dict']
-            c[genome][db] = {x: op.join(dirx, c[db][x]) for x in ks}
-            f_vcf = op.join(dirx, c['gatk']['known_sites'])
-            if op.isfile(f_vcf):
-                c[genome]['gatk']['known_sites'] = f_vcf
-            fos = list(c[genome][db].values())
-        elif db == 'snpeff':
-            xcfg, xout = c[db]['xcfg'], c[db]['xout']
-            fc, fo = op.join(dirx, xcfg), op.join(dirx, genome, xout)
-            c[genome][db] = fc
-            fos = [fo]
+            oks = ['xref','xref.dict']
+            if 'known_sites' in gdic[db] and op.isfile(gdic[db]['known_sites']):
+                oks.append('known_sites')
         else:
             logging.error("unknown db: %s" % db)
             sys.exit(1)
-        for fo in fos:
-            assert op.isfile(fo), "%s not found" % fo
+        for ok in oks: fos.append(gdic[db][ok])
+
+    c['g'][genome] = gdic
+    for fo in fos:
+        assert op.isfile(fo), "%s not found" % fo
 
 def check_config_default(c):
     for fn in [c['config_default']]:
         assert op.isfile(fn), "cannot read %s" % fn
 
     fy = open(c['config_default'], 'r')
-    config_default = yaml.load(fy)
+    config_default = yaml.safe_load(fy)
     update_config(config_default, c)
     c = config_default
 
-    assert 'dirw' in c, 'dirw not defined'
-    dir_project, dir_cache = c['dir_project'], c['dir_cache']
-    dirw = c['dirw']
-    for subdir in [c['dirw'], c['tmpdir']]:
+    dirh0, dirc0, pid = c['dir_project'], c['dir_cache'], c['pid']
+    c['dirh'] = op.join(dirh0, pid)
+    c['dirc'] = op.join(dirc0, pid)
+    c['dird'] = op.join(dirh0, pid, 'data')
+    c['dirr'] = op.join(dirc0, pid, 'data')
+    dirh, dirc, dird = c['dirh'], c['dirc'], c['dird']
+    dir_raw = op.join(c['dird'], 'raw_output')
+    for subdir in [dirh,dirc,dird, c['tmpdir'], dir_raw]:
         if not op.isdir(subdir):
             makedirs(subdir)
-    for rsubdir in [c['dirl'], c['dirp']]:
-        subdir = op.join(c['dirw'], rsubdir)
-        if not op.isdir(subdir):
-            makedirs(subdir)
+    make_symlink(dir_raw, c['dirr'])
+
+    dir_cl = op.join(dird, 'cache')
+    make_symlink(dirc, dir_cl)
+
+    df = pd.read_excel(c['config_genome'], sheet_name=0, header=0,
+        converters={"annotation":bool, "done":bool, "run":bool,
+            "fasta":bool, "blat":bool,
+            "bwa":bool, "star":bool, "gatk":bool, "hisat2":bool,
+            "snpeff":bool, "blastn":bool, "blastp":bool, "bismark":bool})
+
+    xdic, gdic = dict(), dict()
+    for i in range(len(df)):
+        genome = df['genome'][i]
+        xdic[genome] = {x: df[x][i] for x in list(df) if x != 'genome'}
+        gdic[genome] = dict()
+    c['x'] = xdic
+    c['g'] = gdic
 
     return c
 
@@ -190,15 +192,11 @@ def read_samplelist(samplelist):
     y1['Genotypes'] = list(y1['gt'].keys())
     return y1
 
-def check_config_rnaseq(c):
+def check_config_ngs(c):
+    c = check_config_default(c)
+    c['dirw'] = c['dirc']
     for fn in [c['studylist']]:
         assert op.isfile(fn), "cannot read %s" % fn
-    dir_project, dir_cache = c['dir_project'], c['dir_cache']
-    dirw = dir_cache
-    c['dirw'] = dirw
-    c = check_config_default(c)
-    dir_cachelink = op.join(dir_project, 'data', 'cache')
-    make_symlink(dir_cache, dir_cachelink)
 
     df = pd.read_excel(c['studylist'], sheet_name=0, header=0, converters={"meta":bool, "stress":bool, "run": bool})
     y = dict()
@@ -209,13 +207,13 @@ def check_config_rnaseq(c):
         if df['run'][i]: num_run += 1
         yid = df['yid'][i]
 
-        for rsubdir in [c['dirl'], c['dirp']]:
+        for rsubdir in [c['dirl'], c['dirj']]:
             subdir = op.join(c['dirw'], yid, rsubdir)
             if not op.isdir(subdir):
                 makedirs(subdir)
-        dir_raw = "%s/data/08_raw_output/%s" % (dir_project, yid)
+        dir_raw = "%s/08_raw_output/%s" % (c['dird'], yid)
         if not op.isdir(dir_raw): makedirs(dir_raw)
-        dir_rawlink = op.join(dirw, yid, c['dird'])
+        dir_rawlink = op.join(c['dirw'], yid, 'data')
         make_symlink(dir_raw, dir_rawlink)
 
         y1 = {x: df[x][i] for x in list(df) if x != 'yid'}
@@ -223,10 +221,10 @@ def check_config_rnaseq(c):
         for key_to_valid in keys_to_valid:
             value_to_valid = y1[key_to_valid]
             assert value_to_valid in c['valid'][key_to_valid], "invalid value for key[%s]: %s" % (key_to_valid, value_to_valid)
-        fs = "%s/data/05_read_list/%s.tsv" % (dir_project, yid)
+        fs = "%s/05_read_list/%s.tsv" % (c['dird'], yid)
         assert op.isfile(fs), "samplelist not found: %s" % fs
         y1['samplelist'] = fs
-        fsc = "%s/data/05_read_list/%s.c.tsv" % (dir_project, yid)
+        fsc = "%s/05_read_list/%s.c.tsv" % (c['dird'], yid)
         if not op.isfile(fsc): fsc = fs
         y1['samplelistc'] = fsc
         y1.update(read_samplelist(fs))
@@ -241,7 +239,7 @@ def check_config_rnaseq(c):
     print('working on %s datasets' % num_run)
 
     for genome in gdic.keys():
-       check_genome(genome, gdic[genome], c)
+       check_genome(genome, c)
     return c
 
 def bytes2human(n):

@@ -16,8 +16,8 @@ rule fq_compress:
         r2 = "{yid}/%s/{sid}_2.fq.gz" % config['fq_compress']['odir']
     params:
         N = "{yid}.%s.{sid}" % config['fq_compress']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['fq_compress']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['fq_compress']['id']),
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['fq_compress']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['fq_compress']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['runtime'],
@@ -35,8 +35,8 @@ rule fq_deinterleave:
     params:
         extra = config["fq_deinterleave"]["extra"],
         N = "{yid}.%s.{sid}" % config['fq_deinterleave']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['fq_deinterleave']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['fq_deinterleave']['id']),
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['fq_deinterleave']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['fq_deinterleave']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fq_deinterleave')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'fq_deinterleave')['runtime'],
@@ -65,8 +65,8 @@ rule fq_dump:
         o2 = "{yid}/%s/{sid}_2.fastq" % config['fq_dump']['odir'],
         tmp = config['tmpdir'],
         N = "{yid}.%s.{sid}" % config['fq_dump']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['fq_dump']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['fq_dump']['id']),
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['fq_dump']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['fq_dump']['id']),
         mem = lambda w, resources: resources.mem
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'fq_dump')['ppn'],

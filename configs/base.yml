@@ -1,12 +1,13 @@
 #### General/shared rules ####
 tmpdir: /scratch.global/zhoux379/temp
+dir_project: /home/springer/zhoux379/projects
+dir_cache: /scratch.global/zhoux379
+dirl: logs
+dirj: jobs
 email: zhoux379@umn.edu
 java:
   mem: 8
   tmpdir: /scratch.global/zhoux379/temp
-dirl: logs
-dirp: pbs
-dird: data
 zip_re: (\.gz|\.zip|\.bz2)
 valid:
   source:
@@ -26,39 +27,79 @@ valid:
     - hisat2
     - bwa
     - bismark
-## genomes
-dirg: /home/springer/zhoux379/data/genome
-genomes:
-  B73:
-    chroms: B01 B02 B03 B04 B05 B06 B07 B08 B09 B10 B99
-    annotation: True
-  Mo17:
-    chroms: M01 M02 M03 M04 M05 M06 M07 M08 M09 M10 M99
-    annotation: True
-  W22:
-    chroms: W01 W02 W03 W04 W05 W06 W07 W08 W09 W10 W99
-    annotation: True
-  PH207:
-    chroms: P01 P02 P03 P04 P05 P06 P07 P08 P09 P10 P99
-    annotation: True
-  PHB47:
-    annotation: True
-  B104:
-    annotation: True
-  CML247:
-    annotation: False
-  DK105:
-    annotation: False
-  EP1:
-    annotation: False
-  F7:
-    annotation: False
-  PE0075:
-    annotation: False
-  Sbicolor:
-    annotation: True
-  Osativa:
-    annotation: True
+dirg: /home/springer/zhoux379/projects/genome/data
+config_genome: /home/springer/zhoux379/projects/genome/data/01.cfg.xlsx
+db:
+  fasta:
+    xdir: .
+    ref: 10_genome.fna
+    chrom_size: 15_intervals/01.chrom.sizes
+    chrom_bed: 15_intervals/01.chrom.bed
+    gap: 15_intervals/11.gap.bed
+    region_file: 15_intervals/20.gap.sep.60win.tsv
+    fchain: 08_seq_map/mapf.chain
+    bchain: 08_seq_map/mapb.chain
+  annotation:
+    xdir: 50_annotation
+    gff: 10.gff
+    gff_db: 10.gff.db
+    gtf: 10.gtf
+    tsv: 10.tsv
+    bed: 10.bed
+    des: 10.desc.tsv
+    fna: 10.fna
+    faa: 10.faa
+    lgff: 15.gff
+    lgff_db: 15.gff.db
+    lgtf: 15.gtf
+    ltsv: 15.tsv
+    lbed: 15.bed
+    ldes: 15.desc.tsv
+    lfna: 15.fna
+    lfaa: 15.faa
+    tandup: 22.tandup.pro.tsv
+    rds: ../55.rds
+  blat:
+    xdir: 21_dbs/blat
+    xpre: db
+    x.2bit: db.2bit
+    x.ooc: db.2bit.tile11.ooc
+  bwa:
+    xdir: 21_dbs/bwa
+    xpre: db
+    xout: db.bwt
+  bowtie2:
+    xdir: 21_dbs/bowtie2
+    xpre: ''
+  star:
+    xdir: 21_dbs/star
+    xpre: ''
+    xout: SA
+  gatk:
+    xdir: 21_dbs/gatk
+    xref: db.fasta
+    xref.fai: db.fasta.fai
+    xref.dict: db.dict
+  hisat2:
+    xdir: 21_dbs/hisat2
+    xpre: db
+    xout: db.1.ht2
+  snpeff:
+    xdir: 21_dbs/snpeff
+    xcfg: snpEff.config
+    xout: snpEffectPredictor.bin
+  blastn:
+    xdir: 21_dbs/blastn
+    xpre: db
+    xout: db.nsq
+  blastp:
+    xdir: 21_dbs/blastp
+    xpre: db
+    xout: db.psq
+  bismark:
+    xdir: 21_dbs/bismark
+    xpre: ''
+    xout: Bisulfite_Genome/CT_conversion/BS_CT.rev.2.bt2
 ## fastq utilities
 fastq:
   odir: 10_fastq
@@ -150,19 +191,12 @@ mapping:
   odir: 22_bam
 blat:
   id: blat
-  xdir: blat
-  xpre: db
-  x.2bit: db.2bit
-  x.ooc: db.2bit.tile11.ooc
   runtime: 12
   mem: 10
   aruntime: 10
   amem: 5
 blastn:
   id: blastn
-  xdir: blastn
-  xpre: db
-  xout: db.nsq
   ppn: 8
   runtime: 5
   mem: 30
@@ -170,9 +204,6 @@ blastn:
   amem: 5
 blastp:
   id: blastp
-  xdir: blastp
-  xpre: db
-  xout: db.psq
   ppn: 8
   runtime: 5
   mem: 30
@@ -180,7 +211,6 @@ blastp:
   amem: 5
 bowtie2:
   id: bowti
-  xdir: bowtie2
   ppn: 4
   runtime: 20
   mem: 20
@@ -188,9 +218,6 @@ bowtie2:
   amem: 5
 bwa:
   id: bwa
-  xdir: bwa
-  xpre: db
-  xout: db.bwt
   odir: 21_bwa
   extra: ''
   ppn: 12
@@ -201,9 +228,6 @@ bwa:
   aq: 0
 star:
   id: star
-  xdir: star
-  xpre: ''
-  xout: SA
   odir: 21_star
   extra: "--outSAMmapqUnique 60
       --outFilterType BySJout 
@@ -223,9 +247,6 @@ star:
   amem: 5
 hisat2:
   id: hisat
-  xdir: hisat2
-  xpre: db
-  xout: db.1.ht2
   odir: 21_hisat2
   extra: --new-summary
   ppn: 8
@@ -235,9 +256,6 @@ hisat2:
   amem: 5
 bismark:
   id: bsm
-  xdir: bismark
-  xpre: ''
-  xout: Bisulfite_Genome/CT_conversion/BS_CT.rev.2.bt2
   odir: 21_bismark
   extra: -n 1
   ppn: 8
@@ -327,8 +345,11 @@ bismark_extract:
 # variant calling
 cleanbam:
   id: cBam
-  odir1: 23_mark_dup
-  odir2: 24_base_recal
+  od23: 23_mark_dup
+  od24a: 24_bcftools/01_by_region
+  of24b: 24_bcftools/02.vcf.gz
+  of24c: 24_bcftools/03.hq.vcf.gz
+  od24: 24_base_recal
 callvnt:
   id: callv
   truth_sites_snp: /home/springer/zhoux379/projects/reseq/data/20_hmp/21.snp.sites.vcf.gz
@@ -339,8 +360,12 @@ callvnt:
   od27: 27_gvcf_by_region
   od28: 28_vcf_by_region
   of30: 30.vcf.gz
-  of32: 32.snp.vcf.gz
-  of34: 34.snp.indel.vcf.gz
+  of31a: 31.snp.vcf.gz
+  of31b: 31.idl.vcf.gz
+  of33: 33.snp.vcf.gz
+  of35: 35.snp.indel.vcf.gz
+  of37: 37.filtered.vcf.gz
+  of38: 38.eff.vcf.gz
 bcftools:
   call:
     id: bcfCa
@@ -357,6 +382,11 @@ bcftools:
     ppn: 1
     runtime: 10
     mem: 15
+  filter:
+    id: bcfFilt
+    ppn: 1
+    runtime: 10
+    mem: 20
   gtcheck:
     id: bcfGt
     odir: 27_gtcheck
@@ -366,10 +396,6 @@ bcftools:
     runtime: 1
     mem: 5
 gatk:
-  xdir: gatk
-  xref: db.fasta
-  xref.fai: db.fasta.fai
-  xref.dict: db.dict
   known_sites: known_sites.vcf.gz
   cmd: gatk
   mark_duplicates:
@@ -432,11 +458,19 @@ gatk:
     mem: 30
     aruntime: 10
     amem: 5
-  variant_recalibrator:
-    id: vntRecal
+  pick_training:
+    id: pickT
     ppn: 1
-    runtime: 50
-    mem: 40
+    runtime: 20
+    mem: 20
+    aruntime: 10
+    amem: 0
+  variant_recalibrator:
+    id: recal
+    q: 1
+    ppn: 1
+    runtime: 20
+    mem: 200
     aruntime: 10
     amem: 0
   apply_vqsr:
@@ -449,22 +483,17 @@ gatk:
   variant_filtration:
     id: varF
     ppn: 1
-    runtime: 5
+    runtime: 20
     mem: 20
     aruntime: 5
-    amem: 5
+    amem: 1
 snpeff:
   id: snpeff
-  xdir: snpeff
-  xcfg: snpEff.config
-  xout: snpEffectPredictor.bin
-  idir: xxx
-  odir: yyy
   ppn: 1
   runtime: 20
-  mem: 30
+  mem: 20
   aruntime: 10
-  amem: 5
+  amem: 2
 # statistics & reports
 multiqc:
   id: multiqc

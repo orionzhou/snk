@@ -1,9 +1,8 @@
 import os
 import os.path as op
-from snk.utils import check_config_ngs
-from snk.utils import get_resource
+from snk.utils import get_resource, check_config_ngs
 
-configfile: 'config.yaml'
+configfile: 'config.yml'
 config = check_config_ngs(config)
 workdir: config['dirw']
 

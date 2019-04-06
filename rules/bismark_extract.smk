@@ -10,8 +10,8 @@ rule sambamba_sort_name:
     params:
         extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
         N = "{yid}.%s.{sid}" % (config['sambamba']['sort']['id'], w.sid),
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['sambamba']['sort']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['sambamba']['sort']['id']),
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['sambamba']['sort']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['sambamba']['sort']['id']),
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['runtime'],
@@ -32,8 +32,8 @@ rule bismark_extract:
         cx_report = lambda w: "%s/%s.rn.CX_report.txt" % (config['bismark_extract']['odir'], w.sid),
         parallel = lambda w, resources: int(resources.ppn / 2),
         N = "{yid}.%s.{sid}" % config['bismark_extract']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirp'], config['bismark_extract']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirp'], config['bismark_extract']['id'])
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['bismark_extract']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['bismark_extract']['id'])
     resources:
         ppn = lambda w, attempt:  get_resource(config, attempt, 'bismark_extract')['ppn'],
         runtime = lambda w, attempt:  get_resource(config, attempt, 'bismark_extract')['runtime'],

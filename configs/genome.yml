@@ -1,76 +1,10 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
-dirw: /home/springer/zhoux379/data/genome
-genomes:
-  - B73
-  - Mo17
-  - W22
-  - PH207
-  - PHB47
-  - B104
-  - CML247
-  - DK105
-  - EP1
-  - F7
-  - PE0075
-  - Sbicolor
-  - Osativa
+pid: genome
 ddir: 21_dbs
 adir: 50_annotation
-B73:
-  prefix: B
-  gap: 10000
-  dbs: fasta blat bwa star gatk hisat2 snpeff blastn blastp bismark
-Mo17:
-  prefix: M
-  gap: 10000
-  dbs: fasta blat bwa star gatk hisat2 snpeff blastn blastp
-W22:
-  prefix: W
-  gap: 10000
-  dbs: fasta blat bwa star gatk snpeff blastn blastp
-PH207:
-  prefix: P
-  gap: 5000
-  dbs: fasta blat bwa star gatk snpeff blastn blastp
-PHB47:
-  prefix: PHB47_
-  gap: 10000
-  dbs: fasta blat bwa star gatk snpeff blastn blastp
-B104:
-  prefix: B104_
-  gap: 10000
-  dbs: fasta blat bwa gatk star blastn blastp snpeff
-CML247:
-  prefix: CML247_
-  gap: 10000
-  dbs: fasta blat bwa gatk
-DK105:
-  prefix: DK105_
-  gap: 10000
-  dbs: fasta blat bwa gatk
-EP1:
-  prefix: EP1_
-  gap: 5000
-  dbs: fasta blat bwa gatk
-F7:
-  prefix: F7_
-  gap: 5000
-  dbs: fasta blat bwa gatk
-PE0075:
-  prefix: PE0075_
-  gap: 10000
-  dbs: fasta blat bwa gatk
-Sbicolor:
-  prefix: Sb
-  gap: 10000
-  dbs: fasta blat blastn blastp
-Osativa:
-  prefix: Os
-  gap: 10000
-  dbs: fasta blat blastn blastp
 # index databases
 fasta:
-  id: fasta
+  id: fa
   ppn: 1
   runtime: 2
   mem: 20
@@ -156,5 +90,5 @@ anno4_tandup:
 prepR:
   id: prepR
   ppn: 1
-  runtime: 3
+  runtime: 2
   mem: 15

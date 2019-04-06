@@ -1,7 +1,6 @@
 import os
 import os.path as op
 from snakemake.utils import update_config, makedirs
-from astropy.table import Table, Column
 from snk.utils import get_resource
 from snk.utils import make_symlink, check_genome, check_config_default
 import yaml
@@ -17,28 +16,17 @@ def ndigit(num):
     return digit
 
 def check_config(c):
-    dir_project, dir_cache = c['dir_project'], c['dir_cache']
-    c['dirw'] = dir_cache
-    dir_raw = "%s/data/raw_output" % dir_project
-    if not op.isdir(dir_raw):
-        makedirs(dir_raw)
-    
     c = check_config_default(c)
-    
-    dir_cachelink = op.join(dir_project, 'data', 'cache')
-    make_symlink(dir_cache, dir_cachelink)
-    dir_rawlink = op.join(c['dirw'], c['dird'])
-    make_symlink(dir_raw, dir_rawlink)
-
+    c['dirw'] = c['dirc']
     c['comps'] = [x.split('-') for x in c['comps']]
     for genome in set([i for subl in c['comps'] for i in subl]):
-        if c['genomes'][genome]['annotation']:
+        if c['g'][genome]['annotation']:
             check_genome(genome, ['blat','gatk','snpeff'], c)
         else:
             check_genome(genome, ['blat','gatk'], c)
     return c
 
-configfile: 'config.yaml'
+configfile: 'config.yml'
 config = check_config(config)
 workdir: config['dirw']
 
@@ -48,16 +36,16 @@ wildcard_constraints:
     idx = "[0-9]+",
     tchrom = "[a-zA-Z0-9]+"
 
-localrules: all, wgc1_prepare, wgc1_break_qry, wgc1_break_tgt
+localrules: all
 
 def all_inputs(wildcards):
     inputs = []
     for qry, tgt in config['comps']:
         dir4 = "%s/%s_%s" % (config['wgc']['dir4'], qry, tgt)
-        diro = "%s/%s_%s" % (config['dird'], qry, tgt)
+        diro = "%s/%s_%s" % (config['dirr'], qry, tgt)
         inputs.append("%s/10.vnt.bed" % diro)
         inputs.append("%s/15.%s.tsv" % (diro, tgt))
-        if config[qry]['annotation']:
+        if config['g'][qry]['annotation']:
             inputs.append("%s/15.%s.tsv" % (diro, qry))
 #        inputs.append("%s/10.tsv" % diro)
     return inputs

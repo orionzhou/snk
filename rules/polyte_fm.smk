@@ -83,8 +83,8 @@ rule fm3_bwa:
         opt = lambda w: config['t'][w.sid]['opt'],
         mode = lambda w: config['t'][w.sid]['mode'],
         N = lambda w: "%s.%s" % (config['fm']['bwa']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['fm']['bwa']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['fm']['bwa']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirj'], config['fm']['bwa']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirj'], config['fm']['bwa']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
@@ -131,8 +131,8 @@ rule fm4_coord:
         tgt = lambda w: config['t'][w.sid]['tgt'],
         tgt_chain = lambda w: "$genome/%s/08_seq_map/mapb.chain" % config['t'][w.sid]['tgt'],
         N = lambda w: "%s.%s" % (config['fm']['coord']['id'], w.sid),
-        e = lambda w: "%s/%s/%s.e" % (config['dirp'], config['fm']['coord']['id'], w.sid),
-        o = lambda w: "%s/%s/%s.o" % (config['dirp'], config['fm']['coord']['id'], w.sid),
+        e = lambda w: "%s/%s/%s.e" % (config['dirj'], config['fm']['coord']['id'], w.sid),
+        o = lambda w: "%s/%s/%s.o" % (config['dirj'], config['fm']['coord']['id'], w.sid),
         ppn = lambda w, resources: resources.ppn,
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem

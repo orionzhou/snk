@@ -1,5 +1,4 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
-dir_project: /home/springer/zhoux379/projects/bsseq
-dir_cache: /scratch.global/zhoux379/bsseq
+pid: bsseq
 studylist: /home/springer/zhoux379/projects/bsseq/data/01.cfg.xlsx
 study: sp014
