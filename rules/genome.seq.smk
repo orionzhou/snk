@@ -1,5 +1,13 @@
+def fasta_input(w):
+    genome = w.genome
+    if config['x'][genome]['hybrid']:
+        genome1, genome2 = genome.split('x')
+        return ["%s/%s/%s" % (g, config['db']['fasta']['xdir'], config['db']['fasta']['ref']) for g in (genome1, genome2)]
+    else:
+        return "%s/download/raw.fna" % genome
+
 rule fasta:
-    input: "{genome}/download/raw.fna"
+    input: fasta_input
     output:
         fna = "{genome}/%s/%s" % (config['db']['fasta']['xdir'], config['db']['fasta']['ref']),
         fai = "{genome}/%s/%s.fai" % (config['db']['fasta']['xdir'], config['db']['fasta']['ref']),
@@ -9,48 +17,17 @@ rule fasta:
         fchain = "{genome}/%s/%s" % (config['db']['fasta']['xdir'], config['db']['fasta']['fchain']),
         bchain = "{genome}/%s/%s" % (config['db']['fasta']['xdir'], config['db']['fasta']['bchain']),
     params:
-        wdir = lambda w: "%s" % w.genome,
+        wdir = "{genome}",
         odir = "08_seq_map",
-        gap = lambda w: config['x'][w.genome]['gap'],
-        prefix = lambda w: config['x'][w.genome]['prefix'],
+        opt = lambda w: w.genome,
         N = "{genome}.%s" % config['fasta']['id'],
         e = "{genome}/%s/%s.e" % (config['dirj'], config['fasta']['id']),
         o = "{genome}/%s/%s.o" % (config['dirj'], config['fasta']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'fasta')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'fasta')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'fasta')['mem']
-    threads: config['fasta']['ppn']
+        j = lambda w: get_resource(w, config, 'fasta'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'fasta')['ppn']
     conda: "../envs/work.yml"
-    shell:
-        """
-        rm -rf {output.fna}* {output.fai}*
-        rm -rf {output.chrom_bed} {output.chrom_size} {output.gap}
-
-        mkdir -p {params.wdir}/{params.odir}
-        cd {params.wdir}/{params.odir}
-        rm -rf raw.fna.* renamed* map* raw.sizes
-        ln -sf ../download/raw.fna raw.fna
-        fasta.py size raw.fna > raw.sizes
-
-        fasta.py rename raw.fna raw.sizes renamed.fna mapf.bed mapb.bed \
-                --merge_short --gap {params.gap} --prefix_chr {params.prefix}
-
-        fasta.py size renamed.fna > renamed.sizes
-
-        chain.py fromBed mapf.bed raw.sizes renamed.sizes > mapf.chain
-
-        chainSwap mapf.chain mapb.chain
-
-        cd ..
-        ln -sf {params.odir}/renamed.fna 10_genome.fna
-        cd ..
-
-        samtools faidx {output.fna}
-        fasta.py size --bed {output.fna} > {output.chrom_bed}
-        cut -f1,3 {output.chrom_bed} > {output.chrom_size}
-        fasta.py gaps {output.fna} > {output.gap}
-        """
+    script: "../scripts/make_fasta.py"
 
 rule blat_index:
     input:
@@ -63,11 +40,9 @@ rule blat_index:
         N = "{genome}.%s" % config['blat_index']['id'],
         e = "{genome}/%s/%s.e" % (config['dirj'], config['blat_index']['id']),
         o = "{genome}/%s/%s.o" % (config['dirj'], config['blat_index']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'blat_index')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'blat_index')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'blat_index')['mem']
-    threads: config['blat_index']['ppn']
+        j = lambda w: get_resource(w, config, 'blat_index'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'blat_index')['ppn']
     conda: "../envs/work.yml"
     shell:
         """
@@ -90,12 +65,40 @@ rule blast_index:
         N = "{genome}.%s" % config['blast_index']['id'],
         e = "{genome}/%s/%s.e" % (config['dirj'], config['blast_index']['id']),
         o = "{genome}/%s/%s.o" % (config['dirj'], config['blast_index']['id']),
-    threads: config['blast_index']['ppn']
+        j = lambda w: get_resource(w, config, 'blast_index'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'blast_index')['ppn']
     conda: "../envs/blast.yml"
     shell:
         """
         makeblastdb -dbtype nucl -in {input.fna} -title db -out {params.odir1}/db
         makeblastdb -dbtype prot -in {input.faa} -title db -out {params.odir2}/db
+        """
+
+rule last_index:
+    input:
+        fna = "{genome}/%s/%s" % (config['db']['annotation']['xdir'], config['db']['annotation']['lfna']),
+        faa = "{genome}/%s/%s" % (config['db']['annotation']['xdir'], config['db']['annotation']['lfaa']),
+    output:
+        "{genome}/%s/%s" % (config['db']['lastn']['xdir'], config['db']['lastn']['xout']),
+        "{genome}/%s/%s" % (config['db']['lastp']['xdir'], config['db']['lastp']['xout']),
+    params:
+        odir1 = "{genome}/%s" % config['db']['lastn']['xdir'],
+        odir2 = "{genome}/%s" % config['db']['lastp']['xdir'],
+        extra = "",
+        xpre1 = "{genome}/%s/%s" % (config['db']['lastn']['xdir'], config['db']['lastn']['xpre']),
+        xpre2 = "{genome}/%s/%s" % (config['db']['lastp']['xdir'], config['db']['lastp']['xpre']),
+        N = "{genome}.%s" % config['last_index']['id'],
+        e = "{genome}/%s/%s.e" % (config['dirj'], config['last_index']['id']),
+        o = "{genome}/%s/%s.o" % (config['dirj'], config['last_index']['id']),
+        j = lambda w: get_resource(w, config, 'last_index'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'last_index')['ppn']
+    conda: "../envs/work.yml"
+    shell:
+        """
+        lastdb {params.extra} {params.xpre1} {input.fna}
+        lastdb -p {params.extra} {params.xpre2} {input.faa}
         """
 
 rule bwa_index:
@@ -108,11 +111,9 @@ rule bwa_index:
         N = "{genome}.%s" % config['bwa_index']['id'],
         e = "{genome}/%s/%s.e" % (config['dirj'], config['bwa_index']['id']),
         o = "{genome}/%s/%s.o" % (config['dirj'], config['bwa_index']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bwa_index')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bwa_index')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bwa_index')['mem']
-    threads: config['bwa_index']['ppn']
+        j = lambda w: get_resource(w, config, 'bwa_index'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'bwa_index')['ppn']
     conda: "../envs/work.yml"
     shell:
         """
@@ -128,17 +129,14 @@ rule bismark_index:
         "{genome}/%s/%s" % (config['db']['bismark']['xdir'], config['db']['bismark']['xout'])
     params:
         odir = "{genome}/%s" % config['db']['bismark']['xdir'],
-        parallel = lambda w, resources: int(resources.ppn / 2),
+        parallel = lambda w: get_resource(w, config, 'bismark_index')['ppn'] / 2,
         N = "{genome}.%s" % config['bismark_index']['id'],
         e = "{genome}/%s/%s.e" % (config['dirj'], config['bismark_index']['id']),
         o = "{genome}/%s/%s.o" % (config['dirj'], config['bismark_index']['id']),
-        mem = lambda w, resources: resources.mem
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bismark_index')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bismark_index')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bismark_index')['mem']
-    threads: config['bismark_index']['ppn']
-    conda: "../envs/work.yml"
+        j = lambda w: get_resource(w, config, 'bismark_index'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'bismark_index')['ppn']
+    conda: "../envs/bismark.yml"
     shell:
         """
         rm -rf {params.odir}
@@ -159,11 +157,9 @@ rule star_index:
         N = "{genome}.%s" % config['star_index']['id'],
         e = "{genome}/%s/%s.e" % (config['dirj'], config['star_index']['id']),
         o = "{genome}/%s/%s.o" % (config['dirj'], config['star_index']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'star_index')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'star_index')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'star_index')['mem']
-    threads: config['star_index']['ppn']
+        j = lambda w: get_resource(w, config, 'star_index'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'star_index')['ppn']
     conda: "../envs/work.yml"
     shell:
         """
@@ -185,12 +181,10 @@ rule gatk_index:
         N = "{genome}.%s" % config['gatk_index']['id'],
         e = "{genome}/%s/%s.e" % (config['dirj'], config['gatk_index']['id']),
         o = "{genome}/%s/%s.o" % (config['dirj'], config['gatk_index']['id']),
-        mem = lambda w, resources: resources.mem
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'gatk_index')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'gatk_index')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'gatk_index')['mem']
-    threads: config['gatk_index']['ppn']
+        j = lambda w: get_resource(w, config, 'gatk_index'),
+        mem = lambda w: get_resource(w, config, 'gatk_index')['mem'],
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'gatk_index')['ppn']
     conda: "../envs/work.yml"
     shell:
         """
@@ -212,12 +206,10 @@ rule hisat2_index:
         N = "{genome}.%s" % config['hisat2_index']['id'],
         e = "{genome}/%s/%s.e" % (config['dirj'], config['hisat2_index']['id']),
         o = "{genome}/%s/%s.o" % (config['dirj'], config['hisat2_index']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'hisat2_index')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'hisat2_index')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'hisat2_index')['mem']
-    threads: config['hisat2_index']['ppn']
-    conda: "../envs/work.yml"
+        j = lambda w: get_resource(w, config, 'hisat2_index'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'hisat2_index')['ppn']
+    conda: "../envs/hisat2.yml"
     shell:
         """
         rm -rf {params.odir}
@@ -243,12 +235,10 @@ rule snpeff_index:
         N = "{genome}.%s" % config['snpeff_index']['id'],
         e = "{genome}/%s/%s.e" % (config['dirj'], config['snpeff_index']['id']),
         o = "{genome}/%s/%s.o" % (config['dirj'], config['snpeff_index']['id']),
-        mem = lambda w, resources: resources.mem
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'snpeff_index')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'snpeff_index')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'snpeff_index')['mem']
-    threads: config['snpeff_index']['ppn']
+        j = lambda w: get_resource(w, config, 'snpeff_index'),
+        mem = lambda w: get_resource(w, config, 'snpeff_index')['mem'],
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'snpeff_index')['ppn']
     conda: "../envs/work.yml"
     shell:
         """

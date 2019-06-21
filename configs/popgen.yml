@@ -1,0 +1,17 @@
+config_default: /home/springer/zhoux379/git/snk/configs/base.yml
+pid: reseq
+wid: popgen
+studylist: /home/springer/zhoux379/projects/reseq/phylo/01.cfg.xlsx
+popgen:
+  ref: /home/springer/zhoux379/projects/genome/data/B73/10_genome.fna
+  cdsloc: /home/springer/zhoux379/projects/genome/data/B73/50_annotation/15.cds.txt
+  gene: /home/springer/zhoux379/projects/genome/data/B73/50_annotation/15.tsv
+  gene_id: /home/springer/zhoux379/projects/genome/data/B73/50_annotation/15.gid.txt
+  vcf: /home/springer/zhoux379/projects/reseq/popgen/hmp3/21.snp.vcf.gz
+  sample_list: /home/springer/zhoux379/projects/reseq/popgen/01.samples.txt
+  batch_size: 1000
+  od05: 05_cds_fas
+  od06: 06_gene_fas
+  of10: 10.merged.fas
+  od12: 12_div_stats
+  of13: 13.div.stats.tsv

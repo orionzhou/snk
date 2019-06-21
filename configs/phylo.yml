@@ -1,0 +1,10 @@
+config_default: /home/springer/zhoux379/git/snk/configs/base.yml
+pid: reseq
+wid: phylo
+studylist: /home/springer/zhoux379/projects/reseq/phylo/01.cfg.xlsx
+phylo:
+  of10: 10.vcf.gz
+  of21: 21.snp.vcf.gz
+  of22: 22.idl.vcf.gz
+  of31: 31.vcf.gz
+  of35: 35.treefile

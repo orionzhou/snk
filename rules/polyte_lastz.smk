@@ -14,9 +14,9 @@ rule lastz:
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'lastz')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'lastz')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'lastz')['mem']
+        ppn = lambda w, attempt:  get_resource(w, config, attempt, 'lastz')['ppn'],
+        runtime = lambda w, attempt:  get_resource(w, config, attempt, 'lastz')['runtime'],
+        mem = lambda w, attempt:  get_resource(w, config, attempt, 'lastz')['mem']
     threads: config['lastz']["ppn"]
     shell:
         """

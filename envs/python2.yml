@@ -1,0 +1,8 @@
+name: python2
+channels:
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+prefix: /home/springer/zhoux379/software/miniconda3/envs/python2
+

@@ -6,16 +6,15 @@ rule bcftools_call:
         protected("{yid}/%s/{rid}.vcf.gz" % config['cleanbam']['od24a']),
         protected("{yid}/%s/{rid}.vcf.gz.tbi" % config['cleanbam']['od24a'])
     params:
-        ref = lambda w: config['g'][config['y'][w.yid]['reference']]['fasta']['ref'],
-        region = lambda w: config['g'][config['y'][w.yid]['reference']]['regions'][w.rid],
-        N = "{yid}.%s.{rid}" % config['bcftools']['call']['id'],
-        e = "{yid}/%s/%s/{rid}.e" % (config['dirj'], config['bcftools']['call']['id']),
-        o = "{yid}/%s/%s/{rid}.o" % (config['dirj'], config['bcftools']['call']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bcftools', 'call')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bcftools', 'call')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bcftools', 'call')['mem']
-    threads: config["bcftools"]['call']["ppn"]
+        ref = lambda w: config['g'][config['y'][w.yid]['ref']]['fasta']['ref'],
+        region = lambda w: config['g'][config['y'][w.yid]['ref']]['regions'][w.rid],
+        N = "{yid}.%s.{rid}" % config['bcftools_call']['id'],
+        e = "{yid}/%s/%s/{rid}.e" % (config['dirj'], config['bcftools_call']['id']),
+        o = "{yid}/%s/%s/{rid}.o" % (config['dirj'], config['bcftools_call']['id']),
+        j = lambda w: get_resource(w, config, 'bcftools_call'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'bcftools_call')['ppn']
+    conda: "../envs/work.yml"
     shell:
         """
         bcftools mpileup -f {params.ref} -r {params.region} \
@@ -27,22 +26,20 @@ rule bcftools_call:
 rule bcftools_concat:
     input:
         lambda w: expand("%s/%s/{rid}.vcf.gz" % (w.yid, config['cleanbam']['od24a']),
-            rid = config['g'][config['y'][w.yid]['reference']]['regions'].keys())
+            rid = config['g'][config['y'][w.yid]['ref']]['regions'].keys())
     output:
         vcf = protected("{yid}/%s" % config['cleanbam']['of24b']),
         tbi = protected("{yid}/%s.tbi" % config['cleanbam']['of24b']),
         stat = protected("{yid}/%s" % config['cleanbam']['of24b'].replace(".vcf.gz", ".txt"))
     params:
-        ref = lambda w: config['g'][config['y'][w.yid]['reference']]['fasta']['ref'],
-        N = "{yid}.%s" % config['bcftools']['concat']['id'],
-        e = "{yid}/%s/%s.e" % (config['dirj'], config['bcftools']['concat']['id']),
-        o = "{yid}/%s/%s.o" % (config['dirj'], config['bcftools']['concat']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bcftools', 'concat')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bcftools', 'concat')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bcftools', 'concat')['mem']
-    threads:
-        config["bcftools"]['concat']["ppn"]
+        ref = lambda w: config['g'][config['y'][w.yid]['ref']]['fasta']['ref'],
+        N = "{yid}.%s" % config['bcftools_concat']['id'],
+        e = "{yid}/%s/%s.e" % (config['dirj'], config['bcftools_concat']['id']),
+        o = "{yid}/%s/%s.o" % (config['dirj'], config['bcftools_concat']['id']),
+        j = lambda w: get_resource(w, config, 'bcftools_concat'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'bcftools_concat')['ppn']
+    conda: "../envs/work.yml"
     shell:
         """
         bcftools concat {input} -Oz -o {output.vcf}
@@ -60,15 +57,13 @@ rule bcftools_filter:
         stat = protected("{yid}/%s" % config['cleanbam']['of24c'].replace(".vcf.gz", ".txt"))
     params:
         minqual = 900,
-        N = "{yid}.%s" % config['bcftools']['filter']['id'],
-        e = "{yid}/%s/%s.e" % (config['dirj'], config['bcftools']['filter']['id']),
-        o = "{yid}/%s/%s.o" % (config['dirj'], config['bcftools']['filter']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bcftools', 'filter')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bcftools', 'filter')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bcftools', 'filter')['mem']
-    threads:
-        config["bcftools"]['filter']["ppn"]
+        N = "{yid}.%s" % config['bcftools_filter']['id'],
+        e = "{yid}/%s/%s.e" % (config['dirj'], config['bcftools_filter']['id']),
+        o = "{yid}/%s/%s.o" % (config['dirj'], config['bcftools_filter']['id']),
+        j = lambda w: get_resource(w, config, 'bcftools_filter'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'bcftools_filter')['ppn']
+    conda: "../envs/work.yml"
     shell:
         """
         bcftools view -i 'QUAL>{params.minqual}' {input.vcf} -Oz -o {output.vcf}
@@ -84,6 +79,7 @@ rule bcftools_gtcheck:
     params:
         vcf = '',
         extra = '',
+    conda: "../envs/work.yml"
     shell:
         """
         bcftools gtcheck {params.extra} -g {params.vcf} {input} > {output}

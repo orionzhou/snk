@@ -1,0 +1,47 @@
+name: primer3
+channels:
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+dependencies:
+  - biopython=1.73
+  - bzip2=1.0.6
+  - ca-certificates=2019.3.9
+  - certifi=2019.3.9
+  - greenlet=0.4.15
+  - libblas=3.8.0
+  - libcblas=3.8.0
+  - libffi=3.2.1
+  - libgcc-ng=9.1.0
+  - libgfortran-ng=7.3.0
+  - liblapack=3.8.0
+  - libstdcxx-ng=9.1.0
+  - msgpack-python=0.6.1
+  - ncurses=6.1
+  - neovim=0.3.1
+  - numpy=1.16.4
+  - openblas=0.3.6
+  - openssl=1.1.1b
+  - pandas=0.24.2
+  - perl=5.26.2
+  - pip=19.1.1
+  - primer3=2.4.1a
+  - pynvim=0.3.2
+  - python=3.7.3
+  - python-dateutil=2.8.0
+  - pytz=2019.1
+  - pyyaml=5.1.1
+  - readline=7.0
+  - setuptools=41.0.1
+  - six=1.12.0
+  - sqlite=3.28.0
+  - tk=8.6.9
+  - wheel=0.33.4
+  - xz=5.2.4
+  - yaml=0.1.7
+  - zlib=1.2.11
+  - pip:
+    - primer3-py==0.6.0
+prefix: /home/springer/zhoux379/software/miniconda3/envs/primer3
+

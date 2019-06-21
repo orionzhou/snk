@@ -11,9 +11,9 @@ rule crossmap:
         e = "%s/%s/{cid}.e" % (config['dirj'], config['hmp']['crossmap']['id']),
         o = "%s/%s/{cid}.o" % (config['dirj'], config['hmp']['crossmap']['id']),
     resources:
-        ppn = lambda w, attempt: get_resource(config,attempt,'hmp','crossmap')['ppn'],
-        runtime = lambda w, attempt: get_resource(config,attempt,'hmp','crossmap')['runtime'],
-        mem = lambda w, attempt: get_resource(config,attempt,'hmp','crossmap')['mem']
+        ppn = lambda w, attempt: get_resource(w, config,attempt,'hmp','crossmap')['ppn'],
+        runtime = lambda w, attempt: get_resource(w, config,attempt,'hmp','crossmap')['runtime'],
+        mem = lambda w, attempt: get_resource(w, config,attempt,'hmp','crossmap')['mem']
     threads: config['hmp']['crossmap']['ppn']
     conda: "envs/crossmap.yml"
     shell:
@@ -37,9 +37,9 @@ rule vcfnorm:
         o = "%s/%s/{cid}.o" % (config['dirj'], config['hmp']['vcfnorm']['id']),
         mem = lambda w, resources: resources.mem - 20
     resources:
-        ppn = lambda w, attempt: get_resource(config,attempt,'hmp','vcfnorm')['ppn'],
-        runtime = lambda w, attempt: get_resource(config,attempt,'hmp','vcfnorm')['runtime'],
-        mem = lambda w, attempt: get_resource(config,attempt,'hmp','vcfnorm')['mem']
+        ppn = lambda w, attempt: get_resource(w, config,attempt,'hmp','vcfnorm')['ppn'],
+        runtime = lambda w, attempt: get_resource(w, config,attempt,'hmp','vcfnorm')['runtime'],
+        mem = lambda w, attempt: get_resource(w, config,attempt,'hmp','vcfnorm')['mem']
     threads: config['hmp']['vcfnorm']['ppn']
     conda: "envs/samtools.yml"
     shell:
@@ -69,9 +69,9 @@ rule liftover:
         o = "%s/%s/{cid}.o" % (config['dirj'], config['hmp']['liftover']['id']),
         mem = lambda w, resources: resources.mem - 5
     resources:
-        ppn = lambda w, attempt: get_resource(config,attempt,'hmp','liftover')['ppn'],
-        runtime = lambda w, attempt: get_resource(config,attempt,'hmp','liftover')['runtime'],
-        mem = lambda w, attempt: get_resource(config,attempt,'hmp','liftover')['mem']
+        ppn = lambda w, attempt: get_resource(w, config,attempt,'hmp','liftover')['ppn'],
+        runtime = lambda w, attempt: get_resource(w, config,attempt,'hmp','liftover')['runtime'],
+        mem = lambda w, attempt: get_resource(w, config,attempt,'hmp','liftover')['mem']
     threads: config['hmp']['liftover']['ppn']
     conda: "envs/gatk.yml"
     shell:
@@ -95,9 +95,9 @@ rule merge:
         o = "%s/%s.o" % (config['dirj'], config['hmp']['merge']['id']),
         mem = lambda w, resources: resources.mem - 15
     resources:
-        ppn = lambda w, attempt: get_resource(config,attempt,'hmp','merge')['ppn'],
-        runtime = lambda w, attempt: get_resource(config,attempt,'hmp','merge')['runtime'],
-        mem = lambda w, attempt: get_resource(config,attempt,'hmp','merge')['mem']
+        ppn = lambda w, attempt: get_resource(w, config,attempt,'hmp','merge')['ppn'],
+        runtime = lambda w, attempt: get_resource(w, config,attempt,'hmp','merge')['runtime'],
+        mem = lambda w, attempt: get_resource(w, config,attempt,'hmp','merge')['mem']
     threads: config['hmp']['merge']['ppn']
     conda: "envs/samtools.yml"
     shell:
@@ -125,9 +125,9 @@ rule filter:
         o = "%s/%s.o" % (config['dirj'], config['hmp']['filter']['id']),
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt: get_resource(config,attempt,'hmp','filter')['ppn'],
-        runtime = lambda w, attempt: get_resource(config,attempt,'hmp','filter')['runtime'],
-        mem = lambda w, attempt: get_resource(config,attempt,'hmp','filter')['mem']
+        ppn = lambda w, attempt: get_resource(w, config,attempt,'hmp','filter')['ppn'],
+        runtime = lambda w, attempt: get_resource(w, config,attempt,'hmp','filter')['runtime'],
+        mem = lambda w, attempt: get_resource(w, config,attempt,'hmp','filter')['mem']
     threads: config['hmp']['filter']['ppn']
     conda: "envs/samtools.yml"
     shell:
@@ -159,9 +159,9 @@ rule sample:
         o = "%s/%s.o" % (config['dirj'], config['hmp']['sample']['id']),
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt: get_resource(config,attempt,'hmp','sample')['ppn'],
-        runtime = lambda w, attempt: get_resource(config,attempt,'hmp','sample')['runtime'],
-        mem = lambda w, attempt: get_resource(config,attempt,'hmp','sample')['mem']
+        ppn = lambda w, attempt: get_resource(w, config,attempt,'hmp','sample')['ppn'],
+        runtime = lambda w, attempt: get_resource(w, config,attempt,'hmp','sample')['runtime'],
+        mem = lambda w, attempt: get_resource(w, config,attempt,'hmp','sample')['mem']
     threads: config['hmp']['sample']['ppn']
     conda: "envs/gatk.yml"
     shell:
@@ -173,25 +173,25 @@ rule sample:
         -V {input} -O {output} -fraction {params.fraction}
         """
 
-rule phylo:
+rule iqtree:
     input: config['hmp']['of31']
     output: config['hmp']['of35']
     params:
         phy = lambda w, output: output.replace(".iqtree", ".phy"),
         vphy = lambda w, output: output.replace(".iqtree", ".varsites.phy"),
         tmp = config['tmpdir'],
-        N = config['hmp']['phylo']['id'],
-        e = "%s/%s.e" % (config['dirj'], config['hmp']['phylo']['id']),
-        o = "%s/%s.o" % (config['dirj'], config['hmp']['phylo']['id']),
+        N = config['hmp']['iqtree']['id'],
+        e = "%s/%s.e" % (config['dirj'], config['iqtree']['id']),
+        o = "%s/%s.o" % (config['dirj'], config['iqtree']['id']),
         ppn = lambda w, resources: resources.ppn,
         mem = lambda w, resources: resources.mem
     resources:
-        q = lambda w, attempt: get_resource(config,attempt,'hmp','phylo')['q'],
-        ppn = lambda w, attempt: get_resource(config,attempt,'hmp','phylo')['ppn'],
-        runtime = lambda w, attempt: get_resource(config,attempt,'hmp','phylo')['runtime'],
-        mem = lambda w, attempt: get_resource(config,attempt,'hmp','phylo')['mem']
-    threads: config['hmp']['phylo']['ppn']
-    conda: "envs/job.yml"
+        q = lambda w, attempt: get_resource(w, config,attempt,'iqtree')['q'],
+        ppn = lambda w, attempt: get_resource(w, config,attempt,'iqtree')['ppn'],
+        runtime = lambda w, attempt: get_resource(w, config,attempt,'iqtree')['runtime'],
+        mem = lambda w, attempt: get_resource(w, config,attempt,'iqtree')['mem']
+    threads: config['iqtree']['ppn']
+    conda: "envs/work.yml"
     shell:
         """
         vcf2phylip.py -i {input} -o {params.phy}

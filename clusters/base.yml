@@ -1,13 +1,22 @@
 __default__:
-  q: 0
+  id: job0
+  grouping: group
+  idir: ''
+  odir: ''
   nodes: 1
+  q: small
   ppn: 1
   runtime: 8
   mem: 8
+  appn: 0
   aruntime: 1
   amem: 5
-  aq: 0
-  load: 1
+  load: 0
+  tasks: ''
+  qs: ''
+  ppns: ''
+  mems: ''
+  rates: ''
   M: zhoux379@umn.edu
   m: a
   r: n

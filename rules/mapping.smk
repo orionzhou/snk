@@ -1,12 +1,15 @@
 def mapping_inputs(w):
     yid, sid = w.yid, w.sid
+    part = w.part
+    pre = "%s_%s" % (sid, part)
     idir = config['mapping']['idir']
+
     inputs = dict()
     if config['y'][yid]['t'][sid]['paired']:
-        inputs['fq1'] = "%s/%s/%s_1.fq.gz" % (yid, idir, sid)
-        inputs['fq2'] = "%s/%s/%s_2.fq.gz" % (yid, idir, sid)
+        inputs['fq1'] = ancient("%s/%s/%s_1.fq.gz" % (yid, idir, pre))
+        inputs['fq2'] = ancient("%s/%s/%s_2.fq.gz" % (yid, idir, pre))
     else:
-        inputs['fq'] = "%s/%s/%s.fq.gz" % (yid, idir, sid)
+        inputs['fq'] = ancient("%s/%s/%s.fq.gz" % (yid, idir, pre))
     return inputs
 
 def mapping_input_str(w, input, mapper):
@@ -25,8 +28,41 @@ def mapping_input_str(w, input, mapper):
             input_str = "%s" % input['fq']
     return input_str
 
+def db_index(w, db):
+    yid, sid = w.yid, w.sid
+    ref = config['y'][yid]['ref']
+#    if 'ase' in config['y'][yid] and config['y'][yid]['ase']:
+#        ref = config['y'][yid]['t'][sid]['Genotype']
+#        ref = normalize_genotype(ref)
+
+    if db == 'star':
+        return config['g'][ref]["star"]['xpre']
+    elif db == 'hisat2':
+        return config['g'][ref]["hisat2"]['xpre']
+    elif db == 'bwa':
+        return config['g'][ref]["bwa"]['xpre']
+    elif db == 'bismark':
+        return config['g'][ref]["bismark"]['xpre']
+    elif db == 'gtf':
+        return config['g'][ref]["annotation"]['gtf']
+    else:
+        print('unknown db: %d' % db)
+        sys.exit(1)
+
 def star_extra(w):
-    extras = [config["star"]["extra"]]
+    extras = """
+        --outSAMmapqUnique 60
+        --outFilterType BySJout
+        --outFilterMultimapNmax 20
+        --alignSJoverhangMin 8
+        --alignSJDBoverhangMin 1
+        --outFilterMismatchNmax 999
+        --outFilterMismatchNoverReadLmax 1.0
+        --alignIntronMin 20
+        --alignIntronMax 1000000
+        --alignMatesGapMax 1000000
+        --outSAMunmapped Within KeepPairs
+    """.split()
     extras.append("--outSAMattrRGline ID:%s SM:%s" % (w.sid, w.sid))
     #if 'vcf' in config and wildcards.gt in config['vcf']:
     if 1 == 2:
@@ -40,24 +76,21 @@ def star_extra(w):
 rule star:
     input: unpack(mapping_inputs)
     output:
-        temp("{yid}/%s/{sid}/Aligned.out.bam" % config['star']['odir']),
-        "{yid}/%s/{sid}/Log.final.out" % config['star']['odir']
+        temp("{yid}/%s/{sid}_{part}/Aligned.out.bam" % config['mapping']['od21s']),
+        "{yid}/%s/{sid}_{part}/Log.final.out" % config['mapping']['od21s']
     params:
-        index = lambda w: config['g'][config['y'][w.yid]['reference']]["star"]['xpre'],
+        index = lambda w: db_index(w, 'star'),
         input_str = lambda w, input: mapping_input_str(w, input, 'star'),
-        outprefix = lambda w: "%s/%s/%s/" % (w.yid, config['star']['odir'], w.sid),
+        outprefix = "{yid}/%s/{sid}_{part}/" % config['mapping']['od21s'],
         readcmd = "--readFilesCommand zcat",
         extra = star_extra,
-        N = "{yid}.%s.{sid}" % config['star']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['star']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['star']['id']),
-    resources:
-        q = lambda w, attempt:  get_resource(config, attempt, 'star')['q'],
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'star')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'star')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'star')['mem']
+        N = "{yid}.%s.{sid}{part}" % config['star']['id'],
+        e = "{yid}/%s/%s/{sid}{part}.e" % (config['dirj'], config['star']['id']),
+        o = "{yid}/%s/%s/{sid}{part}.o" % (config['dirj'], config['star']['id']),
+        j = lambda w: get_resource(w, config, 'star'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'star')['ppn']
     conda: "../envs/work.yml"
-    threads: config['star']['ppn']
     shell:
         """
         STAR {params.extra} --runThreadN {threads} \
@@ -69,28 +102,27 @@ rule star:
         """
 
 def hisat2_extra(w):
-    extras = [config["hisat2"]["extra"]]
+    extras = "--new-summary --no-softclip".split()
+    extras = "--new-summary".split()
     extras.append("--rg-id %s --rg SM:%s" % (w.sid, w.sid))
     return " ".join(extras)
 
 rule hisat2:
     input: unpack(mapping_inputs)
     output:
-        temp("{yid}/%s/{sid}.bam" % config['hisat2']['odir']),
-        "{yid}/%s/{sid}.txt" % config['hisat2']['odir']
+        temp("{yid}/%s/{sid}_{part}.bam" % config['mapping']['od21h']),
+        "{yid}/%s/{sid}_{part}.txt" % config['mapping']['od21h']
     params:
-        index = lambda w: config['g'][config['y'][w.yid]['reference']]["hisat2"]['xpre'],
+        index = lambda w: db_index(w, 'hisat2'),
         input_str = lambda w, input: mapping_input_str(w, input, 'hisat2'),
         extra = hisat2_extra,
-        N = "{yid}.%s.{sid}" % config['hisat2']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['hisat2']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['hisat2']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'hisat2')['mem']
-    threads: config['hisat2']['ppn']
-    conda: "../envs/work.yml"
+        N = "{yid}.%s.{sid}{part}" % config['hisat2']['id'],
+        e = "{yid}/%s/%s/{sid}{part}.e" % (config['dirj'], config['hisat2']['id']),
+        o = "{yid}/%s/%s/{sid}{part}.o" % (config['dirj'], config['hisat2']['id']),
+        j = lambda w: get_resource(w, config, 'hisat2'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'hisat2')['ppn']
+    conda: "../envs/hisat2.yml"
     shell:
         """
         hisat2 {params.extra} --threads {threads} \
@@ -100,7 +132,7 @@ rule hisat2:
         """
 
 def bwa_extra(w):
-    extras = [config["bwa"]["extra"]]
+    extras = []
     yid, sid = w.yid, w.sid
     sm = sid
     if 'Genotype' in config['y'][yid]['t'][sid]:
@@ -113,80 +145,81 @@ def bwa_extra(w):
 
 rule bwa:
     input: unpack(mapping_inputs)
-    output: temp("{yid}/%s/{sid}.sam" % config['bwa']['odir'])
+    output: temp("{yid}/%s/{sid}_{part}.bam" % config['mapping']['od21b'])
     params:
-        index = lambda w: config['g'][config['y'][w.yid]['reference']]["bwa"]['xpre'],
+        index = lambda w: db_index(w, 'bwa'),
         input_str = lambda w, input: mapping_input_str(w, input, 'bwa'),
         extra = bwa_extra,
-        N = "{yid}.%s.{sid}" % config['bwa']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['bwa']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['bwa']['id']),
-    resources:
-        q = lambda w, attempt:  get_resource(config, attempt, 'bwa')['q'],
-        ppn = lambda w, attempt: get_resource(config, attempt, 'bwa')['ppn'],
-        runtime = lambda w, attempt: get_resource(config, attempt, 'bwa')['runtime'],
-        mem = lambda w, attempt: get_resource(config, attempt, 'bwa')['mem']
-    threads: config['bwa']['ppn']
+        N = "{yid}.%s.{sid}{part}" % config['bwa']['id'],
+        e = "{yid}/%s/%s/{sid}{part}.e" % (config['dirj'], config['bwa']['id']),
+        o = "{yid}/%s/%s/{sid}{part}.o" % (config['dirj'], config['bwa']['id']),
+        j = lambda w: get_resource(w, config, 'bwa'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'bwa')['ppn']
     conda: "../envs/work.yml"
     shell:
         """
-        bwa mem -t {threads} {params.index} {params.extra} {params.input_str} \
-            >{output}
+        bwa mem -t {threads} {params.index} {params.extra} \
+            {params.input_str} |\
+            samtools view -bS - > {output}
         """
 
 def bismark_extra(w):
-    extras = [config["bismark"]["extra"]]
     yid, sid = w.yid, w.sid
     sm = sid
+    extras = ["-n 1"]
     if 'Genotype' in config['y'][yid]['t'][sid]:
         sm = config['y'][yid]['t'][w.sid]['Genotype']
-    extras.append("--temp_dir %s" % config['tmpdir'])
     extras.append("--rg_tag --rg_id %s --rg_sample %s" % (sid, sm))
     return " ".join(extras)
 
 rule bismark:
     input: unpack(mapping_inputs)
     output:
-        bam = "{yid}/%s/{sid}.bam" % config['bismark']['odir'],
-        report = "{yid}/%s/{sid}.txt" % config['bismark']['odir'],
+        bam = "{yid}/%s/{sid}_{part}.bam" % config['mapping']['od21m'],
+        report = "{yid}/%s/{sid}_{part}.txt" % config['mapping']['od21m'],
     params:
-        index = lambda w: config['g'][config['y'][w.yid]['reference']]["bismark"]['xpre'],
+        index = lambda w: db_index(w, 'bismark'),
         input_str = lambda w, input: mapping_input_str(w, input, 'bismark'),
-        odir = config['bismark']['odir'],
-        parallel = lambda w, resources: int(resources.ppn / 2),
+        odir = "{yid}/%s" % config['mapping']['od21m'],
+        opre = '{sid}_{part}',
+        tmp_dir = "{yid}/%s/{sid}_{part}" % config['mapping']['od21m'],
+        p = lambda w: int(get_resource(w, config, 'bismark')['ppn'] / 2),
         extra = bismark_extra,
-        N = "{yid}.%s.{sid}" % config['bismark']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['bismark']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['bismark']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bismark')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bismark')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bismark')['mem']
-    threads: config['bismark']['ppn']
-    conda: "../envs/work.yml"
+        N = "{yid}.%s.{sid}{part}" % config['bismark']['id'],
+        e = "{yid}/%s/%s/{sid}{part}.e" % (config['dirj'], config['bismark']['id']),
+        o = "{yid}/%s/%s/{sid}{part}.o" % (config['dirj'], config['bismark']['id']),
+        j = lambda w: get_resource(w, config, 'bismark'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'bismark')['ppn']
+    conda: "../envs/bismark.yml"
     shell:
-#        --basename {wildcards.sid}
         """
-        bismark --parallel {params.parallel} \
+        mkdir -p {params.tmp_dir}
+        bismark --parallel {params.p} \
             {params.index} {params.input_str} \
+            --temp_dir {params.tmp_dir} \
             {params.extra} --output_dir {params.odir}
-        mv {params.odir}/{wildcards.sid}*bismark*.bam {output.bam}
-        mv {params.odir}/{wildcards.sid}*bismark*_report.txt {output.report}
+        mv {params.odir}/{params.opre}*bismark*.bam {output.bam}
+        mv {params.odir}/{params.opre}*bismark*_report.txt {output.report}
         """
 
 def sambamba_sort_input(w):
     yid, sid = w.yid, w.sid
+    parts = config['y'][yid]['t'][sid]['parts']
     mapper = config['y'][yid]['mapper']
     assert mapper in config['valid']['mapper'], "invalid mapper: %s" % mapper
-    idir = "%s/%s" % (yid, config[mapper]['odir'])
-    fi = ''
+    ptn = ''
     if mapper == 'star':
-        fi = "%s/%s/Aligned.out.bam" % (idir, sid)
-    elif mapper in ['hisat2','bismark']:
-        fi = "%s/%s.bam" % (idir, sid)
+        ptn = "%s/%s/%s_{part}/Aligned.out.bam" % (yid, config['mapping']['od21s'], sid)
+    elif mapper == 'hisat2':
+        ptn = "%s/%s/%s_{part}.bam" % (yid, config['mapping']['od21h'], sid)
+    elif mapper == 'bismark':
+        ptn = "%s/%s/%s_{part}.bam" % (yid, config['mapping']['od21m'], sid)
     elif mapper == 'bwa':
-        fi = "%s/%s.sam" % (idir, sid)
-    return fi
+        ptn = "%s/%s/%s_{part}.bam" % (yid, config['mapping']['od21b'], sid)
+    fis = expand(ptn, part = parts)
+    return fis
 
 rule sambamba_sort:
     input: sambamba_sort_input
@@ -195,16 +228,14 @@ rule sambamba_sort:
         "{yid}/%s/{sid}.bam.bai" % config['mapping']['odir']
     params:
         mapper = lambda w: config['y'][w.yid]['mapper'],
-        bam0 = lambda w, output: output[0].replace(".bam", ".t.bam"),
-        extra = "--tmpdir=%s %s" % (config['tmpdir'], config['sambamba']['sort']['extra']),
-        N = "{yid}.%s.{sid}" % config['sambamba']['sort']['id'],
-        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['sambamba']['sort']['id']),
-        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['sambamba']['sort']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'sort')['mem']
-    threads: config['sambamba']['ppn']
+        odir = "{yid}/%s" % config['mapping']['odir'],
+        tmp_dir = config['tmpdir'],
+        N = "{yid}.%s.{sid}" % config['sambamba_sort']['id'],
+        e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['sambamba_sort']['id']),
+        o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['sambamba_sort']['id']),
+        j = lambda w: get_resource(w, config, 'sambamba_sort')
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'sambamba_sort')['ppn']
     conda: "../envs/work.yml"
     script: "../scripts/sambamba_sort.py"
 
@@ -215,14 +246,11 @@ rule bam_stat:
         N = "{yid}.%s.{sid}" % config['bam_stat']['id'],
         e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['bam_stat']['id']),
         o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['bam_stat']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
-    threads: config['bam_stat']['ppn']
+        j = lambda w: get_resource(w, config, 'bam_stat'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'bam_stat')['ppn']
     conda: "../envs/work.yml"
-    shell:
-        "bam.py stat {input} > {output}"
+    shell: "bam.py stat {input} > {output}"
 
 def merge_bamstats_inputs(w):
     yid = w.yid
@@ -234,10 +262,16 @@ def merge_bamstats_inputs(w):
 rule merge_bamstats:
     input:
         lambda w: expand("%s/%s/{sid}.tsv" % (w.yid, config['mapping']['odir']), sid = config['y'][w.yid]['SampleID'])
-    output: protected("{yid}/data/%s" % config['merge_bamstats']['out'])
+    output: protected("%s/{yid}/%s" % (config['oid'], config['merge_bamstats']['out']))
+    params:
+        N = "{yid}.%s" % (config['merge_bamstats']['id']),
+        e = "{yid}/%s/%s.e" % (config['dirj'], config['merge_bamstats']['id']),
+        o = "{yid}/%s/%s.o" % (config['dirj'], config['merge_bamstats']['id']),
+        j = lambda w: get_resource(w, config, 'merge_bamstats'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'merge_bamstats')['ppn']
     conda: "../envs/work.yml"
-    shell:
-        "merge.bamstats.R -o {output} {input}"
+    shell: "merge.stats.R --opt bam_stat -o {output} {input}"
 
 
 

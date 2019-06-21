@@ -1,81 +1,26 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 pid: wgc
 comps:
-  - Sbicolor-B73
-comps1:
-  - Sbicolor-B73
-  - W22-B73
-  - Mo17-B73
-  - W22-B73
-  - PH207-B73
-  - PHB47-B73
-  - B104-B73
-  - CML247-B73
-  - DK105-B73
-  - EP1-B73
-  - F7-B73
-  - PE0075-B73
-wgc:
-  dir1: 10_genomes
-  dir2: 20_align
-  dir3: 30_merged
-  dir4: 41_orthofinder
-  out: 15.B73.tsv
-  npieces: 30
-  prepT:
-    id: prepT
-    ppn: 1
-    runtime: 2
-    mem: 10
-    aruntime: 2
-    amem: 5
-  prepQ:
-    id: prepQ
-    ppn: 1
-    runtime: 2
-    mem: 10
-    aruntime: 2
-    amem: 5
-  align:
-    id: aln
-    ppn: 4
-    runtime: 20
-    mem: 20
-    aruntime: 20
-    amem: 10
-  merge:
-    id: merge
-    ppn: 1
-    runtime: 1
-    mem: 20
-    aruntime: 2
-    amem: 5
-  chain:
-    id: chain
-    ppn: 1
-    runtime: 20
-    mem: 30
-    aruntime: 20
-    amem: 10
-  post:
-    id: post
-    ppn: 1
-    runtime: 2
-    mem: 10
-    aruntime: 2
-    amem: 20
-  eff:
-    id: eff
-    ppn: 1
-    runtime: 5
-    mem: 25
-    aruntime: 5
-    amem: 5
-orthofinder:
-  id: ofind
-  ppn: 8
-  runtime: 5
-  mem: 40
-  aruntime: 5
-  amem: 10
+  - Athaliana-Zmays_B73
+  #- Sbicolor-Zmays_B73
+  #- Mo17-B73
+  #- W22-B73
+  #- PH207-B73
+  #- PHB47-B73
+  #- B104-B73
+ortho_genomes:
+  - Athaliana
+  - Zmays_B73
+  - Alyrata
+  - Brapa
+  - Gmax
+  - Mtruncatula
+  - Osativa
+  - Bdistachyon
+  - Sbicolor
+  - Sitalica
+  - Slycopersicum
+  - Ppersica
+  - Ptrichocarpa
+  - Vvinifera
 

@@ -89,9 +89,9 @@ rule fm3_bwa:
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt: get_resource(config, attempt, 'fm', 'bwa')['ppn'],
-        runtime = lambda w, attempt: get_resource(config, attempt, 'fm', 'bwa')['runtime'],
-        mem = lambda w, attempt: get_resource(config, attempt, 'fm', 'bwa')['mem']
+        ppn = lambda w, attempt: get_resource(w, config, attempt, 'fm', 'bwa')['ppn'],
+        runtime = lambda w, attempt: get_resource(w, config, attempt, 'fm', 'bwa')['runtime'],
+        mem = lambda w, attempt: get_resource(w, config, attempt, 'fm', 'bwa')['mem']
     threads: config["fm"]['bwa']["ppn"]
     run:
         makedirs(config['fm']['odir3'])
@@ -137,9 +137,9 @@ rule fm4_coord:
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt: get_resource(config, attempt, 'fm', 'coord')['ppn'],
-        runtime = lambda w, attempt: get_resource(config, attempt, 'fm', 'coord')['runtime'],
-        mem = lambda w, attempt: get_resource(config, attempt, 'fm', 'coord')['mem']
+        ppn = lambda w, attempt: get_resource(w, config, attempt, 'fm', 'coord')['ppn'],
+        runtime = lambda w, attempt: get_resource(w, config, attempt, 'fm', 'coord')['runtime'],
+        mem = lambda w, attempt: get_resource(w, config, attempt, 'fm', 'coord')['mem']
     shell:
 #        CrossMap.py bam {params.tgt_chain} {input} - |\
 #                samtools view -h -O SAM -o {params.pre}.sam

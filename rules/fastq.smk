@@ -18,12 +18,10 @@ rule fq_compress:
         N = "{yid}.%s.{sid}" % config['fq_compress']['id'],
         e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['fq_compress']['id']),
         o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['fq_compress']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'fq_compress')['mem']
-    threads: config['fq_compress']['ppn']
-    conda: "../envs/job.yml"
+        j = lambda w: get_resource(w, config, 'fq_compress'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'fq_compress')['ppn']
+    conda: "../envs/work.yml"
     script: "../scripts/fq_compress.py"
 
 rule fq_deinterleave:
@@ -33,20 +31,17 @@ rule fq_deinterleave:
         r1 = "{yid}/%s/{sid}_1.fq.gz" % config['fq_deinterleave']['odir'],
         r2 = "{yid}/%s/{sid}_2.fq.gz" % config['fq_deinterleave']['odir']
     params:
-        extra = config["fq_deinterleave"]["extra"],
         N = "{yid}.%s.{sid}" % config['fq_deinterleave']['id'],
         e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['fq_deinterleave']['id']),
         o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['fq_deinterleave']['id']),
-    resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'fq_deinterleave')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'fq_deinterleave')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'fq_deinterleave')['mem']
-    threads: config['fq_deinterleave']['ppn']
-    conda: "../envs/job.yml"
+        j = lambda w: get_resource(w, config, 'fq_deinterleave'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'fq_deinterleave')['ppn']
+    conda: "../envs/work.yml"
     shell:
         """
         zcat {input} | \
-        deinterleave_fastq.sh {output.r1} {output.r2} {threads} compress
+            deinterleave_fastq.sh {output.r1} {output.r2} {threads} compress
         touch {output.r0}
         """
 
@@ -56,8 +51,6 @@ rule fq_dump:
         r0 = "{yid}/%s/{sid}.fq.gz" % config['fq_dump']['odir'],
         r1 = "{yid}/%s/{sid}_1.fq.gz" % config['fq_dump']['odir'],
         r2 = "{yid}/%s/{sid}_2.fq.gz" % config['fq_dump']['odir']
-    log:
-        "{yid}/%s/%s/{sid}.log" % (config['dirl'], config['fq_dump']['id'])
     params:
         odir = "{yid}/%s" % config['fq_dump']['odir'],
         o0 = "{yid}/%s/{sid}.fastq" % config['fq_dump']['odir'],
@@ -67,14 +60,13 @@ rule fq_dump:
         N = "{yid}.%s.{sid}" % config['fq_dump']['id'],
         e = "{yid}/%s/%s/{sid}.e" % (config['dirj'], config['fq_dump']['id']),
         o = "{yid}/%s/%s/{sid}.o" % (config['dirj'], config['fq_dump']['id']),
-        mem = lambda w, resources: resources.mem
+        j = lambda w: get_resource(w, config, 'fq_dump'),
+        mem = lambda w: get_resource(w, config, 'fq_dump')['mem'],
     resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'fq_dump')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'fq_dump')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'fq_dump')['mem'],
-        load = lambda w, attempt:  get_resource(config, attempt, 'fq_dump')['load']
-    threads: config['fq_dump']['ppn']
-    conda: "../envs/job.yml"
+        attempt = lambda w, attempt: attempt,
+        load = lambda w: get_resource(w, config, 'fq_dump')['load'],
+    threads: lambda w: get_resource(w, config, 'fq_dump')['ppn']
+    conda: "../envs/work.yml"
     script: "../scripts/fq_dump.py"
 
 def fastq_inputs(w):

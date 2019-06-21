@@ -1,0 +1,53 @@
+name: alfred
+channels:
+  - conda-forge
+  - bioconda
+  - r
+  - defaults
+dependencies:
+  - alfred=0.1.17
+  - binutils_impl_linux-64=2.31.1
+  - binutils_linux-64=2.31.1
+  - boost=1.68.0
+  - boost-cpp=1.68.0
+  - bzip2=1.0.6
+  - ca-certificates=2019.3.9
+  - certifi=2019.3.9
+  - curl=7.64.1
+  - gcc_impl_linux-64=7.3.0
+  - gcc_linux-64=7.3.0
+  - gxx_impl_linux-64=7.3.0
+  - gxx_linux-64=7.3.0
+  - htslib=1.9
+  - icu=58.2
+  - krb5=1.16.3
+  - libblas=3.8.0
+  - libcblas=3.8.0
+  - libcurl=7.64.1
+  - libdeflate=1.2
+  - libedit=3.1.20170329
+  - libffi=3.2.1
+  - libgcc-ng=9.1.0
+  - libgfortran=3.0.0
+  - libgfortran-ng=7.3.0
+  - liblapack=3.8.0
+  - libssh2=1.8.2
+  - libstdcxx-ng=9.1.0
+  - ncurses=6.1
+  - nlohmann_json=3.6.1
+  - numpy=1.16.4
+  - openblas=0.3.5
+  - openssl=1.1.1b
+  - pip=19.1.1
+  - python=3.6.7
+  - readline=7.0
+  - sdsl-lite=2.1.1
+  - setuptools=41.0.1
+  - sqlite=3.28.0
+  - subread=1.6.4
+  - tk=8.6.9
+  - wheel=0.33.4
+  - xz=5.2.4
+  - zlib=1.2.11
+prefix: /home/springer/zhoux379/software/miniconda3/envs/alfred
+

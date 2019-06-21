@@ -45,46 +45,21 @@ if args.help :
 jobscript = sys.argv[-1]
 
 job_properties = read_job_properties(jobscript)
-qmap = {0:'small', 1:'ram256g', 2:'ram256g', 3:'ram256g'}
+if job_properties.get("params", {}).get("j") == None:
+    print("no job parameters params[j]", job_properties)
+    sys.exit(2)
 
-atime=""
-acc_string=""
-pbs_time=""
-chkpt=""
-pref=""
-dd=""
-rd=""
-se=""
-ft=""
-hold=""
-j=""
-resource=""
-mail=""
-mailuser=""
-jname=""
-so=""
-priority=""
-proxy=""
-q=""
-ar=""
-user=""
-ev=""
-eall=""
-wd=""
-add=""
-depend=""
-resourceparams=""
-extras=""
+atime, acc_string, pbs_time, chkpt, pref, \
+dd, rd, se, ft, hold, \
+j, resource, mail, mailuser, jname, \
+so, priority, proxy, q, ar, \
+user, ev, eall, wd, add, \
+depend, resourceparams, extras = [''] * 28
 
-nodes=""
-ppn=""
-mem=""
-walltime=""
-
-jobe, jobo = '', ''
+nodes, ppn, mem, walltime, jobe, jobo = [''] * 6
 
 cc = job_properties['cluster']
-if 'q' in cc: q = " -q " + str(qmap[cc['q']])
+if 'q' in cc: q = " -q " + cc['q']
 if 'm' in cc: mail = " -m " + cc['m']
 if 'M' in cc: mailuser = " -M " + cc['M']
 if 'N' in cc: jname = " -N " + cc['N']
@@ -136,35 +111,33 @@ if args.V: eall = " -V"
 if args.w: wd = " -w " + args.w
 if args.W: add= " -W \"" + args.W + "\""
 
-if "threads" in job_properties:
-    ppn = "ppn=" + str(job_properties["threads"])
 
-if "params" in job_properties:
-    params = job_properties["params"]
-    if 'q' in params: q = " -q " + str(qmap[params['q']])
-    if 'm' in params: mail = " -m " + str(params['m'])
-    if 'M' in params: mailuser = " -M " + str(params['M'])
-    if 'N' in params: jname = " -N " + str(params['N'])
-    if 'o' in params:
-        so = " -o " + str(params['o'])
-        jobo = params['o']
-    if 'e' in params:
-        se = " -e " + str(params['e'])
-        jobe = params['e']
-    if "nodes" in params: nodes="nodes=" + str(params["nodes"])
-    if 'ppn' in params: ppn = "ppn=" + str(params["ppn"])
-    if ppn and not nodes : nodes="nodes=1"
-    if "mem" in params: mem="mem=" + str(params["mem"]) + 'gb'
-    if "runtime" in params: walltime="walltime=" + str(params["runtime"]*3600)
+params = job_properties["params"]
+if 'N' in params: jname = " -N " + str(params['N'])
+if 'o' in params:
+    so = " -o " + str(params['o'])
+    jobo = params['o']
+if 'e' in params:
+    se = " -e " + str(params['e'])
+    jobe = params['e']
 
+retry = 0
 if "resources" in job_properties:
-    resources = job_properties["resources"]
-    if 'q' in resources: q = " -q " + str(qmap[resources['q']])
-    if "nodes" in resources: nodes="nodes=" + str(resources["nodes"])
-    if 'ppn' in resources: ppn = "ppn=" + str(resources["ppn"])
-    if ppn and not nodes : nodes="nodes=1"
-    if "mem" in resources: mem="mem=" + str(resources["mem"]) + 'gb'
-    if "runtime" in resources: walltime="walltime=" + str(resources["runtime"]*3600)
+    retry = job_properties["resources"]['attempt'] - 1
+
+params = params['j']
+if 'q' in params: q = " -q %s" % params['q']
+if 'm' in params: mail = " -m %s" % str(params['m'])
+if 'M' in params: mailuser = " -M %s" % str(params['M'])
+if "nodes" in params: nodes="nodes=%d" % params["nodes"]
+if 'ppn' in params: ppn = "ppn=%d" % (params["ppn"] + retry * params['appn'])
+if ppn and not nodes : nodes="nodes=1"
+if "mem" in params: mem="mem=%dgb" % (params["mem"] + retry * params['amem'])
+if "runtime" in params: walltime="walltime=%d:00:00" % (params["runtime"] + retry * params['aruntime'])
+
+print('  '.join((jname, jobo, jobe)), file=sys.stderr)
+print("  ".join((q, ppn, mem, walltime)), file=sys.stderr)
+#sys.exit(2)
 
 for jdir in set([os.path.dirname(p) for p in [jobe, jobo]]):
     if not os.path.isdir(jdir):

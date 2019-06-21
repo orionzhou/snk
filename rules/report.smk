@@ -33,9 +33,9 @@ rule multiqc:
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'multiqc')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'multiqc')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'multiqc')['mem']
+        ppn = lambda w, attempt:  get_resource(w, config, attempt, 'multiqc')['ppn'],
+        runtime = lambda w, attempt:  get_resource(w, config, attempt, 'multiqc')['runtime'],
+        mem = lambda w, attempt:  get_resource(w, config, attempt, 'multiqc')['mem']
     threads: config['multiqc']['ppn']
     shell:
         "multiqc {params.extra} --force "
@@ -67,9 +67,9 @@ rule bam_stat:
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'bam_stat')['mem']
+        ppn = lambda w, attempt:  get_resource(w, config, attempt, 'bam_stat')['ppn'],
+        runtime = lambda w, attempt:  get_resource(w, config, attempt, 'bam_stat')['runtime'],
+        mem = lambda w, attempt:  get_resource(w, config, attempt, 'bam_stat')['mem']
     threads: config['bam_stat']['ppn']
     shell:
         "bam.py stat {input} > {output}"
@@ -88,9 +88,9 @@ rule sambamba_flagstat:
         runtime = lambda w, resources: resources.runtime,
         mem = lambda w, resources: resources.mem
     resources:
-        ppn = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'flagstat')['ppn'],
-        runtime = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'flagstat')['runtime'],
-        mem = lambda w, attempt:  get_resource(config, attempt, 'sambamba', 'flagstat')['mem']
+        ppn = lambda w, attempt:  get_resource(w, config, attempt, 'sambamba', 'flagstat')['ppn'],
+        runtime = lambda w, attempt:  get_resource(w, config, attempt, 'sambamba', 'flagstat')['runtime'],
+        mem = lambda w, attempt:  get_resource(w, config, attempt, 'sambamba', 'flagstat')['mem']
     threads: config['sambamba']['ppn']
     shell:
         "sambamba flagstat {params.extra} -t {threads} {input} > {output}"

@@ -1,35 +1,39 @@
 import os
 import os.path as op
-from snk.utils import get_resource, check_config_ngs
+from snk.utils import get_resource
+from snk.utils import check_config_bsseq
 
 configfile: 'config.yml'
-config = check_config_ngs(config)
+config = check_config_bsseq(config)
 workdir: config['dirw']
 
 wildcard_constraints:
     sid = "[a-zA-Z0-9]+",
-    region = ".+(:[0-9]+-[0-9]+)?"
+    mid = "[a-zA-Z0-9]+",
+    part = "[a-z]+",
+    gt = "[a-zA-Z0-9\-_]+",
+    rid = "[a-zA-Z0-9]+",
 
-localrules: all, merge_bamstats, merge_trimstats
+localrules: all, trimming, merge_trimstats, merge_bamstats
+
+def all_outputs(w):
+    outputs = []
+    for yid, ydic in config['y'].items():
+        if not ydic['runB']: continue
+        sids = config['y'][yid]['SampleID']
+#        outputs += expand("%s/%s/{sid}.rds" % (config['oid'], yid), sid=sids)
+        mids = config['y'][yid]['MergeID']
+        outputs += expand("%s/%s/{mid}.{ctx}.bed.gz" % (config['bsseq']['odir'], yid), mid=mids, ctx=['cg','chg','chh'])
+        outputs += expand("%s/%s/{mid}.bed.gz" % (config['oid'], yid), mid=mids)
+    return outputs
 
 rule all:
-    input:
-        expand(["%s/{sid}.rds" % config['bismark_extract']['odir']], sid=config['SampleID']),
-        "%s/%s" % (config['dird'], config['merge_trimstats']['out']),
-        "%s/%s" % (config['dird'], config['merge_bamstats']['out']),
+    input: all_outputs
 
-if config['source'] == 'sra':
-    include: "rules/fasterq_dump.smk"
-elif config['source'] == 'local_interleaved':
-    include: "rules/fq_deinterleave.smk"
-elif config['source'] == 'local':
-    include: "rules/fq_compress.smk"
-
-include: "rules/fastp.smk"
-include: "rules/bismark.smk"
-include: "rules/bismark_extract.smk"
+include: "rules/trimming.smk"
+include: "rules/mapping.smk"
 include: "rules/cleanbam.smk"
-include: "rules/report.smk"
+include: "rules/bsseq.smk"
 
 onsuccess:
     shell("mail -s 'Success: %s' %s < {log}" % (config['dirw'], config['email']))

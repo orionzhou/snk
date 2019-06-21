@@ -1,4 +1,3 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 pid: bsseq
 studylist: /home/springer/zhoux379/projects/bsseq/data/01.cfg.xlsx
-study: sp014

@@ -1,33 +1,12 @@
 import os
 import os.path as op
-from snakemake.utils import update_config, makedirs
-from snk.utils import get_resource
-from snk.utils import make_symlink, check_genome, check_config_default
+import pandas as pd
 import yaml
-
-def ndigit(num):
-    if num < 1:
-        eprint("no digits: %g" % num)
-        sys.exit(1)
-    digit = 0 
-    while num >= 1:
-        num /= 10.0
-        digit += 1
-    return digit
-
-def check_config(c):
-    c = check_config_default(c)
-    c['dirw'] = c['dirc']
-    c['comps'] = [x.split('-') for x in c['comps']]
-    for genome in set([i for subl in c['comps'] for i in subl]):
-        if c['g'][genome]['annotation']:
-            check_genome(genome, ['blat','gatk','snpeff'], c)
-        else:
-            check_genome(genome, ['blat','gatk'], c)
-    return c
+from snk.utils import get_resource
+from snk.utils import check_config_wgc
 
 configfile: 'config.yml'
-config = check_config(config)
+config = check_config_wgc(config)
 workdir: config['dirw']
 
 wildcard_constraints:
@@ -40,14 +19,15 @@ localrules: all
 
 def all_inputs(wildcards):
     inputs = []
+    inputs.append("%s/%s" % (config['wgc']['od50'], config['wgc']['of50']))
+    return inputs
     for qry, tgt in config['comps']:
-        dir4 = "%s/%s_%s" % (config['wgc']['dir4'], qry, tgt)
-        diro = "%s/%s_%s" % (config['dirr'], qry, tgt)
-        inputs.append("%s/10.vnt.bed" % diro)
-        inputs.append("%s/15.%s.tsv" % (diro, tgt))
-        if config['g'][qry]['annotation']:
-            inputs.append("%s/15.%s.tsv" % (diro, qry))
-#        inputs.append("%s/10.tsv" % diro)
+        odir = "%s/%s_%s" % (config['dirr'], qry, tgt)
+        inputs.append("%s/%s" % (odir, config['wgc']['rf10']))
+        inputs.append("%s/15.%s.tsv" % (odir, tgt))
+        if config['x'][qry]['annotation']:
+            inputs.append("%s/15.%s.tsv" % (odir, qry))
+            inputs.append("%s/%s/%s" % (odir, config['wgc']['rd20'], config['wgc']['out']))
     return inputs
 rule all:
     input:

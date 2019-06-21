@@ -1,0 +1,5 @@
+config_default: /home/springer/zhoux379/git/snk/configs/base.yml
+pid: reseq
+wid: data
+studylist: /home/springer/zhoux379/projects/reseq/data/10.genotyping.xlsx
+

@@ -1,5 +1,6 @@
 from snakemake import shell
 input, output, params, threads, wildcards, config = snakemake.input, snakemake.output, snakemake.params, snakemake.threads, snakemake.wildcards, snakemake.config
+
 if config['y'][wildcards.yid]['t'][wildcards.sid]['paired']:
     shell("""
     fasterq-dump --split-files -e {threads} -m {params.mem} \
