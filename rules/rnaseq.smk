@@ -90,30 +90,11 @@ rule merge_mmquant:
     conda: "../envs/work.yml"
     shell: "merge.stats.R --opt mmquant -o {output} {input}"
 
-rule rc2cpm_raw:
+rule rc2cpm:
     input:
         sam = lambda w: config['y'][w.yid]['samplelist'],
         exp = "%s/{yid}/%s" % (config['oid'], config['rnaseq']['out_fcnt']),
-    output:
-        protected("%s/{yid}/%s" % (config['oid'], config['rnaseq']['out_rcpm']))
-    params:
-        N = "{yid}.%s" % (config['rc2cpm']['id']),
-        e = "{yid}/%s/%s.e" % (config['dirj'], config['rc2cpm']['id']),
-        o = "{yid}/%s/%s.o" % (config['dirj'], config['rc2cpm']['id']),
-        j = lambda w: get_resource(w, config, 'rc2cpm'),
-    resources: attempt = lambda w, attempt: attempt
-    threads: lambda w: get_resource(w, config, 'rc2cpm')['ppn']
-    conda: "../envs/work.yml"
-    shell:
-        """
-        rc2cpm.R {input.sam} {input.exp} {output} \
-            --opt featurecounts --yid {wildcards.yid} --config {input.exp}
-        """
-
-rule rc2cpm:
-    input:
-        sam = lambda w: config['y'][w.yid]['samplelistc'],
-        exp = "%s/{yid}/%s" % (config['oid'], config['rnaseq']['out_fcnt']),
+        cfg = lambda w: config['g'][config['y'][w.yid]['ref']]["rds"]['xout']
     output: protected("%s/{yid}/%s" % (config['oid'], config['rnaseq']['out_cpm']))
     params:
         N = "{yid}.%s" % (config['rc2cpm']['id']),
@@ -126,7 +107,27 @@ rule rc2cpm:
     shell:
         """
         rc2cpm.R {input.sam} {input.exp} {output} \
-            --opt featurecounts --yid {wildcards.yid} --config {input.exp}
+            --opt featurecounts --yid {wildcards.yid} --config {input.cfg}
+        """
+
+rule rc2cpm2:
+    input:
+        sam = "%s/11_qc/{yid}/%s" % (config['dirh'], config['rnaseq']['meta']),
+        exp = "%s/{yid}/%s" % (config['oid'], config['rnaseq']['out_fcnt']),
+        cfg = lambda w: config['g'][config['y'][w.yid]['ref']]["rds"]['xout']
+    output: protected("%s/11_qc/{yid}/%s" % (config['dirh'], config['rnaseq']['out_cpm']))
+    params:
+        N = "{yid}.%s" % (config['rc2cpm']['id']),
+        e = "{yid}/%s/%s.e" % (config['dirj'], config['rc2cpm']['id']),
+        o = "{yid}/%s/%s.o" % (config['dirj'], config['rc2cpm']['id']),
+        j = lambda w: get_resource(w, config, 'rc2cpm'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'rc2cpm')['ppn']
+    conda: "../envs/work.yml"
+    shell:
+        """
+        rc2cpm.R {input.sam} {input.exp} {output} \
+            --opt featurecounts --yid {wildcards.yid} --config {input.cfg}
         """
 
 

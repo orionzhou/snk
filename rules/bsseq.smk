@@ -25,7 +25,8 @@ def bs2_extra(w):
     paireds = set([config['y'][yid]['t'][sid]['paired'] for sid in sids])
     if len(paireds) > 1:
         print("mid[ %s ] has both paired and single reads: %s" % (mid, sids))
-        sys.exit(1)
+        return '-p'
+#        sys.exit(1)
     elif paireds.pop():
         return '-p'
     else:

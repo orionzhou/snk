@@ -60,10 +60,12 @@ rule gatk_genotype_gvcfs:
     conda: "../envs/work.yml"
     shell:
 #        -L {input.bed} --include-non-variant-sites \
+#        -V gendb://{params.gendb} \
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" GenotypeGVCFs \
             {params.extra} -R {params.ref} \
-            -V gendb://{params.gendb} -O {output.vcf}
+            -V {input.vcf} \
+            -O {output.vcf}
         """
 
 rule gatk_merge_vcfs2:

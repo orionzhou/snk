@@ -37,7 +37,7 @@ config_job_default: /home/springer/zhoux379/git/snk/clusters/base.yml
 config_job: /home/springer/zhoux379/git/snk/clusters/job.xlsx
 job_default:
   id: job0
-  grouping: group
+  group: g0
   idir: ''
   odir: ''
   nodes: 1
@@ -236,9 +236,10 @@ rnaseq:
   od33c: 33c_ase3
   od33d: 33d_ase4
   od33e: 33e_ase5
+  meta: meta.tsv
   out_fcnt: featurecounts.rds
   out_mmq: mmquant.rds
-  out_rcpm: cpm_raw.rds
+  #  out_rcpm: cpm_raw.rds
   out_cpm: cpm.rds
   out_ase: ase.rds
   out_ase0: ase0.tsv

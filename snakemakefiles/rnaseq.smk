@@ -31,10 +31,14 @@ def all_outputs(w):
         outputs.append("%s/%s" % (odir, config['merge_bamstats']['out']))
         outputs.append("%s/%s" % (odir, config['rnaseq']['out_fcnt']))
 #        outputs.append("%s/%s" % (odir, config['rnaseq']['out_mmq']))
+        outputs.append("%s/%s" % (odir, config['rnaseq']['out_cpm']))
 #        if config['y'][yid]['ase']:
 #            outputs.append("%s/%s" % (odir, config['rnaseq']['out_ase']))
-        outputs.append("%s/%s" % (odir, config['rnaseq']['out_rcpm']))
-        outputs.append("%s/%s" % (odir, config['rnaseq']['out_cpm']))
+
+        meta = "%s/11_qc/%s/%s" % (config['dirh'], yid, config['rnaseq']['meta'])
+        if op.isfile(meta):
+            outputs.append("%s/11_qc/%s/%s" % (config['dirh'], yid, config['rnaseq']['out_cpm']))
+
     return outputs
 rule all:
     input: all_outputs

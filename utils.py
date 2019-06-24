@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 import collections
 import yaml
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 
 from snakemake.utils import update_config, makedirs
 from jcvi.utils.natsort import natsorted
@@ -269,9 +271,41 @@ def read_region_file(fr):
 #        print("%d regions read for %s" % (len(c[genome]['regions']), genome))
     return rdic
 
+def read_google_sheet(name='jobs', f_cred='/home/springer/zhoux379/.config/google_service_account.json'):
+    scope = ['https://spreadsheets.google.com/feeds',
+             'https://www.googleapis.com/auth/drive']
+    cred = ServiceAccountCredentials.from_json_keyfile_name(f_cred, scope)
+    gc = gspread.authorize(cred)
+
+    #book = gc.open_by_key('1SacBnsUW4fzqGYl0k5FVV5AFq2TJvUlBOIWp1NzLh88')
+    book= gc.open('coding')
+    sheet = book.worksheet(name)
+    df = pd.DataFrame(sheet.get_all_records())
+    return df
+
 def read_job_config(c):
+    df = read_google_sheet('jobs')
+    df = df.replace('', np.nan)
     ks = 'ppn runtime mem appn aruntime amem load'.split()
-    ks2 = 'ppns mems runtimes tasks rates'.split()
+    ks2 = 'ppns mems tasks rates'.split()
+    cvts = {k: int for k in ks}
+    cvts.update({k: str for k in ks2})
+    df = df.fillna(value = c['job_default'])
+    df['group'] = df['group'].ffill()
+    df = df.astype(cvts)
+
+    jdic = dict()
+    for i in range(len(df)):
+        rulename= df['rulename'][i]
+        jdic[rulename] = {x: df[x][i] for x in list(df) if x != 'rulename'}
+        for k in ks:
+            jdic[rulename][k] = int(jdic[rulename][k])
+
+    return jdic
+
+def o_read_job_config(c):
+    ks = 'ppn runtime mem appn aruntime amem load'.split()
+    ks2 = 'ppns mems tasks rates'.split()
     cvt = {k: int for k in ks}
     cvt.update({k: str for k in ks2})
     df = pd.read_excel(c['config_job'], sheet_name=0, header=0, converters=cvt)
@@ -286,11 +320,11 @@ def read_job_config(c):
 
     return jdic
 
-def check_genome(genome, c):
-    if genome not in c['x']:
-        g1, g2 = genome.split('x')
-        if g1 > g2:
-            genome = 'x'.join((g2, g1))
+def check_genome(genome, c, tag_hisat2=''):
+    # if genome not in c['x']:
+        # g1, g2 = genome.split('x')
+        # if g1 > g2:
+            # genome = 'x'.join((g2, g1))
     dirw = op.join(c['dirg'], genome)
 
     fos = []
@@ -300,8 +334,8 @@ def check_genome(genome, c):
             continue
         outkeys = outkeys.split()
         xdir = op.join(dirw, c['db'][db]['xdir'])
-        if genome == 'Zmays_B73' and db == 'hisat2': ### use snp-corrected ref
-            xdir = op.join(dirw, '21_dbs/hisat2_snp')
+        if db == 'hisat2' and tag_hisat2.startswith('B73_'):
+            xdir = op.join(dirw, '21_dbs/hisat2', tag_hisat2)
 
         gdic[db] = dict()
         for k,v in c['db'][db].items():
@@ -340,6 +374,24 @@ def check_genome(genome, c):
         assert op.isfile(fo), "%s not found" % fo
 
 def read_genome_config(c):
+    df = read_google_sheet('genomes')
+    cvts=dict(hybrid=bool, annotation=bool,
+        run=bool,
+        fasta=bool, blat=bool,
+        bwa=bool, star=bool, gatk=bool, hisat2=bool, snpeff=bool,
+        lastn=bool, lastp=bool, blastn=bool, blastp=bool,
+        bismark=bool,
+        tandup=bool, rds=bool)
+    df = df.astype(cvts)
+
+    xdic = dict()
+    for i in range(len(df)):
+        genome = df['genome'][i]
+        xdic[genome] = {x: df[x][i] for x in list(df) if x != 'genome'}
+
+    return xdic
+
+def o_read_genome_config(c):
     df = pd.read_excel(c['config_genome'], sheet_name=0, header=0,
                        converters={"hybrid": bool, "annotation":bool,
                                    "done":bool, "run":bool,
@@ -399,13 +451,13 @@ def check_config_default(c):
 def read_samplelist(diri, yid, part_size=100000000):
     y1 = dict()
     fs = "%s/%s.tsv" % (diri, yid)
-    fsc = "%s/%s.c.tsv" % (diri, yid)
+    #fsc = "%s/%s.c.tsv" % (diri, yid)
     assert op.isfile(fs), "samplelist not found: %s" % fs
     y1['samplelist'] = fs
-    if not op.isfile(fsc): fsc = fs
-    y1['samplelistc'] = fsc
+    #if not op.isfile(fsc): fsc = fs
+    #y1['samplelistc'] = fsc
 
-    sl = pd.read_csv(fsc, sep="\t", header=0)
+    sl = pd.read_csv(fs, sep="\t", header=0)
     y1['SampleID'] = sl['SampleID'].tolist()
     y1['t'], y1['gt'], y1['m'] = dict(), dict(), dict()
     cols = sl.columns.values.tolist()
@@ -440,6 +492,28 @@ def read_samplelist(diri, yid, part_size=100000000):
     return y1
 
 def read_study_list(c):
+    df = read_google_sheet('barn')
+    df = df.replace('', np.nan)
+    cvts = dict(interleaved=bool, ase=bool, stress=bool,
+                done=bool, run=bool, runB=bool, runD=bool, runR=bool)
+    defaults = dict(interleaved=False, accession='', format='sra',
+                    stranded='no',
+                    done=False, run=False, runB=False, runD=False, runR=False,
+                    ase=False, stress=False,
+                    ref='Zmays_B73', hisat2='')
+    df = df.fillna(defaults)
+    df = df.astype(cvts)
+
+    for i in range(len(df)):
+        y1 = {x: df[x][i] for x in list(df) if x != 'yid'}
+        keys_to_valid = 'source format readtype stranded mapper'.split()
+        for key_to_valid in keys_to_valid:
+            value_to_valid = y1[key_to_valid]
+            assert value_to_valid in c['valid'][key_to_valid], "invalid value for key[%s]: %s" % (key_to_valid, value_to_valid)
+
+    return df
+
+def o_read_study_list(c):
     fi = c['studylist']
     if 'studylist' not in c or not op.isfile(c['studylist']):
         print("cannot read %s" % fi)
@@ -451,7 +525,7 @@ def read_study_list(c):
 
     defaults = dict(interleaved=False, accession='', format='sra',
                     stranded='no',
-                    ase=False, stress=False, ref='Zmays_B73')
+                    ase=False, stress=False, ref='Zmays_B73', hisat2='')
     df = df.fillna(defaults)
 
     for i in range(len(df)):
@@ -525,16 +599,17 @@ def check_config_rnaseq(c):
         y1.update(read_samplelist(diri = diri, yid = yid))
         y[yid] = y1
 
-        if y1['ase']:
-            refs.update(set(y1['Genotypes']))
-        else:
-            refs.add(y1['ref'])
+#        if y1['ase']:
+#            refs.update(set(y1['Genotypes']))
+#        else:
+        ref, tag_hisat2 = y1['ref'], y1['hisat2']
+        if ref not in refs:
+            check_genome(ref, c, tag_hisat2)
+        refs.add(y1['ref'])
 
     c['y'] = y
     print('working on %s datasets' % num_run)
 
-    for ref in refs:
-       check_genome(ref, c)
     return c
 
 def create_sample_id_mapping(gts, yid, fo):
@@ -640,7 +715,6 @@ def check_config_bsseq(c):
         y1.update(read_samplelist(diri=diri, yid=yid, part_size=c['trimming']['part_size']))
         y[yid] = y1
 
-        if df['run'][i] and y1['meta']: meta = True
         refs.add(y1['ref'])
 
     c['y'] = y
