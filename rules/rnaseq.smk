@@ -41,7 +41,7 @@ rule merge_featurecounts:
         j = lambda w: get_resource(w, config, 'merge_featurecounts'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'merge_featurecounts')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell: "merge.stats.R --opt featurecounts -o {output} {input}"
 
 def mmquant_strand(w):
@@ -68,7 +68,7 @@ rule mmquant:
         j = lambda w: get_resource(w, config, 'mmquant'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'mmquant')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell:
         """
         mmquant -a {params.gtf} -r {input} \
@@ -87,7 +87,7 @@ rule merge_mmquant:
         j = lambda w: get_resource(w, config, 'merge_mmquant'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'merge_mmquant')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell: "merge.stats.R --opt mmquant -o {output} {input}"
 
 rule rc2cpm:
@@ -103,7 +103,7 @@ rule rc2cpm:
         j = lambda w: get_resource(w, config, 'rc2cpm'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'rc2cpm')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell:
         """
         rc2cpm.R {input.sam} {input.exp} {output} \
@@ -123,7 +123,7 @@ rule rc2cpm2:
         j = lambda w: get_resource(w, config, 'rc2cpm'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'rc2cpm')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell:
         """
         rc2cpm.R {input.sam} {input.exp} {output} \

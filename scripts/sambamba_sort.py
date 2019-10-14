@@ -9,9 +9,9 @@ if params.get('sort', '') == 'byname':
 fos = []
 for fi in input:
     fname = op.basename(fi)
-    if params.mapper == 'star':
+    if params.get('mapper','') == 'star':
         fname = op.basename(op.dirname(fi))
-    fo = op.join(params.odir, fname)
+    fo = op.join(params.get('odir'), fname)
     shell("sambamba sort {sort_tag} --tmpdir={params.tmp_dir} -t {threads} -o {fo} {fi}")
     fos.append(fo)
 

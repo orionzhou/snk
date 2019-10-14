@@ -23,7 +23,7 @@ def all_outputs(w):
         sids = config['y'][yid]['SampleID']
 #        outputs += expand("%s/%s/{sid}.rds" % (config['oid'], yid), sid=sids)
         mids = config['y'][yid]['MergeID']
-        outputs += expand("%s/%s/{mid}.{ctx}.bed.gz" % (config['bsseq']['odir'], yid), mid=mids, ctx=['cg','chg','chh'])
+        outputs += expand("%s/%s/{mid}.cx.gz" % (config['oid'], yid), mid=mids)
         outputs += expand("%s/%s/{mid}.bed.gz" % (config['oid'], yid), mid=mids)
     return outputs
 

@@ -2,8 +2,8 @@ def grn1_input(w):
     nid = w.nid
     mid = config['t'][nid]['mid']
     subid = config['t'][nid]['subid']
-    diri = "/home/springer/zhoux379/projects/rnaseq/data/raw"
-    return "%s/%s/cpm.rds" % (diri, mid)
+    diri = "/home/springer/zhoux379/projects/rnaseq/data/11_qc"
+    return ancient("%s/%s/cpm.rds" % (diri, mid))
 
 rule grn1_get_exp_mat:
     input: grn1_input
@@ -128,18 +128,32 @@ rule grn4_merge_cv:
         grn.meval.merge.R -o {output} {input}
         """
 
-rule grn7_eval:
+rule grn7_eval_go:
     input: "%s/{gopt}.{nid}.rds" % config['grn']['od15']
-    output: "%s/{eopt}.{gopt}.{nid}.rds" % config['grn']['od17']
+    output: "%s/go.{gopt}.{nid}.rds" % config['grn']['od17']
     params:
-        N = "%s.{eopt}.{gopt}.{nid}" % config['grn7_eval']['id'],
-        e = "%s/%s/{eopt}/{gopt}.{nid}.e" % (config['dirj'], config['grn7_eval']['id']),
-        o = "%s/%s/{eopt}/{gopt}.{nid}.o" % (config['dirj'], config['grn7_eval']['id']),
-        j = lambda w: get_resource(w, config, 'grn7_eval'),
+        perm = 1000,
+        N = "%s.{gopt}.{nid}" % config['grn7_eval_go']['id'],
+        e = "%s/%s/{gopt}/{nid}.e" % (config['dirj'], config['grn7_eval_go']['id']),
+        o = "%s/%s/{gopt}/{nid}.o" % (config['dirj'], config['grn7_eval_go']['id']),
+        j = lambda w: get_resource(w, config, 'grn7_eval_go'),
     resources: attempt = lambda w, attempt: attempt
-    threads: lambda w: get_resource(w, config, 'grn7_eval')['ppn']
+    threads: lambda w: get_resource(w, config, 'grn7_eval_go')['ppn']
     conda: "../envs/work.yml"
-    shell: "grn.eval.R {input} {output} --opt {wildcards.eopt} --permut 1000"
+    shell: "grn.eval.R {input} {output} -t go --permut 1000 -p {threads}"
+
+rule grn7_eval_nv:
+    input: "%s/{gopt}.{nid}.rds" % config['grn']['od15']
+    output: "%s/nv.{gopt}.{nid}.rds" % config['grn']['od17']
+    params:
+        N = "%s.{gopt}.{nid}" % config['grn7_eval_nv']['id'],
+        e = "%s/%s/{gopt}/{nid}.e" % (config['dirj'], config['grn7_eval_nv']['id']),
+        o = "%s/%s/{gopt}/{nid}.o" % (config['dirj'], config['grn7_eval_nv']['id']),
+        j = lambda w: get_resource(w, config, 'grn7_eval_nv'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'grn7_eval_nv')['ppn']
+    conda: "../envs/work.yml"
+    shell: "grn.eval.R {input} {output} -t nv"
 
 rule grn8_merge_eval:
     input:

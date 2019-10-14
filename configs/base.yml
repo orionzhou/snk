@@ -33,8 +33,8 @@ valid:
     - hisat2
     - bwa
     - bismark
+config: /home/springer/zhoux379/projects/master.xlsx
 config_job_default: /home/springer/zhoux379/git/snk/clusters/base.yml
-config_job: /home/springer/zhoux379/git/snk/clusters/job.xlsx
 job_default:
   id: job0
   group: g0
@@ -82,7 +82,6 @@ pbs_queue_config:
     mem: 24
     runtime: 125
 dirg: /home/springer/zhoux379/projects/genome/data
-config_genome: /home/springer/zhoux379/projects/genome/data/01.cfg.xlsx
 db:
   outkeys:
     fasta: ref chrom_size chrom_bed gap fchain bchain
@@ -229,6 +228,7 @@ merge_bamstats:
   outv: bamstats_v.tsv
 rnaseq:
   idir: 22_bam
+  ase_bcf: /home/springer/zhoux379/projects/reseq/data/ase_bcf
   od31f: 31_featurecounts
   od31m: 31_mmquant
   od33a: 33a_ase1
@@ -239,10 +239,9 @@ rnaseq:
   meta: meta.tsv
   out_fcnt: featurecounts.rds
   out_mmq: mmquant.rds
-  #  out_rcpm: cpm_raw.rds
   out_cpm: cpm.rds
   out_ase: ase.rds
-  out_ase0: ase0.tsv
+  out_ase2: ase2.rds
 cleanbam:
   idir: 22_bam
   od23: 23_mark_dup
@@ -271,12 +270,28 @@ callvnt2:
   od10: 10_genomics_db
   od20: 20_vcfs_by_region
   of30: 30.vcf.gz
+  od31: 31_picked
   of31a: 31.snp.vcf.gz
   of31b: 31.idl.vcf.gz
+  of32a: 32.recal.vcf
+  of32b: 32.tranches
   of33: 33.snp.vcf.gz
+  of34a: 34.recal.vcf
+  of34b: 34.tranches
   of35: 35.snp.indel.vcf.gz
+  od36: 36_filtered
   of37: 37.filtered.vcf.gz
-  of38: 38.eff.vcf.gz
+  od38: 38_snpeff
+  od39: 39_stats
+  odir: vcf
+  out_stat: bcftools_stats.rds
+callvnt3:
+  od10: 10_filtered
+  of11: 11.snp.vcf.gz
+  of11b: 11.stat.tsv
+  of12: 12.idl.vcf.gz
+  od21: 21_vcf
+  od22: 22_ase_bcf
 gatk:
   cmd: gatk
 wgc:

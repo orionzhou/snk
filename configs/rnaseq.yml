@@ -1,3 +1,2 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 pid: rnaseq
-studylist: /home/springer/zhoux379/projects/rnaseq/data/01.cfg.xlsx

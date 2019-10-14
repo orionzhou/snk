@@ -8,10 +8,8 @@ grn:
     - et
     - xgb
   eopts:
-    - tf
     - go
-    - br
-    - bm
+    - nv
   od11: 11_em_raw
   od12: 12_em_filt
   od14: 14_grn_pkl

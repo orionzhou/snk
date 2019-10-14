@@ -3,8 +3,25 @@ pid: reseq
 wid: phylo
 studylist: /home/springer/zhoux379/projects/reseq/phylo/01.cfg.xlsx
 phylo:
-  of10: 10.vcf.gz
-  of21: 21.snp.vcf.gz
-  of22: 22.idl.vcf.gz
+  od10: 10_filtered
+  of11: 11.snp.vcf.gz
+  of11b: 11.stat.tsv
+  of12: 12.idl.vcf.gz
   of31: 31.vcf.gz
-  of35: 35.treefile
+  of35: 35.nwk
+y:
+  ph01:
+    vid: j01
+    n: 436
+    ref: Zmays_B73
+    run: True
+  ph02:
+    vid: j02
+    n: 30
+    ref: Zmays_B73
+    run: False
+  ph05:
+    vid: j01
+    n: 91
+    ref: Zmays_B73
+    run: True

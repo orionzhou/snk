@@ -21,7 +21,8 @@ def all_outputs(w):
         if not ydic['run']: continue
         odir = "%s/%s" % (config['oid'], yid)
         if config['g'][ydic['ref']]['annotation']:
-            outputs.append("%s/%s" % (odir, config['callvnt2']['of38']))
+            outputs.append("%s/%s.vcf.gz" % (config['callvnt2']['odir'], yid))
+            outputs.append("%s/%s/%s" % (config['oid'], yid, config['callvnt2']['out_stat']))
         else:
             outputs.append("%s/%s" % (odir, config['callvnt2']['of37']))
     return outputs

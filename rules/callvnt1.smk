@@ -1,12 +1,12 @@
 include: 'gatk.smk'
 
-def gatk_hc_inputs(w):
+def cv11_inputs(w):
     yid, gt = w.yid, w.gt
     sids = config['y'][yid]['gt'][gt]
     return expand(ancient("%s/%s/{sid}.bam" % (yid, config['callvnt']['idir'])), sid = sids)
 
-rule gatk_haplotype_caller:
-    input: gatk_hc_inputs
+rule cv11_hc:
+    input: cv11_inputs
     output:
         temp("{yid}/%s/{gt}/{rid}.g.vcf.gz" % config['callvnt']['od25']),
         temp("{yid}/%s/{gt}/{rid}.g.vcf.gz.tbi" % config['callvnt']['od25'])
@@ -16,13 +16,13 @@ rule gatk_haplotype_caller:
         input_str = lambda w, input: ["-I %s" % x for x in input],
         region = lambda w: config['g'][config['y'][w.yid]['ref']]['win56'][w.rid],
         extra = gatk_extra(picard = False, jdk = True, hc = True),
-        N = "{yid}.%s.{gt}.{rid}" % config['gatk_haplotype_caller']['id'],
-        e = "{yid}/%s/%s/{gt}/{rid}.e" % (config['dirj'], config['gatk_haplotype_caller']['id']),
-        o = "{yid}/%s/%s/{gt}/{rid}.o" % (config['dirj'], config['gatk_haplotype_caller']['id']),
-        j = lambda w: get_resource(w, config, 'gatk_haplotype_caller'),
-        mem = lambda w: get_resource(w, config, 'gatk_haplotype_caller')['mem'],
+        N = "{yid}.%s.{gt}.{rid}" % config['cv11_hc']['id'],
+        e = "{yid}/%s/%s/{gt}/{rid}.e" % (config['dirj'], config['cv11_hc']['id']),
+        o = "{yid}/%s/%s/{gt}/{rid}.o" % (config['dirj'], config['cv11_hc']['id']),
+        j = lambda w: get_resource(w, config, 'cv11_hc'),
+        mem = lambda w: get_resource(w, config, 'cv11_hc')['mem'],
     resources: attempt = lambda w, attempt: attempt
-    threads: lambda w: get_resource(w, config, 'gatk_haplotype_caller')['ppn']
+    threads: lambda w: get_resource(w, config, 'cv11_hc')['ppn']
     conda: "../envs/work.yml"
     shell:
         #-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation \
@@ -34,7 +34,7 @@ rule gatk_haplotype_caller:
         {params.input_str} -O {output[0]}
         """
 
-def merge_vcf_inputs(w):
+def cv12_inputs(w):
     yid, gt = w.yid, w.gt
     rids = natsorted(config['g'][config['y'][yid]['ref']]['win56'].keys())
     vcfs = expand("%s/%s/%s/{rid}.g.vcf.gz" %
@@ -43,8 +43,8 @@ def merge_vcf_inputs(w):
         (yid, config['callvnt']['od25'], gt), rid = rids)
     return {'vcfs':vcfs, 'tbis':tbis}
 
-rule gatk_merge_vcfs:
-    input: unpack(merge_vcf_inputs)
+rule cv12_merge_vcfs:
+    input: unpack(cv12_inputs)
     output:
         vcf = "{yid}/%s/{gt}.g.vcf.gz" % config['callvnt']['od26'],
         tbi = "{yid}/%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['od26']
@@ -52,13 +52,13 @@ rule gatk_merge_vcfs:
         cmd = config['gatk']['cmd'],
         input_str = lambda w, input: ["-I %s" % x for x in input.vcfs],
         extra = gatk_extra(picard = True),
-        N = "{yid}.%s.{gt}" % config['gatk_merge_vcfs']['id'],
-        e = "{yid}/%s/%s/{gt}.e" % (config['dirj'], config['gatk_merge_vcfs']['id']),
-        o = "{yid}/%s/%s/{gt}.o" % (config['dirj'], config['gatk_merge_vcfs']['id']),
-        j = lambda w: get_resource(w, config, 'gatk_merge_vcfs'),
-        mem = lambda w: get_resource(w, config, 'gatk_merge_vcfs')['mem'],
+        N = "{yid}.%s.{gt}" % config['cv12_merge_vcfs']['id'],
+        e = "{yid}/%s/%s/{gt}.e" % (config['dirj'], config['cv12_merge_vcfs']['id']),
+        o = "{yid}/%s/%s/{gt}.o" % (config['dirj'], config['cv12_merge_vcfs']['id']),
+        j = lambda w: get_resource(w, config, 'cv12_merge_vcfs'),
+        mem = lambda w: get_resource(w, config, 'cv12_merge_vcfs')['mem'],
     resources: attempt = lambda w, attempt: attempt
-    threads: lambda w: get_resource(w, config, 'gatk_merge_vcfs')['ppn']
+    threads: lambda w: get_resource(w, config, 'cv12_merge_vcfs')['ppn']
     conda: "../envs/work.yml"
     shell:
         """
@@ -67,7 +67,7 @@ rule gatk_merge_vcfs:
         {params.input_str} -O {output.vcf}
         """
 
-rule gatk_rename:
+rule cv13_rename:
     input:
         vcf = "{yid}/%s/{gt}.g.vcf.gz" % config['callvnt']['od26'],
         tbi = "{yid}/%s/{gt}.g.vcf.gz.tbi" % config['callvnt']['od26']
@@ -79,13 +79,13 @@ rule gatk_rename:
         cmd = config['gatk']['cmd'],
         extra = gatk_extra(picard = True, jdk = False),
         ngt = "{yid}#{gt}",
-        N = "{yid}.%s.{gt}" % config['gatk_rename']['id'],
-        e = "{yid}/%s/%s/{gt}.e" % (config['dirj'], config['gatk_rename']['id']),
-        o = "{yid}/%s/%s/{gt}.o" % (config['dirj'], config['gatk_rename']['id']),
-        j = lambda w: get_resource(w, config, 'gatk_rename'),
-        mem = lambda w: get_resource(w, config, 'gatk_rename')['mem'],
+        N = "{yid}.%s.{gt}" % config['cv13_rename']['id'],
+        e = "{yid}/%s/%s/{gt}.e" % (config['dirj'], config['cv13_rename']['id']),
+        o = "{yid}/%s/%s/{gt}.o" % (config['dirj'], config['cv13_rename']['id']),
+        j = lambda w: get_resource(w, config, 'cv13_rename'),
+        mem = lambda w: get_resource(w, config, 'cv13_rename')['mem'],
     resources: attempt = lambda w, attempt: attempt
-    threads: lambda w: get_resource(w, config, 'gatk_rename')['ppn']
+    threads: lambda w: get_resource(w, config, 'cv13_rename')['ppn']
     conda: "../envs/work.yml"
     shell:
         """
@@ -96,7 +96,7 @@ rule gatk_rename:
         bcftools stats -s - {output.vcf} > {output.stat}
         """
 
-rule merge_vcfstats:
+rule cv14_vcfstats:
     input:
         lambda w: expand("%s/%s/{gt}.txt" % (config['callvnt']['odir'], w.yid), gt = config['y'][w.yid]['Genotypes'])
     output:

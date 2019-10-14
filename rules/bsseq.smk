@@ -64,21 +64,9 @@ rule bs2_extract:
 rule bs3_convert:
     input: "{yid}/%s/{mid}.CX_report.txt" % config['bsseq']['od33']
     output:
-        cx = "%s/{yid}/{mid}.cx.gz" % config['bsseq']['odir'],
-        bed1 = "%s/{yid}/{mid}.cg.bed.gz" % config['bsseq']['odir'],
-        bed2 = "%s/{yid}/{mid}.chg.bed.gz" % config['bsseq']['odir'],
-        bed3 = "%s/{yid}/{mid}.chh.bed.gz" % config['bsseq']['odir'],
-        out = "%s/{yid}/{mid}.bed.gz" % config['oid'],
+        cx = "%s/{yid}/{mid}.cx.gz" % config['oid'],
     params:
-        itv = lambda w: config['g'][config['y'][w.yid]['ref']]["annotation"]['bsseq'],
-        cx = "%s/{yid}/{mid}.cx" % config['bsseq']['odir'],
-        bed1 = "%s/{yid}/{mid}.cg.bed" % config['bsseq']['odir'],
-        bed2 = "%s/{yid}/{mid}.chg.bed" % config['bsseq']['odir'],
-        bed3 = "%s/{yid}/{mid}.chh.bed" % config['bsseq']['odir'],
-        out1 = "%s/{yid}/{mid}.cg.bed" % config['oid'],
-        out2 = "%s/{yid}/{mid}.chg.bed" % config['oid'],
-        out3 = "%s/{yid}/{mid}.chh.bed" % config['oid'],
-        out = "%s/{yid}/{mid}.bed" % config['oid'],
+        cx = "%s/{yid}/{mid}.cx" % config['oid'],
         N = "{yid}.%s.{mid}" % config['bs3_convert']['id'],
         e = "{yid}/%s/%s/{mid}.e" % (config['dirj'], config['bs3_convert']['id']),
         o = "{yid}/%s/%s/{mid}.o" % (config['dirj'], config['bs3_convert']['id']),
@@ -93,30 +81,51 @@ rule bs3_convert:
         """
         sort -S {params.mem}G -k1,1 -k2,2n {input} > {params.cx}
         gzip {params.cx}
+        """
 
-        zcat {output.cx} | bioawk -t \
-            '{{if($4+$5 > 0 && $6=="CG") print $1,$2-1,$2,$3,$4,$5,$6}}' \
-            > {params.bed1}
-        zcat {output.cx} | bioawk -t \
-            '{{if($4+$5 > 0 && $6=="CHG") print $1,$2-1,$2,$3,$4,$5,$6}}' \
-            > {params.bed2}
-        zcat {output.cx} | bioawk -t \
-            '{{if($4+$5 > 0 && $6=="CHH") print $1,$2-1,$2,$3,$4,$5,$6}}' \
-            > {params.bed3}
+rule bs4_intersect:
+    input: "%s/{yid}/{mid}.cx.gz" % config['oid']
+    output: "%s/{yid}/{mid}.bed.gz" % config['oid'],
+    params:
+        itv = lambda w: config['g'][config['y'][w.yid]['ref']]["annotation"]['bsseq'],
+        o1a = "%s/{yid}/{mid}.1.cg.bed" % config['oid'],
+        o1b = "%s/{yid}/{mid}.1.chg.bed" % config['oid'],
+        o1c = "%s/{yid}/{mid}.1.chh.bed" % config['oid'],
+        o2a = "%s/{yid}/{mid}.2.cg.bed" % config['oid'],
+        o2b = "%s/{yid}/{mid}.2.chg.bed" % config['oid'],
+        o2c = "%s/{yid}/{mid}.2.chh.bed" % config['oid'],
+        out = "%s/{yid}/{mid}.bed" % config['oid'],
+        N = "{yid}.%s.{mid}" % config['bs4_intersect']['id'],
+        e = "{yid}/%s/%s/{mid}.e" % (config['dirj'], config['bs4_intersect']['id']),
+        o = "{yid}/%s/%s/{mid}.o" % (config['dirj'], config['bs4_intersect']['id']),
+        j = lambda w: get_resource(w, config, 'bs4_intersect'),
+        mem = lambda w: get_resource(w, config, 'bs4_intersect')['mem'] - 5
+    resources: attempt = lambda w, attempt: attempt
+    threads: config['bs4_intersect']['ppn']
+    conda: "../envs/work.yml"
+    shell:
+        """
+        zcat {input} | bioawk -t \
+            '{{if($4+$5 >= 0 && $6=="CG") print $1,$2-1,$2,$3,$4,$5,$6}}' \
+            > {params.o1a}
+        zcat {input} | bioawk -t \
+            '{{if($4+$5 >= 0 && $6=="CHG") print $1,$2-1,$2,$3,$4,$5,$6}}' \
+            > {params.o1b}
+        zcat {input} | bioawk -t \
+            '{{if($4+$5 >= 0 && $6=="CHH") print $1,$2-1,$2,$3,$4,$5,$6}}' \
+            > {params.o1c}
 
-        intersectBed -a {params.itv} -b {params.bed1} -wo -sorted | \
-            groupBy -i stdin -g 1-6 -c 11,11,12,13 -o count,sum,sum,distinct > {params.out1}
-        intersectBed -a {params.itv} -b {params.bed2} -wo -sorted | \
-            groupBy -i stdin -g 1-6 -c 11,11,12,13 -o count,sum,sum,distinct > {params.out2}
-        intersectBed -a {params.itv} -b {params.bed3} -wo -sorted | \
-            groupBy -i stdin -g 1-6 -c 11,11,12,13 -o count,sum,sum,distinct > {params.out3}
-        cat {params.out1} {params.out2} {params.out3} | \
+        intersectBed -a {params.itv} -b {params.o1a} -wo -sorted | \
+            groupBy -i stdin -g 1-6 -c 11,11,12,13 -o count,sum,sum,distinct > {params.o2a}
+        intersectBed -a {params.itv} -b {params.o1b} -wo -sorted | \
+            groupBy -i stdin -g 1-6 -c 11,11,12,13 -o count,sum,sum,distinct > {params.o2b}
+        intersectBed -a {params.itv} -b {params.o1c} -wo -sorted | \
+            groupBy -i stdin -g 1-6 -c 11,11,12,13 -o count,sum,sum,distinct > {params.o2c}
+        cat {params.o2a} {params.o2b} {params.o2c} | \
             sort -S {params.mem}G -k1,1 -k2,2n -k3,3n > {params.out}
-        gzip {params.bed1}
-        gzip {params.bed2}
-        gzip {params.bed3}
         gzip {params.out}
-        rm {params.out1} {params.out2} {params.out3}
+        rm {params.o1a} {params.o1b} {params.o1c}
+        rm {params.o2a} {params.o2b} {params.o2c}
         """
 
 

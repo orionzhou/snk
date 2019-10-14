@@ -67,6 +67,15 @@ rule fq_extract:
             shell("touch {output.r1} {output.r2}")
 
 
+def fastp_extra(w):
+    yid, sid, part = w.yid, w.sid, w.part
+    readtype = config['y'][yid]['readtype']
+    assert readtype in config['valid']['readtype'], "invalid readtype: %s" % readtype
+    extra = ''
+    if readtype == '3rnaseq':
+        extra += '-x '
+    return extra
+
 rule fastp:
     input:
         r0 = ancient("{yid}/%s/{sid}_{part}.fq" % config['trimming']['od12']),
@@ -80,6 +89,7 @@ rule fastp:
         html = "{yid}/%s/{sid}_{part}.html" % config['trimming']['od14p']
     params:
         paired = lambda w: int(config['y'][w.yid]['t'][w.sid]['paired']),
+        extra = fastp_extra,
         N = "{yid}.%s.{sid}{part}" % config['fastp']['id'],
         e = "{yid}/%s/%s/{sid}{part}.e" % (config['dirj'], config['fastp']['id']),
         o = "{yid}/%s/%s/{sid}{part}.o" % (config['dirj'], config['fastp']['id']),
@@ -132,7 +142,10 @@ rule bbduk:
     threads: lambda w: get_resource(w, config, 'bbduk')['ppn']
     conda: "../envs/work.yml"
     shell:
-        "{params.cmd} in={input} out={output.r0} {params.extra} stats={output.json}"
+        """
+        {params.cmd} in={input} out={output.r0} json=t {params.extra} >{output.json} 2>&1
+        touch {output.r1} {output.r2}
+        """
 
 def trimming_inputs(w):
     yid, sid, part = w.yid, w.sid, w.part
@@ -179,11 +192,12 @@ rule merge_trimstats:
     output:
         protected("%s/{yid}/%s" % (config['oid'], config['trimming']['out']))
     params:
+        opt = lambda w: 'bbduk' if config['y'][w.yid]['readtype'] == '3rnaseq' else 'fastp',
         N = "{yid}.%s" % (config['merge_trimstats']['id']),
         e = "{yid}/%s/%s.e" % (config['dirj'], config['merge_trimstats']['id']),
         o = "{yid}/%s/%s.o" % (config['dirj'], config['merge_trimstats']['id']),
         j = lambda w: get_resource(w, config, 'merge_trimstats'),
     resources: attempt = lambda w, attempt: attempt
     conda: "../envs/work.yml"
-    shell: "jsonutil.py fastp {input} > {output}"
+    shell: "jsonutil.py {params.opt} {input} > {output}"
 

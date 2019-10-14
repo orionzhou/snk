@@ -2,15 +2,7 @@ config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 pid: reseq
 wid: data
 y:
-  j01:
-    yid: j01
-    n: 436
-    ref: Zmays_B73
-    run: False
-  j07:
-    yid: j07
-    n: 962
+  vt01:
+    vid: j01
     ref: Zmays_B73
     run: True
-
-

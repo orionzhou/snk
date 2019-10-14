@@ -5,9 +5,10 @@ channels:
   - r
   - defaults
 dependencies:
-  - biopython=1.73
-  - ca-certificates=2019.3.9
-  - certifi=2019.3.9
+  - _libgcc_mutex=0.1
+  - biopython=1.74
+  - ca-certificates=2019.6.16
+  - certifi=2019.6.16
   - egglib=3.0.0b21
   - libblas=3.8.0
   - libcblas=3.8.0
@@ -15,11 +16,12 @@ dependencies:
   - libgcc-ng=9.1.0
   - libgfortran-ng=7.3.0
   - liblapack=3.8.0
+  - libopenblas=0.3.6
   - libstdcxx-ng=9.1.0
   - ncurses=6.1
   - numpy=1.16.4
   - openblas=0.3.6
-  - openssl=1.1.1b
+  - openssl=1.1.1c
   - paml=4.9
   - pandas=0.24.2
   - pip=19.1.1
@@ -27,10 +29,10 @@ dependencies:
   - python=2.7.15
   - python-dateutil=2.8.0
   - pytz=2019.1
-  - readline=7.0
+  - readline=8.0
   - setuptools=41.0.1
   - six=1.12.0
-  - sqlite=3.28.0
+  - sqlite=3.29.0
   - tk=8.6.9
   - wheel=0.33.4
   - zlib=1.2.11
