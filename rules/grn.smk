@@ -20,7 +20,7 @@ rule grn1_get_exp_mat:
         j = lambda w: get_resource(w, config, 'grn1_get_exp_mat'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'grn1_get_exp_mat')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell:
         """
         cpm.filter.R {input} {output.raw} \
@@ -69,7 +69,7 @@ rule grn3_convert:
         j = lambda w: get_resource(w, config, 'grn3_convert'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'grn3_convert')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell: "grn.pkl2rds.R {input.em} {input.pkl} {output}"
 
 rule grn4_merge:
@@ -83,7 +83,7 @@ rule grn4_merge:
         j = lambda w: get_resource(w, config, 'grn4_merge'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'grn4_merge')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell: "grn.merge.R {output} --gopt {wildcards.gopt}"
 
 rule grn3_cv:
@@ -122,25 +122,48 @@ rule grn4_merge_cv:
         j = lambda w: get_resource(w, config, 'grn4_merge_cv'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'grn4_merge_cv')['ppn']
-    conda: "../envs/work.yml"
-    shell:
-        """
-        grn.meval.merge.R -o {output} {input}
-        """
+    conda: "../envs/r.yml"
+    shell: "grn.meval.merge.R -o {output} {input}"
+
+rule grn7_eval_bs:
+    input: "%s/{gopt}.{nid}.rds" % config['grn']['od15']
+    output: "%s/bs.{gopt}.{nid}.rds" % config['grn']['od17']
+    params:
+        N = "%s.{gopt}.{nid}" % config['grn7_eval_bs']['id'],
+        e = "%s/%s/{gopt}/{nid}.e" % (config['dirj'], config['grn7_eval_bs']['id']),
+        o = "%s/%s/{gopt}/{nid}.o" % (config['dirj'], config['grn7_eval_bs']['id']),
+        j = lambda w: get_resource(w, config, 'grn7_eval_bs'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'grn7_eval_bs')['ppn']
+    conda: "../envs/r.yml"
+    shell: "grn.eval.R {input} {output} -t bs"
+
+rule grn7_eval_ko:
+    input: "%s/{gopt}.{nid}.rds" % config['grn']['od15']
+    output: "%s/ko.{gopt}.{nid}.rds" % config['grn']['od17']
+    params:
+        N = "%s.{gopt}.{nid}" % config['grn7_eval_ko']['id'],
+        e = "%s/%s/{gopt}/{nid}.e" % (config['dirj'], config['grn7_eval_ko']['id']),
+        o = "%s/%s/{gopt}/{nid}.o" % (config['dirj'], config['grn7_eval_ko']['id']),
+        j = lambda w: get_resource(w, config, 'grn7_eval_ko'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'grn7_eval_ko')['ppn']
+    conda: "../envs/r.yml"
+    shell: "grn.eval.R {input} {output} -t ko"
 
 rule grn7_eval_go:
     input: "%s/{gopt}.{nid}.rds" % config['grn']['od15']
     output: "%s/go.{gopt}.{nid}.rds" % config['grn']['od17']
     params:
-        perm = 1000,
+        perm = 500,
         N = "%s.{gopt}.{nid}" % config['grn7_eval_go']['id'],
         e = "%s/%s/{gopt}/{nid}.e" % (config['dirj'], config['grn7_eval_go']['id']),
         o = "%s/%s/{gopt}/{nid}.o" % (config['dirj'], config['grn7_eval_go']['id']),
         j = lambda w: get_resource(w, config, 'grn7_eval_go'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'grn7_eval_go')['ppn']
-    conda: "../envs/work.yml"
-    shell: "grn.eval.R {input} {output} -t go --permut 1000 -p {threads}"
+    conda: "../envs/r.yml"
+    shell: "grn.eval.R {input} {output} -t go --permut {params.perm} -p {threads}"
 
 rule grn7_eval_nv:
     input: "%s/{gopt}.{nid}.rds" % config['grn']['od15']
@@ -152,7 +175,7 @@ rule grn7_eval_nv:
         j = lambda w: get_resource(w, config, 'grn7_eval_nv'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'grn7_eval_nv')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell: "grn.eval.R {input} {output} -t nv"
 
 rule grn8_merge_eval:
@@ -166,6 +189,6 @@ rule grn8_merge_eval:
         j = lambda w: get_resource(w, config, 'grn8_merge_eval'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'grn8_merge_eval')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell: "grn.eval.merge.R {output} --gopt {wildcards.gopt} --eopt {wildcards.eopt}"
 

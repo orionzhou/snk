@@ -1,2 +1,5 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 pid: rnaseq
+ril_variant:
+  rn13a: /home/springer/zhoux379/projects/reseq/data/variants/Mo17.tsv.gz
+  rn15d: /home/springer/zhoux379/projects/reseq/data/variants/H99.tsv.gz

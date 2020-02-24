@@ -8,7 +8,7 @@ workdir: config['dirw']
 
 wildcard_constraints:
     yid = "[a-zA-Z0-9]+",
-    sid = "[a-zA-Z0-9]+",
+    sid = "[a-zA-Z0-9\-]+",
 
 localrules: all
 def all_outputs(w):

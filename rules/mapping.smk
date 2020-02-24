@@ -29,7 +29,7 @@ def mapping_input_str(w, input, mapper):
     return input_str
 
 def db_index(w, db):
-    yid, sid = w.yid, w.sid
+    yid = w.yid
     ref = config['y'][yid]['ref']
 #    if 'ase' in config['y'][yid] and config['y'][yid]['ase']:
 #        ref = config['y'][yid]['t'][sid]['Genotype']
@@ -45,6 +45,8 @@ def db_index(w, db):
         return config['g'][ref]["bismark"]['xpre']
     elif db == 'gtf':
         return config['g'][ref]["annotation"]['gtf']
+    elif db == 'gatk':
+        return config['g'][ref]["gatk"]['xref']
     else:
         print('unknown db: %d' % db)
         sys.exit(1)
@@ -53,11 +55,15 @@ def star_extra(w):
     extras = """
         --outSAMmapqUnique 60
         --outFilterType BySJout
-        --outFilterMultimapNmax 20
+        --outFilterMultimapNmax 10
+        --outFilterMismatchNmax 999
+        --outFilterMismatchNoverLmax 1
+        --outFilterMismatchNoverReadLmax 1.0
+        --outFilterMatchNminOverLread 0
+        --outFilterMatchNmin 0
+        --outFilterScoreMinOverLread 0
         --alignSJoverhangMin 8
         --alignSJDBoverhangMin 1
-        --outFilterMismatchNmax 999
-        --outFilterMismatchNoverReadLmax 1.0
         --alignIntronMin 20
         --alignIntronMax 1000000
         --alignMatesGapMax 1000000
@@ -270,7 +276,7 @@ rule merge_bamstats:
         j = lambda w: get_resource(w, config, 'merge_bamstats'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'merge_bamstats')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell: "merge.stats.R --opt bam_stat -o {output} {input}"
 
 

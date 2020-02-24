@@ -6,6 +6,7 @@ yid, gt = wildcards.yid, wildcards.gt
 adic = config['y'][yid]['ase'][gt]
 inbred,sid,sid1,sid2 = adic['inbred'], adic['sid'], adic['sid1'], adic['sid2']
 min_gq = params.min_gq
+ref = params.ref
 
 sids = []
 if inbred:
@@ -23,12 +24,14 @@ sid_str = ",".join(sids)
 if len(sids) == 1:
     shell("""
         bcftools view -a -s {sid_str} {input.vcf} -Ou | \
-            bcftools view -i 'GQ>={min_gq} & GT="AA"' -Oz -o {output.vcf}
+            bcftools view -i 'ALT!="*" && GQ>={min_gq} && GT="AA"' -Ou | \
+            bcftools norm -f {ref} -Oz -o {output.vcf}
     """)
 else:
     shell("""
         bcftools view -a -s {sid_str} {input.vcf} -Ou | \
-            bcftools view -i 'N_PASS(GQ>={min_gq}) = 2 & N_PASS(GT="AA") = 1 & N_PASS(GT="RR") = 1' -Oz -o {output.vcf}
+            bcftools view -i 'ALT!="*" && N_PASS(GQ>={min_gq}) = 2 && N_PASS(GT="AA") = 1 & N_PASS(GT="RR") = 1' -Ou | \
+            bcftools norm -f {ref} -Oz -o {output.vcf}
     """)
 
 eff = output.stat.replace('.txt', '.tsv')
@@ -80,7 +83,7 @@ fho.close()
 
 shell("""
     bgzip {params.vcf2}
-    bcftools view -Ob {output.vcf2} -o {output.bcf}
+    bcftools view -v snps -Ob {output.vcf2} -o {output.bcf}
     bcftools index -c {output.bcf}
     """)
 

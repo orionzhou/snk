@@ -78,14 +78,10 @@ def fq_copy_inputs(w):
         idir = config['barn']['od09d']
     elif source == 'local':
         fmt = config['y'][yid]['format']
-        if fmt in ['umgc','jgi','simple']:
-            if config['y'][yid]['interleaved']:
-                idir = config['barn']['od09v']
-            else:
-                idir = config['barn']['od09z']
+        if config['y'][yid]['interleaved']:
+            idir = config['barn']['od09v']
         else:
-            print("unsupported format: %s for %s" % (fmt, sid))
-            sys.exit(1)
+            idir = config['barn']['od09z']
     else:
         print("unsupported source: %s for %s" % (source, sid))
         sys.exit(1)
@@ -185,6 +181,6 @@ rule update_readlist:
         j = lambda w: get_resource(w, config, 'update_readlist'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'update_readlist')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/r.yml"
     shell: "samplelist_addstat.R {input.sl} {input.fqc} {output}"
 

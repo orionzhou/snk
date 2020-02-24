@@ -178,80 +178,6 @@ def get_resource(w, c, rulename):
     ppn, mem, runtime = [int(x) for x in (ppn, mem, runtime)]
     return dict(q=q,ppn=ppn,mem=mem,runtime=runtime,appn=appn,amem=amem,aruntime=aruntime,load=load)
 
-def o_get_config_resource(config, k1, k2 = ''):
-    assert k1 in config, '%s not in config' % k1
-    c = config[k1]
-    q, aq = 0, 0
-    runtime, aruntime = 8, 2
-    mem, amem = 10, 5
-    ppn, appn = 1, 0
-    load = 1
-    if k2 != '':
-        assert k2 in config[k1], '%s not in config[%s]' % (k2, k1)
-        c2 = config[k1][k2]
-        if 'q' in c2: q = c2['q']
-        elif 'q' in c: q = c['q']
-        if 'aq' in c2: aq = c2['aq']
-        elif 'aq' in c: aq = c['aq']
-        if 'ppn' in c2: ppn = c2['ppn']
-        elif 'ppn' in c: ppn = c['ppn']
-        if 'appn' in c2: appn = c2['ppn']
-        elif 'appn' in c: appn = c['appn']
-        if 'runtime' in c2: runtime = c2['runtime']
-        elif 'runtime' in c: runtime = c['runtime']
-        if 'aruntime' in c2: aruntime = c2['aruntime']
-        elif 'runtime' in c: aruntime = c['aruntime']
-        if 'mem' in c2: mem = c2['mem']
-        elif 'mem' in c: mem = c['mem']
-        if 'amem' in c2: amem = c2['amem']
-        elif 'amem' in c: amem = c['amem']
-        if 'load' in c2: load = c2['load']
-        elif 'load' in c: load = c['load']
-    else:
-        if 'q' in c: q = c['q']
-        if 'aq' in c: aq = c['aq']
-        if 'ppn' in c: ppn = c['ppn']
-        if 'appn' in c: appn = c['appn']
-        if 'runtime' in c: runtime = c['runtime']
-        if 'aruntime' in c: aruntime = c['aruntime']
-        if 'mem' in c: mem = c['mem']
-        if 'amem' in c: amem = c['amem']
-        if 'load' in c: load = c['load']
-    return dict(q=q, aq=aq, runtime=runtime, aruntime=aruntime,
-                mem=mem, amem=amem, ppn=ppn, appn=appn, load=load)
-
-def o_get_resource(w, config, attempt, k1, k2 = ''):
-    #r = get_config_resource(config, k1, k2)
-    r = config[k1]
-    q = r['q'] + r['aq'] * (attempt - 1)
-    load = r['load']
-
-    rulename = k1
-    if k2 != '': rulename = "_".join((k1, k2))
-    r2 = estimate_resource(w, config, rulename)
-
-    ppn = r['ppn']
-    if r2.get('ppn') != None:
-        ppn = max(ppn, r2['ppn'])
-
-    runtime = r['runtime']
-    if r2.get('runtime') != None:
-        runtime = max(runtime, r2['runtime'])
-
-    mem = r['mem']
-    if r2.get('mem') != None:
-        mem = max(mem, r2['mem'])
-
-    ppn = ppn + r['appn'] * (attempt - 1)
-    runtime += r['aruntime'] * (attempt - 1)
-    mem += r['amem'] * (attempt - 1)
-
-    res = dict(q=q,ppn=ppn,runtime=runtime,mem=mem,load=load)
-    for k, v in res.items():
-        res[k] = int(v)
-
-    return res
-
 def read_region_file(fr):
     rdic = dict()
     tr = pd.read_csv(fr, sep='\t', header=0)
@@ -295,26 +221,6 @@ def read_job_config(c):
 
     return jdic
 
-def o_read_job_config(c):
-    df = read_google_sheet('jobs')
-    df = df.replace('', np.nan)
-    ks = 'ppn runtime mem appn aruntime amem load'.split()
-    ks2 = 'ppns mems tasks rates'.split()
-    cvts = {k: int for k in ks}
-    cvts.update({k: str for k in ks2})
-    df = df.fillna(value = c['job_default'])
-    df['group'] = df['group'].ffill()
-    df = df.astype(cvts)
-
-    jdic = dict()
-    for i in range(len(df)):
-        rulename= df['rulename'][i]
-        jdic[rulename] = {x: df[x][i] for x in list(df) if x != 'rulename'}
-        for k in ks:
-            jdic[rulename][k] = int(jdic[rulename][k])
-
-    return jdic
-
 def read_genome_config(c):
     cvts=dict(hybrid=bool, annotation=bool,
         run=bool,
@@ -331,59 +237,20 @@ def read_genome_config(c):
 
     return xdic
 
-def o_read_genome_config(c):
-    df = read_google_sheet('genomes')
-    cvts=dict(hybrid=bool, annotation=bool,
-        run=bool,
-        fasta=bool, blat=bool,
-        bwa=bool, star=bool, gatk=bool, hisat2=bool, snpeff=bool,
-        lastn=bool, lastp=bool, blastn=bool, blastp=bool,
-        bismark=bool,
-        tandup=bool, rds=bool)
-    df = df.astype(cvts)
-
-    xdic = dict()
-    for i in range(len(df)):
-        genome = df['genome'][i]
-        xdic[genome] = {x: df[x][i] for x in list(df) if x != 'genome'}
-
-    return xdic
-
 def read_study_list(c):
-    cvts = dict(interleaved=bool, ase=bool, stress=bool,
+    cvts = dict(interleaved=bool, ase=bool, stress=bool, ril=bool,
                 run=bool, runB=bool, runD=bool, runR=bool)
     df = pd.read_excel(c['config'], sheet_name='barn', header=0, converters=cvts)
 
-    defaults = dict(interleaved=False, accession='', format='sra',
+    defaults = dict(libtype='rnaseq', source='sra', readtype='illumina', mapper='bwa',
+                    interleaved=False, accession='', format='sra',
                     stranded='no',
-                    ase=False, stress=False, ref='Zmays_B73', hisat2='')
+                    ase=False, stress=False, ril=False, ref='Zmays_B73', hisat2='')
     df = df.fillna(defaults)
 
     for i in range(len(df)):
         y1 = {x: df[x][i] for x in list(df) if x != 'yid'}
-        keys_to_valid = 'source format readtype stranded mapper'.split()
-        for key_to_valid in keys_to_valid:
-            value_to_valid = y1[key_to_valid]
-            assert value_to_valid in c['valid'][key_to_valid], "invalid value for key[%s]: %s" % (key_to_valid, value_to_valid)
-
-    return df
-
-def o_read_study_list(c):
-    df = read_google_sheet('barn')
-    df = df.replace('', np.nan)
-    cvts = dict(interleaved=bool, ase=bool, stress=bool,
-                done=bool, run=bool, runB=bool, runD=bool, runR=bool)
-    defaults = dict(interleaved=False, accession='', format='sra',
-                    stranded='no',
-                    done=False, run=False, runB=False, runD=False, runR=False,
-                    ase=False, stress=False,
-                    ref='Zmays_B73', hisat2='')
-    df = df.fillna(defaults)
-    df = df.astype(cvts)
-
-    for i in range(len(df)):
-        y1 = {x: df[x][i] for x in list(df) if x != 'yid'}
-        keys_to_valid = 'source format readtype stranded mapper'.split()
+        keys_to_valid = 'source readtype stranded mapper'.split()
         for key_to_valid in keys_to_valid:
             value_to_valid = y1[key_to_valid]
             assert value_to_valid in c['valid'][key_to_valid], "invalid value for key[%s]: %s" % (key_to_valid, value_to_valid)
@@ -491,7 +358,8 @@ def read_samplelist(diri, yid, part_size=100000000, cap_gt=False):
     #if not op.isfile(fsc): fsc = fs
     #y1['samplelistc'] = fsc
 
-    sl = pd.read_csv(fs, sep="\t", header=0)
+    cvts = dict(SampleID=str,Tissue=str,Genotype=str)
+    sl = pd.read_csv(fs, sep="\t", header=0, converters=cvts)
     y1['SampleID'] = sl['SampleID'].tolist()
     y1['t'], y1['gt'], y1['m'] = dict(), dict(), dict()
     cols = sl.columns.values.tolist()
@@ -589,6 +457,11 @@ def check_config_rnaseq(c):
         y1.update(read_samplelist(diri = diri, yid = yid, cap_gt = True))
         y[yid] = y1
 
+        if y[yid]['ril']:
+            if yid not in c['ril_variant'] or not op.isfile(c['ril_variant'][yid]):
+                print("no variant file to do RIL genotyping: %s" % yid)
+                sys.exit(1)
+
         ref, tag_hisat2 = y1['ref'], y1['hisat2']
         if ref not in refs:
             check_genome(ref, c, tag_hisat2)
@@ -596,6 +469,21 @@ def check_config_rnaseq(c):
 
     c['y'] = y
     print('working on %s datasets' % num_run)
+
+    return c
+
+def check_config_brbseq(c):
+    c = check_config_default(c)
+    c['dirw'] = c['dirc']
+
+    for rsubdir in [c['dirl'], c['dirj']]:
+        subdir = op.join(c['dirw'], rsubdir)
+        if not op.isdir(subdir):
+            makedirs(subdir)
+
+    refs = ['Zmays_B73']
+    for ref in refs:
+        check_genome(ref, c, 'B73_vt01')
 
     return c
 

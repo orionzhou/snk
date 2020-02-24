@@ -36,6 +36,9 @@ def all_outputs(w):
             outputs.append("%s/%s" % (odir, config['rnaseq']['out_ase']))
             outputs.append("%s/%s" % (odir, config['rnaseq']['out_ase2']))
 
+        if config['y'][yid]['ril']:
+            outputs.append("%s/%s" % (odir, config['rnaseq']['out_ril']))
+
         meta = "%s/11_qc/%s/%s" % (config['dirh'], yid, config['rnaseq']['meta'])
         if op.isfile(meta):
             outputs.append("%s/11_qc/%s/%s" % (config['dirh'], yid, config['rnaseq']['out_cpm']))

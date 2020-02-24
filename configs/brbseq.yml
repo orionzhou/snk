@@ -1,0 +1,11 @@
+config_default: /home/springer/zhoux379/git/snk/configs/base.yml
+pid: stress
+brbseq:
+  idir: 01_fastq
+  od02: 02_trim
+  od03: 03_demul
+  od04: 04_umi_cnts
+  od11: 11_hisat2
+  od12: 12_sorted
+  od13: 13_stat
+  od21: 21_dge

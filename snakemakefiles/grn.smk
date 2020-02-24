@@ -20,7 +20,11 @@ rule all:
         expand("%s/{nid}.tsv" % config['grn']['od12'], nid=config['nid']),
         expand("%s/{gopt}.{nid}.rds" % config['grn']['od15'], gopt=config['grn']['gopts'], nid=config['nid']),
         expand("%s/{gopt}.rds" % config['oid'], gopt = config['grn']['gopts']),
-        expand("%s/{gopt}.{eopt}.rds" % config['oid'], gopt=config['grn']['gopts'], eopt=config['grn']['eopts'])
+#        expand("%s/{gopt}.{eopt}.rds" % config['oid'], gopt=config['grn']['gopts'], eopt=config['grn']['eopts'])
+        expand("%s/{gopt}.bs.rds" % config['oid'], gopt = config['grn']['gopts']),
+        expand("%s/{gopt}.ko.rds" % config['oid'], gopt = config['grn']['gopts']),
+        expand("%s/{gopt}.go.rds" % config['oid'], gopt = config['grn']['gopts']),
+        expand("%s/{gopt}.nv.rds" % config['oid'], gopt = config['grn']['gopts'])
 
 include: "rules/grn.smk"
 

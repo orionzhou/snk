@@ -17,9 +17,9 @@ valid:
     - local
   format:
     - umgc
+    - sra
     - jgi
     - simple
-    - sra
   readtype:
     - illumina
     - solid
@@ -41,7 +41,7 @@ job_default:
   idir: ''
   odir: ''
   nodes: 1
-  q: small
+  q: amdsmall
   ppn: 1
   runtime: 8
   mem: 8
@@ -50,7 +50,7 @@ job_default:
   amem: 5
   load: 0
   tasks: ''
-  qs: 'small'
+  qs: 'amdsmall'
   ppns: ''
   mems: ''
   rates: ''
@@ -61,26 +61,22 @@ job_default:
   o: smk.o
   e: smk.e
 pbs_queue_config:
-  small:
-    ppn: 24
-    mem: 62
-    runtime: 96
-  max:
-    ppn: 24
-    mem: 62
-    runtime: 696
-  ram256g:
-    ppn: 24
+  amdsmall:
+    ppn: 128
     mem: 250
     runtime: 96
-  ram1t:
-    ppn: 24
-    mem: 998
+  amdslarge:
+    ppn: 128
+    mem: 250
+    runtime: 24
+  amd2tb:
+    ppn: 128
+    mem: 2000
     runtime: 96
-  k40:
+  v100:
     ppn: 24
-    mem: 24
-    runtime: 125
+    mem: 375
+    runtime: 24
 dirg: /home/springer/zhoux379/projects/genome/data
 db:
   outkeys:
@@ -236,12 +232,16 @@ rnaseq:
   od33c: 33c_ase3
   od33d: 33d_ase4
   od33e: 33e_ase5
+  od41: 41_gt
+  of42: 42_merged.vcf.gz
+  od43: 43_snpbinner
   meta: meta.tsv
   out_fcnt: featurecounts.rds
   out_mmq: mmquant.rds
   out_cpm: cpm.rds
   out_ase: ase.rds
   out_ase2: ase2.rds
+  out_ril: ril.rds
 cleanbam:
   idir: 22_bam
   od23: 23_mark_dup
@@ -287,9 +287,8 @@ callvnt2:
   out_stat: bcftools_stats.rds
 callvnt3:
   od10: 10_filtered
-  of11: 11.snp.vcf.gz
+  of11: 11.vcf.gz
   of11b: 11.stat.tsv
-  of12: 12.idl.vcf.gz
   od21: 21_vcf
   od22: 22_ase_bcf
 gatk:

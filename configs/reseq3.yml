@@ -3,6 +3,6 @@ pid: reseq
 wid: data
 y:
   vt01:
-    vid: j01
+    vid: j07
     ref: Zmays_B73
     run: True

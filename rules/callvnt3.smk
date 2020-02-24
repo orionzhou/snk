@@ -1,10 +1,8 @@
 rule vt1a_filter:
     input: lambda w: config['y'][w.yid]['vcf']
     output:
-        snp = "{yid}/%s/{rid}.snp.vcf.gz" % config['callvnt3']['od10'],
-        idl = "{yid}/%s/{rid}.idl.vcf.gz" % config['callvnt3']['od10'],
-        snp_stat = "{yid}/%s/{rid}.snp.txt" % config['callvnt3']['od10'],
-        idl_stat = "{yid}/%s/{rid}.idl.txt" % config['callvnt3']['od10'],
+        vcf = "{yid}/%s/{rid}.vcf.gz" % config['callvnt3']['od10'],
+        stat = "{yid}/%s/{rid}.txt" % config['callvnt3']['od10'],
     params:
         min_gq = 30,
         min_prop = 0,
@@ -12,10 +10,8 @@ rule vt1a_filter:
         region = lambda w: config['g'][config['y'][w.yid]['ref']]['win56'][w.rid],
         samples = lambda w: ",".join(config['y'][w.yid]['samples']),
         tmp = config['tmpdir'],
-        snp_sites = lambda w, output: output.snp.replace(".vcf.gz", ".sites.vcf.gz"),
-        idl_sites = lambda w, output: output.idl.replace(".vcf.gz", ".sites.vcf.gz"),
-        snp_bed = lambda w, output: output.snp.replace(".vcf.gz", ".bed"),
-        idl_bed = lambda w, output: output.idl.replace(".vcf.gz", ".bed"),
+        sites = lambda w, output: output.vcf.replace(".vcf.gz", ".sites.vcf.gz"),
+        bed = lambda w, output: output.vcf.replace(".vcf.gz", ".bed"),
         N = "{yid}.%s.{rid}" % config['vt1a_filter']['id'],
         e = "{yid}/%s/%s/{rid}.e" % (config['dirj'], config['vt1a_filter']['id']),
         o = "{yid}/%s/%s/{rid}.o" % (config['dirj'], config['vt1a_filter']['id']),
@@ -26,28 +22,20 @@ rule vt1a_filter:
     shell:
         """
         bcftools view -a -s {params.samples} -r {params.region} {input} -Ou | \
-          bcftools view -v snps -m2 -M2 -i 'F_PASS(GQ>={params.min_gq} & GT!="mis") >= {params.min_prop} && N_PASS(GT="AA") > 0 && MAF>={params.min_maf}' \
-          -Oz -o {output.snp}
-        bcftools view -a -s {params.samples} -r {params.region} {input} -Ou | \
-          bcftools view -v indels -m2 -M2 -i 'F_PASS(GQ>={params.min_gq} & GT!="mis") >= {params.min_prop} && N_PASS(GT="AA") > 0 && MAF>={params.min_maf}' \
-          -Oz -o {output.idl}
-        bcftools index -t {output.snp}
-        bcftools index -t {output.idl}
-        bcftools stats -s - {output.snp} > {output.snp_stat}
-        bcftools stats -s - {output.idl} > {output.idl_stat}
-        bcftools view -G {output.snp} -Ou | bcftools annotate -x INFO -Oz -o {params.snp_sites}
-        bcftools view -G {output.idl} -Ou | bcftools annotate -x INFO -Oz -o {params.idl_sites}
-        bcftools index -t {params.snp_sites}
-        bcftools index -t {params.idl_sites}
-        bcftools query -f '%CHROM\t%POS0\t%END\t%ID\n' {output.snp} -o {params.snp_bed}
-        bcftools query -f '%CHROM\t%POS0\t%END\t%ID\n' {output.idl} -o {params.idl_bed}
+          bcftools view -m2 -i 'ALT!="*" && F_PASS(GQ>={params.min_gq} & GT!="mis") >= {params.min_prop} && N_PASS(GT="AA") > 0 && MAF>={params.min_maf}' \
+          -Oz -o {output.vcf}
+        bcftools index -t {output.vcf}
+        bcftools stats -s - {output.vcf} > {output.stat}
+        bcftools view -G {output.vcf} -Ou | bcftools annotate -x INFO -Oz -o {params.sites}
+        bcftools index -t {params.sites}
+        bcftools query -f '%CHROM\t%POS0\t%END\t%ID\n' {output.vcf} -o {params.bed}
         """
 
 rule vt1b_concat:
     input:
-        vcfs = lambda w: expand("%s/%s/{rid}.snp.vcf.gz" % (w.yid, config['callvnt3']['od10']),
+        vcfs = lambda w: expand("%s/%s/{rid}.vcf.gz" % (w.yid, config['callvnt3']['od10']),
                 rid = natsorted(config['g'][config['y'][w.yid]['ref']]['win56'].keys())),
-        stats = lambda w: expand("%s/%s/{rid}.snp.txt" % (w.yid, config['callvnt3']['od10']),
+        stats = lambda w: expand("%s/%s/{rid}.txt" % (w.yid, config['callvnt3']['od10']),
                 rid = natsorted(config['g'][config['y'][w.yid]['ref']]['win56'].keys())),
     output:
         vcf = "{yid}/%s" % config['callvnt3']['of11'],
@@ -71,8 +59,7 @@ rule vt1b_concat:
         """
 
 rule vt3_ase:
-    input:
-        vcf = "{yid}/%s" % config['callvnt3']['of11'],
+    input: vcf = "{yid}/%s" % config['callvnt3']['of11'],
     output:
         vcf = "{yid}/%s/{gt}.vcf.gz" % config['callvnt3']['od21'],
         tbi = "{yid}/%s/{gt}.vcf.gz.tbi" % config['callvnt3']['od21'],
