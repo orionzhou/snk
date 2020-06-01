@@ -23,7 +23,7 @@ rule cv11_hc:
         mem = lambda w: get_resource(w, config, 'cv11_hc')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv11_hc')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         #-G StandardAnnotation -G AS_StandardAnnotation -G StandardHCAnnotation \
         """
@@ -59,7 +59,7 @@ rule cv12_merge_vcfs:
         mem = lambda w: get_resource(w, config, 'cv12_merge_vcfs')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv12_merge_vcfs')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
@@ -86,7 +86,7 @@ rule cv13_rename:
         mem = lambda w: get_resource(w, config, 'cv13_rename')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv13_rename')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" RenameSampleInVcf \

@@ -18,7 +18,7 @@ rule vt1a_filter:
         j = lambda w: get_resource(w, config, 'vt1a_filter'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'vt1a_filter')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         bcftools view -a -s {params.samples} -r {params.region} {input} -Ou | \
@@ -49,7 +49,7 @@ rule vt1b_concat:
         j = lambda w: get_resource(w, config, 'vt1b_concat'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'vt1b_concat')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         bcftools concat -Ou {input.vcfs} |\
@@ -78,7 +78,7 @@ rule vt3_ase:
         j = lambda w: get_resource(w, config, 'vt3_ase'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'vt3_ase')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     script: "../scripts/build_ase_vnt.py"
 
 

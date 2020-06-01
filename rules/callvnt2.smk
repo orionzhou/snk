@@ -30,7 +30,7 @@ rule cv21_combine_gvcfs:
         mem = lambda w: get_resource(w, config, 'cv21_combine_gvcfs')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv21_combine_gvcfs')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" CombineGVCFs \
@@ -57,13 +57,14 @@ rule cv22_genotype_gvcf:
         mem = lambda w: get_resource(w, config, 'cv22_genotype_gvcf')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv22_genotype_gvcf')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
 #        -L {input.bed} --include-non-variant-sites \
 #        -V gendb://{params.gendb} \
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" GenotypeGVCFs \
             {params.extra} -R {params.ref} \
+            --allow-old-rms-mapping-quality-annotation-data \
             -V {input.vcf} \
             -O {output.vcf}
         """
@@ -88,12 +89,13 @@ rule cv23_merge_vcfs:
         mem = lambda w: get_resource(w, config, 'cv23_merge_vcfs')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv23_merge_vcfs')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
-        #bcftools index -t {output.vcf}
+#        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
+#            {params.extra} {params.input_str} -O {output.vcf}
         """
-        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
-            {params.extra} {params.input_str} -O {output.vcf}
+        bcftools concat {input.vcfs} -Oz -o {output.vcf}
+        bcftools index -t {output.vcf}
         """
 
 
@@ -118,7 +120,7 @@ rule cv24a_pick_training:
         mem = lambda w: get_resource(w, config, 'cv24a_pick_training')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv24a_pick_training')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         bcftools view -G -i 'TYPE="snp" & QUAL>{params.minqual}' {input.vcf} -Oz -o {output.snp}
@@ -154,13 +156,17 @@ rule cv24b_merge_vcfs:
         mem = lambda w: get_resource(w, config, 'cv24b_merge_vcfs')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv24b_merge_vcfs')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
+#        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
+#            {params.extra} {params.snps} -O {output.snp}
+#        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
+#            {params.extra} {params.idls} -O {output.idl}
         """
-        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
-            {params.extra} {params.snps} -O {output.snp}
-        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
-            {params.extra} {params.idls} -O {output.idl}
+        bcftools concat {input.snps} -Oz -o {output.snp}
+        bcftools index -t {output.snp}
+        bcftools concat {input.idls} -Oz -o {output.idl}
+        bcftools index -t {output.idl}
         bcftools stats {output.snp} > {output.snp}.txt
         bcftools stats {output.idl} > {output.idl}.txt
         """
@@ -185,7 +191,7 @@ rule cv25a_snp_recal:
         mem = lambda w: get_resource(w, config, 'cv25a_snp_recal')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv25a_snp_recal')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" VariantRecalibrator \
@@ -216,7 +222,7 @@ rule cv25b_snp_vqsr:
         mem = lambda w: get_resource(w, config, 'cv25b_snp_vqsr')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv25b_snp_vqsr')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" ApplyVQSR \
@@ -248,7 +254,7 @@ rule cv25c_idl_recal:
         mem = lambda w: get_resource(w, config, 'cv25c_idl_recal')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv25c_idl_recal')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" VariantRecalibrator \
@@ -279,7 +285,7 @@ rule cv25d_idl_vqsr:
         mem = lambda w: get_resource(w, config, 'cv25d_idl_vqsr')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv25d_idl_vqsr')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         {params.cmd} --java-options "-Xmx{params.mem}G" ApplyVQSR \
@@ -297,8 +303,8 @@ rule cv27a_filter:
         vcf = "{yid}/%s" % config['callvnt2']['of35'],
         tbi = "{yid}/%s.tbi" % config['callvnt2']['of35'],
     output:
-        vcf = "{yid}/%s/{rid}.vcf.gz" % config['callvnt2']['od36'],
-        tbi = "{yid}/%s/{rid}.vcf.gz.tbi" % config['callvnt2']['od36'],
+        vcf = "{yid}/%s/{rid}.vcf.gz" % config['callvnt2']['od37'],
+        tbi = "{yid}/%s/{rid}.vcf.gz.tbi" % config['callvnt2']['od37'],
     params:
         cmd = config['gatk']['cmd'],
         ref = lambda w: config['g'][config['y'][w.yid]['ref']]['gatk']['xref'],
@@ -311,7 +317,7 @@ rule cv27a_filter:
         mem = lambda w: get_resource(w, config, 'cv27a_filter')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv27a_filter')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
 #bcftools filter -i 'FILTER=="PASS"' {input.vcf} -Oz -o {output.vcf}
 #bcftools index -t {output.vcf}
@@ -322,46 +328,16 @@ rule cv27a_filter:
             -V {input.vcf} -O {output.vcf}
         """
 
-rule cv27b_merge_vcfs:
-    input:
-        vcfs = lambda w: expand("%s/%s/{rid}.vcf.gz" % (w.yid, config['callvnt2']['od36']),
-                rid = natsorted(config['g'][config['y'][w.yid]['ref']]['win56'].keys())),
-        tbis = lambda w: expand("%s/%s/{rid}.vcf.gz.tbi" % (w.yid, config['callvnt2']['od36']),
-                rid = natsorted(config['g'][config['y'][w.yid]['ref']]['win56'].keys())),
-    output:
-        vcf = "{yid}/%s" % config['callvnt2']['of37'],
-        tbi = "{yid}/%s.tbi" % config['callvnt2']['of37'],
-    params:
-        cmd = config['gatk']['cmd'],
-        ref = lambda w: config['g'][config['y'][w.yid]['ref']]['gatk']['xref'],
-        vcfs = lambda w, input: ["-I %s" % x for x in input.vcfs],
-        extra = gatk_extra(picard = True, jdk = False),
-        N = "{yid}.%s" % config['cv27b_merge_vcfs']['id'],
-        e = "{yid}/%s/%s.e" % (config['dirj'], config['cv27b_merge_vcfs']['id']),
-        o = "{yid}/%s/%s.o" % (config['dirj'], config['cv27b_merge_vcfs']['id']),
-        j = lambda w: get_resource(w, config, 'cv27b_merge_vcfs'),
-        mem = lambda w: get_resource(w, config, 'cv27b_merge_vcfs')['mem'] - 1,
-    resources: attempt = lambda w, attempt: attempt
-    threads: lambda w: get_resource(w, config, 'cv27b_merge_vcfs')['ppn']
-    conda: "../envs/work.yml"
-    shell:
-#bcftools stats -s - {output.vcf} > {output.stat}
-        """
-        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
-            {params.extra} {params.vcfs} -O {output.vcf}
-        """
-
 rule cv28a_snpeff:
     input:
-        vcf = "{yid}/%s/{rid}.vcf.gz" % config['callvnt2']['od36'],
-        tbi = "{yid}/%s/{rid}.vcf.gz.tbi" % config['callvnt2']['od36'],
+        vcf = "{yid}/%s/{rid}.vcf.gz" % config['callvnt2']['od37'],
+        tbi = "{yid}/%s/{rid}.vcf.gz.tbi" % config['callvnt2']['od37'],
     output:
         vcf = "{yid}/%s/{rid}.vcf.gz" % config['callvnt2']['od38'],
         tbi = "{yid}/%s/{rid}.vcf.gz.tbi" % config['callvnt2']['od38'],
     params:
         genome = lambda w: config['y'][w.yid]['ref'],
         idx = lambda w: config['g'][config['y'][w.yid]['ref']]['snpeff']['xcfg'],
-        stat0 = "{yid}/%s" % config['callvnt2']['of37'].replace(".vcf.gz", ".txt"),
         N = "{yid}.%s.{rid}" % config['cv28a_snpeff']['id'],
         e = "{yid}/%s/%s/{rid}.e" % (config['dirj'], config['cv28a_snpeff']['id']),
         o = "{yid}/%s/%s/{rid}.o" % (config['dirj'], config['cv28a_snpeff']['id']),
@@ -369,7 +345,7 @@ rule cv28a_snpeff:
         mem = lambda w: get_resource(w, config, 'cv28a_snpeff')['mem'] - 1,
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv28a_snpeff')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
         """
         snpEff -Xmx{params.mem}G -c {params.idx} {params.genome} -ud 0 \
@@ -399,17 +375,19 @@ rule cv28b_merge_vcfs:
         mem = lambda w: get_resource(w, config, 'cv28b_merge_vcfs')['mem'] - 1,
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv28b_merge_vcfs')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell:
+#        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
+#            {params.extra} {params.vcfs} -O {output.vcf}
         """
-        {params.cmd} --java-options "-Xmx{params.mem}G" MergeVcfs \
-            {params.extra} {params.vcfs} -O {output.vcf}
+        bcftools concat {input.vcfs} -Oz -o {output.vcf}
+        bcftools index -t {output.vcf}
         """
 
 rule cv29a_stat:
     input:
-        vcf = "{yid}/%s" % config['callvnt2']['of37'],
-        tbi = "{yid}/%s.tbi" % config['callvnt2']['of37'],
+        vcf = "{yid}/%s/{rid}.vcf.gz" % config['callvnt2']['od37'],
+        tbi = "{yid}/%s/{rid}.vcf.gz.tbi" % config['callvnt2']['od37'],
     output:
         "{yid}/%s/{rid}.txt" % config['callvnt2']['od39'],
     params:
@@ -421,8 +399,8 @@ rule cv29a_stat:
         mem = lambda w: get_resource(w, config, 'cv29a_stat')['mem'],
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv29a_stat')['ppn']
-    conda: "../envs/work.yml"
-    shell: "bcftools stats -s - -r {params.region} {input.vcf} > {output}"
+    conda: "../envs/callvnt.yml"
+    shell: "bcftools stats -s - {input.vcf} > {output}"
 
 rule cv29b_merge_stats:
     input:
@@ -437,7 +415,7 @@ rule cv29b_merge_stats:
         j = lambda w: get_resource(w, config, 'cv29b_merge_stats'),
     resources: attempt = lambda w, attempt: attempt
     threads: lambda w: get_resource(w, config, 'cv29b_merge_stats')['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/callvnt.yml"
     shell: 'merge.bcftools.stats.R {input} {output}'
 
 

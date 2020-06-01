@@ -225,7 +225,7 @@ def read_genome_config(c):
     cvts=dict(hybrid=bool, annotation=bool,
         run=bool,
         fasta=bool, blat=bool,
-        bwa=bool, star=bool, gatk=bool, hisat2=bool, snpeff=bool,
+        bwa=bool, star=bool, gatk=bool, hisat2=bool, salmon=bool, snpeff=bool,
         lastn=bool, lastp=bool, blastn=bool, blastp=bool,
         bismark=bool,
         tandup=bool, rds=bool)
@@ -250,7 +250,7 @@ def read_study_list(c):
 
     for i in range(len(df)):
         y1 = {x: df[x][i] for x in list(df) if x != 'yid'}
-        keys_to_valid = 'source readtype stranded mapper'.split()
+        keys_to_valid = 'source readtype stranded'.split()
         for key_to_valid in keys_to_valid:
             value_to_valid = y1[key_to_valid]
             assert value_to_valid in c['valid'][key_to_valid], "invalid value for key[%s]: %s" % (key_to_valid, value_to_valid)
@@ -713,9 +713,11 @@ def check_config_grn(c):
 def check_config_wgc(c):
     c = check_config_default(c)
     c['dirw'] = c['dirc']
-    c['comps'] = [x.split('-') for x in c['comps']]
-    genomes = [i for subl in c['comps'] for i in subl]
-    for genome in set(genomes + c['ortho_genomes']):
+    c['comps_seq'] = [x.split('-') for x in c['comps_seq']]
+    c['comps_gene'] = [x.split('-') for x in c['comps_gene']]
+    genomes1 = [i for subl in c['comps_seq'] for i in subl]
+    genomes2 = [i for subl in c['comps_gene'] for i in subl]
+    for genome in set(genomes1 + genomes2 + c['ortho_genomes']):
         check_genome(genome, c)
     return c
 

@@ -1,6 +1,12 @@
 config_default: /home/springer/zhoux379/git/snk/configs/base.yml
 pid: wgc
-comps:
+comps_seq: []
+  #- Mo17-B73
+  #- W22-B73
+  #- PH207-B73
+  #- PHB47-B73
+  #- B104-B73
+comps_gene:
   - Athaliana-Zmays_B73
   #- Sbicolor-Zmays_B73
   #- Mo17-B73

@@ -11,6 +11,11 @@ y:
     yid: j07
     n: 962
     ref: Zmays_B73
+    run: False
+  j08:
+    yid: j08
+    n: 119
+    ref: Zmays_B73
     run: True
 
 

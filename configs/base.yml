@@ -90,6 +90,7 @@ db:
     bismark: xout
     star: xout
     hisat2: xout
+    salmon: xout
     lastn: xout
     lastp: xout
     blastn: xout
@@ -159,6 +160,10 @@ db:
     xdir: 21_dbs/hisat2
     xpre: db
     xout: db.1.ht2
+  salmon:
+    xdir: 21_dbs/salmon
+    xpre: db
+    xout: db/complete_ref_lens.bin
   snpeff:
     xdir: 21_dbs/snpeff
     xcfg: snpEff.config
@@ -279,8 +284,7 @@ callvnt2:
   of34a: 34.recal.vcf
   of34b: 34.tranches
   of35: 35.snp.indel.vcf.gz
-  od36: 36_filtered
-  of37: 37.filtered.vcf.gz
+  od37: 37_filtered
   od38: 38_snpeff
   od39: 39_stats
   odir: vcf
@@ -290,7 +294,7 @@ callvnt3:
   of11: 11.vcf.gz
   of11b: 11.stat.tsv
   od21: 21_vcf
-  od22: 22_ase_bcf
+  od22: 22_bcf
 gatk:
   cmd: gatk
 wgc:
@@ -303,10 +307,11 @@ wgc:
   od44: 44_lastp
   od50: 50_orthofinder
   of50: output/Orthogroups/Orthogroups.tsv
+  od55: 55_synteny
   rf10: 10.vnt.bed
   rf15: 15.B73.tsv
-  rd20: 20_synteny
-  out: 06.q.blocks
+  rf20q: 20.q.ortholog.tsv
+  rf20t: 20.t.ortholog.tsv
   npieces: 30
 # statistics & reports
 

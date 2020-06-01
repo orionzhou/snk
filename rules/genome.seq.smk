@@ -220,6 +220,29 @@ rule hisat2_index:
                 --exon {params.odir}/db.exon {input.fna} {params.odir}/db
         """
 
+rule salmon_index:
+    input:
+        fna = "{genome}/%s/%s" % (config['db']['annotation']['xdir'], config['db']['annotation']['fna'])
+    output:
+        "{genome}/%s/%s" % (config['db']['salmon']['xdir'], config['db']['salmon']['xout'])
+    params:
+        odir = "{genome}/%s" % config['db']['salmon']['xdir'],
+        pre = "{genome}/%s/%s" % (config['db']['salmon']['xdir'], config['db']['salmon']['xpre']),
+        N = "{genome}.%s" % config['salmon_index']['id'],
+        e = "{genome}/%s/%s.e" % (config['dirj'], config['salmon_index']['id']),
+        o = "{genome}/%s/%s.o" % (config['dirj'], config['salmon_index']['id']),
+        j = lambda w: get_resource(w, config, 'salmon_index'),
+    resources: attempt = lambda w, attempt: attempt
+    threads: lambda w: get_resource(w, config, 'salmon_index')['ppn']
+    conda: "../envs/work.yml"
+    shell:
+        #cut -f1,2 10.tsv | sed '1d' | sort -k1,1 -k2,2 | uniq | awk 'BEGIN{FS="\t";OFS=","}{print $2 $1 $1}' > tx2gene.csv
+        """
+        rm -rf {params.odir}
+        mkdir -p {params.odir}
+        salmon index -p {threads} -t {input.fna} --gencode -i {params.pre}
+        """
+
 rule snpeff_index:
     input:
         fna = "{genome}/%s/%s" % (config['db']['fasta']['xdir'], config['db']['fasta']['ref']),

@@ -11,7 +11,7 @@ rule wgc_prep_tgt:
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_prep_tgt']['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/wgc.yml"
     shell:
         """
         mkdir -p {params.cdir}
@@ -40,7 +40,7 @@ rule wgc_prep_qry:
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_prep_qry']['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/wgc.yml"
     shell:
         """
         bed.py filter -min 5000 {input.gap} > {params.odir}/81.qry.gap.bed
@@ -64,10 +64,10 @@ rule wgc_align:
         tgt = "%s/{tgt}/11_chroms/{tchrom}.fna" % config['wgc']['od10'],
         qry = "%s/{qry}/87_qrys/part.{idx}.fna" % config['wgc']['od10'],
     output:
-        "%s/{qry}_{tgt}/q{idx}.{tchrom}.psl" % config['wgc']['od20']
+        "%s/{qry}-{tgt}/q{idx}.{tchrom}.psl" % config['wgc']['od20']
     params:
-        sam = "%s/{qry}_{tgt}/q{idx}.{tchrom}.sam" % config['wgc']['od20'],
-        lav = "%s/{qry}_{tgt}/q{idx}.{tchrom}.lav" % config['wgc']['od20'],
+        sam = "%s/{qry}-{tgt}/q{idx}.{tchrom}.sam" % config['wgc']['od20'],
+        lav = "%s/{qry}-{tgt}/q{idx}.{tchrom}.lav" % config['wgc']['od20'],
         N = lambda w: "%s.%s%s.%s.%s" % (config['wgc_align']['id'], w.qry[:1], w.tgt[:1], w.idx, w.tchrom),
         e = lambda w: "%s/%s/%s.%s/%s.%s.e" % (config['dirj'], config['wgc_align']['id'], w.qry, w.tgt, w.idx, w.tchrom),
         o = lambda w: "%s/%s/%s.%s/%s.%s.o" % (config['dirj'], config['wgc_align']['id'], w.qry, w.tgt, w.idx, w.tchrom),
@@ -75,7 +75,7 @@ rule wgc_align:
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_align']['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/wgc.yml"
     shell:
         """
         minimap2 -x asm20 -a -t {threads} \
@@ -91,7 +91,7 @@ rule wgc_align:
         #rm {params.lav}
 
 def wgc_merge_inputs(w):
-    odir = "%s/%s_%s" % (config['wgc']['od20'], w.qry, w.tgt)
+    odir = "%s/%s-%s" % (config['wgc']['od20'], w.qry, w.tgt)
     fi = config['g'][w.tgt]['fasta']['chrom_size']
     df = pd.read_csv(fi, sep='\t', names=['chrom','size'])
     tchroms = df['chrom'].values.tolist()
@@ -101,9 +101,9 @@ def wgc_merge_inputs(w):
 
 rule wgc_merge:
     input: wgc_merge_inputs
-    output: "%s/{qry}_{tgt}/03.coord.pass.psl" % config['wgc']['od23']
+    output: "%s/{qry}-{tgt}/03.coord.pass.psl" % config['wgc']['od23']
     params:
-        odir = "%s/{qry}_{tgt}" % config['wgc']['od23'],
+        odir = "%s/{qry}-{tgt}" % config['wgc']['od23'],
         chain = lambda w: "%s/%s/86.chain" %
             (config['wgc']['od10'], w.qry),
         tbit = lambda w: config['g'][w.tgt]['blat']['x.2bit'],
@@ -117,7 +117,7 @@ rule wgc_merge:
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_merge']['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/wgc.yml"
     shell:
 #        pslSwap {params.odir}/01.psl {params.odir}/02.swap.psl
         """
@@ -137,10 +137,10 @@ rule wgc_merge:
         """
 
 rule wgc_chain:
-    input: "%s/{qry}_{tgt}/03.coord.pass.psl" % config['wgc']['od23']
-    output: "%s/{qry}_{tgt}/15.chain" % config['wgc']['od23']
+    input: "%s/{qry}-{tgt}/03.coord.pass.psl" % config['wgc']['od23']
+    output: "%s/{qry}-{tgt}/15.chain" % config['wgc']['od23']
     params:
-        odir = "%s/{qry}_{tgt}" % config['wgc']['od23'],
+        odir = "%s/{qry}-{tgt}" % config['wgc']['od23'],
         tbit = lambda w: config['g'][w.tgt]['blat']['x.2bit'],
         qbit = lambda w: config['g'][w.qry]['blat']['x.2bit'],
         tsize = lambda w: config['g'][w.tgt]['fasta']['chrom_size'],
@@ -152,7 +152,7 @@ rule wgc_chain:
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_chain']['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/wgc.yml"
     shell:
         """
         axtChain -linearGap=medium -psl {input} \
@@ -174,15 +174,15 @@ rule wgc_chain:
         """
 
 rule wgc_post: # python+gatk+R
-    input: "%s/{qry}_{tgt}/15.chain" % config['wgc']['od23']
+    input: "%s/{qry}-{tgt}/15.chain" % config['wgc']['od23']
     output:
-        "%s/{qry}_{tgt}/10.vnt.bed" % config['dirr'],
-        "%s/{qry}_{tgt}/10.{tgt}.vcf.gz" % config['dirr'],
-        "%s/{qry}_{tgt}/10.{qry}.vcf.gz" % config['dirr'],
+        "%s/{qry}-{tgt}/10.vnt.bed" % config['dirr'],
+        "%s/{qry}-{tgt}/10.{tgt}.vcf.gz" % config['dirr'],
+        "%s/{qry}-{tgt}/10.{qry}.vcf.gz" % config['dirr'],
     params:
-        odir = "%s/{qry}_{tgt}" % config['dirr'],
-        tpre = "%s/{qry}_{tgt}/10.{tgt}" % config['dirr'],
-        qpre = "%s/{qry}_{tgt}/10.{qry}" % config['dirr'],
+        odir = "%s/{qry}-{tgt}" % config['dirr'],
+        tpre = "%s/{qry}-{tgt}/10.{tgt}" % config['dirr'],
+        qpre = "%s/{qry}-{tgt}/10.{qry}" % config['dirr'],
         tfas = lambda w: config['g'][w.tgt]['fasta']['ref'],
         qfas = lambda w: config['g'][w.qry]['fasta']['ref'],
         tsize = lambda w: config['g'][w.tgt]['fasta']['chrom_size'],
@@ -196,7 +196,7 @@ rule wgc_post: # python+gatk+R
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_post']['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/wgc.yml"
     shell:
         """
         chainStitchId {input} {params.odir}/01.stitched.chain
@@ -236,10 +236,10 @@ rule wgc_post: # python+gatk+R
         """
 
 rule wgc_eff_t: # python+snpeff
-    input: "%s/{qry}_{tgt}/10.{tgt}.vcf.gz" % config['dirr'],
-    output: "%s/{qry}_{tgt}/15.{tgt}.tsv" % config['dirr'],
+    input: "%s/{qry}-{tgt}/10.{tgt}.vcf.gz" % config['dirr'],
+    output: "%s/{qry}-{tgt}/15.{tgt}.tsv" % config['dirr'],
     params:
-        odir = "%s/{qry}_{tgt}" % config['dirr'],
+        odir = "%s/{qry}-{tgt}" % config['dirr'],
         tfas = lambda w: config['g'][w.tgt]['fasta']['ref'],
         qfas = lambda w: config['g'][w.qry]['fasta']['ref'],
         tsize = lambda w: config['g'][w.tgt]['fasta']['chrom_size'],
@@ -255,7 +255,7 @@ rule wgc_eff_t: # python+snpeff
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_eff']['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/wgc.yml"
     shell:
         """
         snpEff -Xmx{params.mem}G -c {params.txcfg} {wildcards.tgt} -ud 0 \
@@ -264,10 +264,10 @@ rule wgc_eff_t: # python+snpeff
         """
 
 rule wgc_eff_q:
-    input: "%s/{qry}_{tgt}/10.{qry}.vcf.gz" % config['dirr'],
-    output: "%s/{qry}_{tgt}/15.{qry}.tsv" % config['dirr'],
+    input: "%s/{qry}-{tgt}/10.{qry}.vcf.gz" % config['dirr'],
+    output: "%s/{qry}-{tgt}/15.{qry}.tsv" % config['dirr'],
     params:
-        odir = "%s/{qry}_{tgt}" % config['dirr'],
+        odir = "%s/{qry}-{tgt}" % config['dirr'],
         tfas = lambda w: config['g'][w.tgt]['fasta']['ref'],
         qfas = lambda w: config['g'][w.qry]['fasta']['ref'],
         tsize = lambda w: config['g'][w.tgt]['fasta']['chrom_size'],
@@ -283,7 +283,7 @@ rule wgc_eff_q:
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_eff']['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/wgc.yml"
     shell:
         """
         snpEff -Xmx{params.mem}G -c {params.qxcfg} {wildcards.qry} -ud 0 \
@@ -296,7 +296,7 @@ rule wgc_blastp:
         tgt_faa = lambda w: config['g'][w.tgt]['annotation']['lfaa'],
         qry_faa = lambda w: config['g'][w.qry]['annotation']['lfaa'],
         tgt_db = lambda w: config['g'][w.tgt]['blastp']['xout'],
-    output: "%s/{qry}_{tgt}.tsv" % config['wgc']['od42'],
+    output: "%s/{qry}-{tgt}.tsv" % config['wgc']['od42'],
     params:
         tgt_db = lambda w: config['g'][w.tgt]['blastp']['xpre'],
         N = "%s.{qry}.{tgt}" % config['wgc_blastp']['id'],
@@ -306,7 +306,7 @@ rule wgc_blastp:
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_blastp']['ppn']
-    conda: "../envs/blast.yml"
+    conda: "../envs/wgc.yml"
     shell:
         """
         blastp -db {params.tgt_db} -query {input.qry_faa} -num_threads {threads} -outfmt 6 -out {output}
@@ -318,12 +318,17 @@ rule wgc_synteny:
         qry_faa = lambda w: config['g'][w.qry]['annotation']['lfaa'],
         tgt_bed = lambda w: config['g'][w.tgt]['annotation']['lbed'],
         qry_bed = lambda w: config['g'][w.qry]['annotation']['lbed'],
-        last = "%s/{qry}_{tgt}.tsv" % config['wgc']['od42'],
-    output: "%s/{qry}_{tgt}/%s/%s" % (config['dirr'], config['wgc']['rd20'], config['wgc']['out']),
+        last = "%s/{qry}-{tgt}.tsv" % config['wgc']['od42'],
+    output:
+        pair = "%s/{qry}-{tgt}/%s" % (config['dirh'], '20.pairs.tsv'),
+        plot = "%s/{qry}-{tgt}/%s" % (config['dirh'], '20.pdf'),
+        q = "%s/{qry}-{tgt}/%s" % (config['dirh'], config['wgc']['rf20q']),
+        t = "%s/{qry}-{tgt}/%s" % (config['dirh'], config['wgc']['rf20t']),
     params:
         in_last = lambda w, input: op.abspath(input.last),
         out = lambda w, output: op.basename(output[0]),
-        odir = "%s/{qry}_{tgt}/%s" % (config['dirr'], config['wgc']['rd20']),
+        rdir = "%s/{qry}-{tgt}" % (config['dirr']),
+        odir = "%s/{qry}-{tgt}" % (config['wgc']['od55']),
         cscore = 0.7,
         quota = '1:1',
         dist = 20,
@@ -335,7 +340,7 @@ rule wgc_synteny:
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['wgc_synteny']['ppn']
-    conda: "../envs/work.yml"
+    conda: "../envs/wgc.yml"
     script: "../scripts/synteny.py"
 
 rule orthofinder:
@@ -350,7 +355,7 @@ rule orthofinder:
     resources:
         attempt = lambda w, attempt: attempt,
     threads: config['orthofinder']['ppn']
-    conda: "../envs/orthofinder.yml"
+    conda: "../envs/wgc.yml"
     script: "../scripts/run_orthofinder.py"
 
 
